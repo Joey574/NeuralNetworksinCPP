@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NeuralNetworkCpp", "NeuralN
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MNISTLogisticRegression", "MNISTLogisticRegression\MNISTLogisticRegression.vcxproj", "{C3A93BF6-BB50-4245-A89A-3EEE9945EE96}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LogisticRegressionStandalone", "LogisticRegressionStandalone\LogisticRegressionStandalone.vcxproj", "{86747574-44FE-409B-BE3D-7B537DE0C36C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,14 @@ Global
 		{C3A93BF6-BB50-4245-A89A-3EEE9945EE96}.Release|x64.Build.0 = Release|x64
 		{C3A93BF6-BB50-4245-A89A-3EEE9945EE96}.Release|x86.ActiveCfg = Release|Win32
 		{C3A93BF6-BB50-4245-A89A-3EEE9945EE96}.Release|x86.Build.0 = Release|Win32
+		{86747574-44FE-409B-BE3D-7B537DE0C36C}.Debug|x64.ActiveCfg = Debug|x64
+		{86747574-44FE-409B-BE3D-7B537DE0C36C}.Debug|x64.Build.0 = Debug|x64
+		{86747574-44FE-409B-BE3D-7B537DE0C36C}.Debug|x86.ActiveCfg = Debug|Win32
+		{86747574-44FE-409B-BE3D-7B537DE0C36C}.Debug|x86.Build.0 = Debug|Win32
+		{86747574-44FE-409B-BE3D-7B537DE0C36C}.Release|x64.ActiveCfg = Release|x64
+		{86747574-44FE-409B-BE3D-7B537DE0C36C}.Release|x64.Build.0 = Release|x64
+		{86747574-44FE-409B-BE3D-7B537DE0C36C}.Release|x86.ActiveCfg = Release|Win32
+		{86747574-44FE-409B-BE3D-7B537DE0C36C}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
