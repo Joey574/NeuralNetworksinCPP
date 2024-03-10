@@ -6,7 +6,7 @@ using namespace std;
 
 int main()
 {
-	Matrix test = Matrix(10, 100, -0.5f, 0.5f);
+	Matrix test = Matrix(10, 100, 1);
 	vector<float> vec = vector<float>(10, 1);
 
 	cout << "Colc: " << test.ColumnCount << endl;
@@ -16,7 +16,7 @@ int main()
 	cout << "RowSums[0]: " << test.RowSums()[0] << endl;
 
 	cout << "add scalar of 9" << endl;
-	test.Add(9);
+	test = test + 9;
 
 	cout << "ColumnSums[0]: " << test.ColumnSums()[0] << endl;
 	cout << "RowSums[0]: " << test.RowSums()[0] << endl;

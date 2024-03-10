@@ -44,6 +44,46 @@ class Matrix
 
 		}
 
+		Matrix operator + (float scalar) {
+			return this->Add(scalar);
+		}
+		Matrix operator + (std::vector<float> scalar) {
+			return this->Add(scalar);
+		}
+		Matrix operator + (Matrix element) {
+			return this->Add(element);
+		}
+
+		Matrix operator - (float scalar) {
+			return this->Subtract(scalar);
+		}
+		Matrix operator - (std::vector<float> scalar) {
+			return this->Subtract(scalar);
+		}
+		Matrix operator - (Matrix element) {
+			return this->Subtract(element);
+		}
+
+		Matrix operator * (float scalar) {
+			return this->Multiply(scalar);
+		}
+		Matrix operator * (std::vector<float> scalar) {
+			return this->Multiply(scalar);
+		}
+		Matrix operator * (Matrix element) {
+			return this->Multiply(element);
+		}
+
+		Matrix operator / (float scalar) {
+			return this->Divide(scalar);
+		}
+		Matrix operator / (std::vector<float> scalar) {
+			return this->Divide(scalar);
+		}
+		Matrix operator / (Matrix element) {
+			return this->Divide(element);
+		}
+
 	private:
 
 		std::vector<std::vector<float>> matrix;
