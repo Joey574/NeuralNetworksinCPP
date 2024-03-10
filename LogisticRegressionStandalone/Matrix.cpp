@@ -109,12 +109,12 @@ Matrix Matrix::Add(std::vector<float> scalar) {
 	return matrix;
 }
 
-Matrix Matrix::Add(Matrix scalar) {
+Matrix Matrix::Add(Matrix element) {
 
 	for (int c = 0; c < ColumnCount; c++) {
 		for (int r = 0; r < RowCount; r++) {
 
-			matrix[r][c] += scalar[r][c];
+			matrix[r][c] += element[r][c];
 		}
 	}
 
@@ -158,12 +158,12 @@ Matrix Matrix::Subtract(std::vector<float> scalar) {
 	return matrix;
 }
 
-Matrix Matrix::Subtract(Matrix scalar) {
+Matrix Matrix::Subtract(Matrix element) {
 
 	for (int c = 0; c < ColumnCount; c++) {
 		for (int r = 0; r < RowCount; r++) {
 
-			matrix[r][c] -= scalar[r][c];
+			matrix[r][c] -= element[r][c];
 		}
 	}
 
@@ -207,12 +207,12 @@ Matrix Matrix::Multiply(std::vector<float> scalar) {
 	return matrix;
 }
 
-Matrix Matrix::Multiply(Matrix scalar) {
+Matrix Matrix::Multiply(Matrix element) {
 
 	for (int c = 0; c < ColumnCount; c++) {
 		for (int r = 0; r < RowCount; r++) {
 
-			matrix[r][c] *= scalar[r][c];
+			matrix[r][c] *= element[r][c];
 		}
 	}
 
@@ -256,12 +256,12 @@ Matrix Matrix::Divide(std::vector<float> scalar) {
 	return matrix;
 }
 
-Matrix Matrix::Divide(Matrix scalar) {
+Matrix Matrix::Divide(Matrix element) {
 
 	for (int c = 0; c < ColumnCount; c++) {
 		for (int r = 0; r < RowCount; r++) {
 
-			matrix[r][c] /= scalar[r][c];
+			matrix[r][c] /= element[r][c];
 		}
 	}
 

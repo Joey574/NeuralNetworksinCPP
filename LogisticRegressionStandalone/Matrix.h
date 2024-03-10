@@ -21,19 +21,19 @@ class Matrix
 		
 		Matrix Add(float scalar);
 		Matrix Add(std::vector<float> scalar);
-		Matrix Add(Matrix scalar);
+		Matrix Add(Matrix element);
 		
 		Matrix Subtract(float scalar);
 		Matrix Subtract(std::vector<float> scalar);
-		Matrix Subtract(Matrix scalar);
+		Matrix Subtract(Matrix element);
 		
 		Matrix Multiply(float scalar);
 		Matrix Multiply(std::vector<float> scalar);
-		Matrix Multiply(Matrix scalar);
+		Matrix Multiply(Matrix element);
 		
 		Matrix Divide(float scalar);
 		Matrix Divide(std::vector<float> scalar);
-		Matrix Divide(Matrix scalar);
+		Matrix Divide(Matrix element);
 
 		int ColumnCount;
 		int RowCount;
