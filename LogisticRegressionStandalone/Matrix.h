@@ -39,9 +39,7 @@ class Matrix
 		int RowCount;
 
 		std::vector<float>& operator[] (int index) {
-
 			return matrix[index];
-
 		}
 
 		Matrix operator + (float scalar) {

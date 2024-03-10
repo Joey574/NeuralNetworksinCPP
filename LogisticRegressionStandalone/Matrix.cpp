@@ -36,7 +36,7 @@ Matrix::Matrix(int rows, int columns, float lowerRand, float upperRand) {
 
 	for (int r = 0; r < matrix.size(); r++) {
 		for (int c = 0; c < matrix[0].size(); c++) {
-			matrix[r][c] = lowerRand + ((float)std::rand() / upperRand) * (upperRand - lowerRand);
+			matrix[r][c] = 0;
 		}
 	}
 
