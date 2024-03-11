@@ -36,9 +36,13 @@ Matrix::Matrix(int rows, int columns, float lowerRand, float upperRand) {
 		matrix[i] = std::vector<float>(columns);
 	}
 
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<float> dist(lowerRand, upperRand);
+
 	for (int r = 0; r < matrix.size(); r++) {
 		for (int c = 0; c < matrix[0].size(); c++) {
-			matrix[r][c] = 0;
+			matrix[r][c] = dist(gen);
 		}
 	}
 
@@ -358,5 +362,9 @@ Matrix Matrix::Exp() {
 
 
 Matrix Matrix::CollapseAndLeftMultiply(Matrix element) {
-
+	std::vector<std::vector<float>> mat = matrix;
+	for (int i = 0; i < element.ColumnCount; i++) {
+		mat.push_back(Multiply(element[i]).ColumnSums());
+	}
+	return mat;
 }
