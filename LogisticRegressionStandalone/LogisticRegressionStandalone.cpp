@@ -10,13 +10,17 @@ int inputLayerSize = 784;
 int outputLayerSize = 10;
 vector<int> hiddenSize = {128};
 
-float learningRate;
-float thresholdAccuracy;
-int batchSize;
+float learningRate = 0.1f;
+float thresholdAccuracy = 0.25f;
+int batchSize = 500;
+int iterations = 500;
 
 // Inputs
 Matrix input;
 Matrix batch;
+
+vector<int> inputLabels;
+vector<int> batchLabels;
 
 // Neural Network Matrices
 vector<Matrix> weights;
@@ -34,18 +38,22 @@ Matrix dBiases;
 Matrix ReLU(Matrix total);
 void InitializeNetwork();
 void InitializeResultMatrices(int size);
+void ForwardPropogation();
+void BackwardPropogation();
+void UpdateNetwork();
+Matrix RandomizeInput(Matrix totalInput, int size);
+vector<float> GetPredictions(int len);
+float Accuracy(vector<float> predictions, vector<int> labels);
 
 int main()
 {
-	auto initStart = std::chrono::high_resolution_clock::now();
 	InitializeNetwork();
-	auto initEnd = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double, std::milli> initTime = initEnd - initStart;
-
-	cout << "INITIALIZATION COMPLETE (" << initTime.count() << "ms)" << endl;
 }
 
 void InitializeNetwork() {
+
+	auto initStart = std::chrono::high_resolution_clock::now();
+
 	int connections = 0;
 
 	weights = vector<Matrix>(hiddenSize.size() + 1);
@@ -70,6 +78,10 @@ void InitializeNetwork() {
 	cout << "Total connections: " << connections << endl;
 
 	InitializeResultMatrices(batchSize);
+
+	auto initEnd = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::milli> initTime = initEnd - initStart;
+	cout << "INITIALIZATION COMPLETE (" << initTime.count() << "ms)" << endl;
 }
 
 void InitializeResultMatrices(int size) {
@@ -84,6 +96,37 @@ void InitializeResultMatrices(int size) {
 
 void TrainNetwork() {
 
+	std::chrono::steady_clock::time_point tStart;
+	std::chrono::steady_clock::time_point tEnd;
+	std::chrono::duration<double, std::milli> time;
+
+	for (int i = 0; i < iterations; i++) {
+		float acc = Accuracy(GetPredictions(batchSize), batchLabels);
+
+		if (acc > thresholdAccuracy) {
+			batch = RandomizeInput(input, batchSize);
+		}
+
+		cout << "Iteration: " << i << " Accuracy: " << acc << endl;
+
+		tStart = std::chrono::high_resolution_clock::now();
+		ForwardPropogation();
+		tEnd = std::chrono::high_resolution_clock::now();
+		time = tEnd - tStart;
+		cout << "Forward Propogation complete (" << time.count() << "ms)" << endl;
+
+		tStart = std::chrono::high_resolution_clock::now();
+		BackwardPropogation();
+		tEnd = std::chrono::high_resolution_clock::now();
+		time = tEnd - tStart;
+		cout << "Backward Propogation complete (" << time.count() << "ms)" << endl;
+
+		UpdateNetwork();
+	}
+}
+
+Matrix RandomizeInput(Matrix totalInput, int size) {
+
 }
 
 void ForwardPropogation() {
@@ -95,6 +138,29 @@ void ForwardPropogation() {
 
 void BackwardPropogation() {
 
+}
+
+vector<float> GetPredictions(int len) {
+	vector<float> predictions = vector<float>(len);
+	for (int i = 0; i < len; i++) {
+		auto maxElementIterator = std::max_element(activation[activation.size() - 1].Column(i).begin(), 
+			activation[activation.size() - 1].Column(i).end());
+		predictions[i] = std::distance(activation[activation.size() - 1].Column(i).begin(), maxElementIterator);
+	}
+	return predictions;
+}
+
+float Accuracy(vector<float> predictions, vector<int> labels) {
+	int correct = 0;
+
+	for (int i = 0; i < predictions.size(); i++)
+	{
+		if ((int)(predictions[i] + 0.1f) == labels[i])
+		{
+			correct++;
+		}
+	}
+	return (float)correct / predictions.size();
 }
 
 void UpdateNetwork() {
