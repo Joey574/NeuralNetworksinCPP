@@ -1,4 +1,5 @@
 #include <iostream>
+#include <chrono>
 
 #include "Matrix.h"
 
@@ -36,7 +37,12 @@ void InitializeResultMatrices(int size);
 
 int main()
 {
+	auto initStart = std::chrono::high_resolution_clock::now();
 	InitializeNetwork();
+	auto initEnd = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::milli> initTime = initEnd - initStart;
+
+	cout << "INITIALIZATION COMPLETE (" << initTime.count() << "ms)" << endl;
 }
 
 void InitializeNetwork() {
@@ -64,8 +70,6 @@ void InitializeNetwork() {
 	cout << "Total connections: " << connections << endl;
 
 	InitializeResultMatrices(batchSize);
-
-	cout << "INITIALIZATION COMPLETE" << endl;
 }
 
 void InitializeResultMatrices(int size) {
