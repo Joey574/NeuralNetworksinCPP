@@ -2,6 +2,7 @@
 #include <vector>
 #include <algorithm>
 #include <execution>
+#include <cmath>
 
 class Matrix 
 {
@@ -34,6 +35,14 @@ class Matrix
 		Matrix Divide(float scalar);
 		Matrix Divide(std::vector<float> scalar);
 		Matrix Divide(Matrix element);
+
+		Matrix Pow(float scalar);
+		Matrix Pow(std::vector<float> scalar);
+		Matrix Pow(Matrix element);
+
+		Matrix Exp();
+
+		Matrix CollapseAndLeftMultiply(Matrix element);
 
 		int ColumnCount;
 		int RowCount;

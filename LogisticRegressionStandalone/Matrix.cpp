@@ -3,6 +3,8 @@
 // Constructors
 Matrix::Matrix() {
 	matrix = std::vector<std::vector<float>>(0);
+	ColumnCount = 0;
+	RowCount = 0;
 }
 
 Matrix::Matrix(int rows, int columns) {
@@ -80,24 +82,37 @@ std::vector<float> Matrix::RowSums() {
 	return sums;
 }
 
+std::vector<float> Matrix::Column(int index) {
+	std::vector<float> column = std::vector<float>();
+	for (int i = 0; i < RowCount; i++) {
+		column.push_back(matrix[i][index]);
+	}
+	return column;
+}
+
+std::vector<float> Matrix::Row(int index) {
+	return matrix[index];
+}
+
 // Math Operations
 
 Matrix Matrix::Add(float scalar) {
-	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [scalar](auto&& item) {
+	std::vector<std::vector<float>> add = matrix;
+	std::for_each(std::execution::par, add.begin(), add.end(), [scalar](auto&& item) {
 		std::for_each(std::execution::par, item.begin(), item.end(), [scalar](auto&& value) {
 			return value += scalar;
 			});
 		});
 
-	return matrix;
+	return add;
 }
 
 Matrix Matrix::Add(std::vector<float> scalar) {
-
+	std::vector<std::vector<float>> add = matrix;
 	for (int c = 0; c < ColumnCount; c++) {
 		for (int r = 0; r < RowCount; r++) {
 
-			matrix[r][c] += scalar[r];
+			add[r][c] += scalar[r];
 		}
 	}	
  
@@ -106,15 +121,15 @@ Matrix Matrix::Add(std::vector<float> scalar) {
 		return std::transform(item.begin(), item.end(), scalar.begin(), item.begin(), std::plus<float>());
 		});*/
 
-	return matrix;
+	return add;
 }
 
 Matrix Matrix::Add(Matrix element) {
-
+	std::vector<std::vector<float>> add = matrix;
 	for (int c = 0; c < ColumnCount; c++) {
 		for (int r = 0; r < RowCount; r++) {
 
-			matrix[r][c] += element[r][c];
+			add[r][c] += element[r][c];
 		}
 	}
 
@@ -127,26 +142,27 @@ Matrix Matrix::Add(Matrix element) {
 			});
 		});*/
 
-	return matrix;
+	return add;
 }
 
 
 Matrix Matrix::Subtract(float scalar) {
-	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [scalar](auto&& item) {
+	std::vector<std::vector<float>> sub = matrix;
+	std::for_each(std::execution::par, sub.begin(), sub.end(), [scalar](auto&& item) {
 		std::for_each(std::execution::par, item.begin(), item.end(), [scalar](auto&& value) {
 			return value -= scalar;
 			});
 		});
 
-	return matrix;
+	return sub;
 }
 
 Matrix Matrix::Subtract(std::vector<float> scalar) {
-
+	std::vector<std::vector<float>> sub = matrix;
 	for (int c = 0; c < ColumnCount; c++) {
 		for (int r = 0; r < RowCount; r++) {
 
-			matrix[r][c] -= scalar[r];
+			sub[r][c] -= scalar[r];
 		}
 	}
 
@@ -155,15 +171,15 @@ Matrix Matrix::Subtract(std::vector<float> scalar) {
 		return std::transform(item.begin(), item.end(), scalar.begin(), item.begin(), std::plus<float>());
 		});*/
 
-	return matrix;
+	return sub;
 }
 
 Matrix Matrix::Subtract(Matrix element) {
-
+	std::vector<std::vector<float>> sub = matrix;
 	for (int c = 0; c < ColumnCount; c++) {
 		for (int r = 0; r < RowCount; r++) {
 
-			matrix[r][c] -= element[r][c];
+			sub[r][c] -= element[r][c];
 		}
 	}
 
@@ -176,26 +192,27 @@ Matrix Matrix::Subtract(Matrix element) {
 			});
 		});*/
 
-	return matrix;
+	return sub;
 }
 
 
 Matrix Matrix::Multiply(float scalar) {
-	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [scalar](auto&& item) {
+	std::vector<std::vector<float>> mul = matrix;
+	std::for_each(std::execution::par, mul.begin(), mul.end(), [scalar](auto&& item) {
 		std::for_each(std::execution::par, item.begin(), item.end(), [scalar](auto&& value) {
 			return value *= scalar;
 			});
 		});
 
-	return matrix;
+	return mul;
 }
 
 Matrix Matrix::Multiply(std::vector<float> scalar) {
-
+	std::vector<std::vector<float>> mul = matrix;
 	for (int c = 0; c < ColumnCount; c++) {
 		for (int r = 0; r < RowCount; r++) {
 
-			matrix[r][c] *= scalar[r];
+			mul[r][c] *= scalar[r];
 		}
 	}
 
@@ -204,15 +221,15 @@ Matrix Matrix::Multiply(std::vector<float> scalar) {
 		return std::transform(item.begin(), item.end(), scalar.begin(), item.begin(), std::plus<float>());
 		});*/
 
-	return matrix;
+	return mul;
 }
 
 Matrix Matrix::Multiply(Matrix element) {
-
+	std::vector<std::vector<float>> mul = matrix;
 	for (int c = 0; c < ColumnCount; c++) {
 		for (int r = 0; r < RowCount; r++) {
 
-			matrix[r][c] *= element[r][c];
+			mul[r][c] *= element[r][c];
 		}
 	}
 
@@ -225,26 +242,27 @@ Matrix Matrix::Multiply(Matrix element) {
 			});
 		});*/
 
-	return matrix;
+	return mul;
 }
 
 
 Matrix Matrix::Divide(float scalar) {
-	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [scalar](auto&& item) {
+	std::vector<std::vector<float>> div = matrix;
+	std::for_each(std::execution::par, div.begin(), div.end(), [scalar](auto&& item) {
 		std::for_each(std::execution::par, item.begin(), item.end(), [scalar](auto&& value) {
 			return value /= scalar;
 			});
 		});
 
-	return matrix;
+	return div;
 }
 
 Matrix Matrix::Divide(std::vector<float> scalar) {
-
+	std::vector<std::vector<float>> div = matrix;
 	for (int c = 0; c < ColumnCount; c++) {
 		for (int r = 0; r < RowCount; r++) {
 
-			matrix[r][c] /= scalar[r];
+			div[r][c] /= scalar[r];
 		}
 	}
 
@@ -253,15 +271,15 @@ Matrix Matrix::Divide(std::vector<float> scalar) {
 		return std::transform(item.begin(), item.end(), scalar.begin(), item.begin(), std::plus<float>());
 		});*/
 
-	return matrix;
+	return div;
 }
 
 Matrix Matrix::Divide(Matrix element) {
-
+	std::vector<std::vector<float>> div = matrix;
 	for (int c = 0; c < ColumnCount; c++) {
 		for (int r = 0; r < RowCount; r++) {
 
-			matrix[r][c] /= element[r][c];
+			div[r][c] /= element[r][c];
 		}
 	}
 
@@ -274,5 +292,71 @@ Matrix Matrix::Divide(Matrix element) {
 			});
 		});*/
 
-	return matrix;
+	return div;
+}
+
+
+Matrix Matrix::Pow(float scalar) {
+	std::vector<std::vector<float>> pow = matrix;
+	std::for_each(std::execution::par, pow.begin(), pow.end(), [scalar](auto&& item) {
+		std::for_each(std::execution::par, item.begin(), item.end(), [scalar](auto&& value) {
+			return std::pow(value, scalar);
+			});
+		});
+
+	return pow;
+}
+
+Matrix Matrix::Pow(std::vector<float> scalar) {
+	std::vector<std::vector<float>> pow = matrix;
+	for (int c = 0; c < ColumnCount; c++) {
+		for (int r = 0; r < RowCount; r++) {
+
+			pow[r][c] = std::pow(matrix[r][c], scalar[r]);
+		}
+	}
+
+	// TODO: Finish parallel vector-wise add
+	/*std::for_each(std::execution::par, matrix.begin(), matrix.end(), [scalar](auto&& item) {
+		return std::transform(item.begin(), item.end(), scalar.begin(), item.begin(), std::plus<float>());
+		});*/
+
+	return pow;
+}
+
+Matrix Matrix::Pow(Matrix element) {
+	std::vector<std::vector<float>> pow = matrix;
+	for (int c = 0; c < ColumnCount; c++) {
+		for (int r = 0; r < RowCount; r++) {
+
+			pow[r][c] = std::pow(matrix[r][c], element[r][c]);
+		}
+	}
+
+	// TODO: Implement parallel element-wise add with another matrix
+	/*std::for_each(std::execution::par, matrix.begin(), matrix.end(), [scalar](auto&& item) {
+		int r = std::distance(matrix.begin(), &item);
+		std::for_each(std::execution::par, item.begin(), item.end(), [scalar[r]](auto&& value) {
+			int c = std::distance(item.begin(), &value);
+			return value += scalar[c];
+			});
+		});*/
+
+	return pow;
+}
+
+
+Matrix Matrix::Exp() {
+	std::vector<std::vector<float>> exp = matrix;
+	for (int r = 0; r < RowCount; r++) {
+		for (int c = 0; c < ColumnCount; c++) {
+			exp[r][c] = std::exp(matrix[r][c]);
+		}
+	}
+	return exp;
+}
+
+
+Matrix Matrix::CollapseAndLeftMultiply(Matrix element) {
+
 }
