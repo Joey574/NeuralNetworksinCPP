@@ -99,6 +99,24 @@ std::vector<float> Matrix::Row(int index) {
 	return matrix[index];
 }
 
+std::vector<float> Matrix::MultiplyAndSum(float scalar) {
+	std::vector<std::vector<float>> mul = matrix;
+	__m256 scalarS = _mm256_set1_ps(scalar);
+
+	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&](auto&& item) {
+		size_t r = &item - matrix.data();
+		const int alignedN = item.size() - (item.size() % 8);
+		for (int i = 0; i < alignedN; i += 8) {
+			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
+			__m256 result = _mm256_mul_ps(loaded_a, scalarS);
+			_mm256_storeu_ps(&mul[r][i], result);
+		}
+		});
+	Matrix m = mul;
+
+	return m.RowSums();
+}
+
 // Math Operations
 
 Matrix Matrix::Add(float scalar) {
@@ -230,24 +248,6 @@ Matrix Matrix::Multiply(float scalar) {
 		}
 	});
 	return mul;
-}
-
-std::vector<float> Matrix::MultiplyAndSum(float scalar) {
-	std::vector<std::vector<float>> mul = matrix;
-	__m256 scalarS = _mm256_set1_ps(scalar);
-
-	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&](auto&& item) {
-		size_t r = &item - matrix.data();
-		const int alignedN = item.size() - (item.size() % 8);
-		for (int i = 0; i < alignedN; i += 8) {
-			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
-			__m256 result = _mm256_mul_ps(loaded_a, scalarS);
-			_mm256_storeu_ps(&mul[r][i], result);
-		}
-		});
-	Matrix m = mul;
-
-	return m.RowSums();
 }
 
 Matrix Matrix::Multiply(std::vector<float> scalar) {
