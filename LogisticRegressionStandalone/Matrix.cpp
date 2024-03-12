@@ -285,7 +285,7 @@ Matrix Matrix::SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 		for (int i = 0; i < alignedN; i += 8) {
 			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
 			__m256 result;
-			operation(loaded_a, _scalar, result);
+			(this->*operation)(loaded_a, _scalar, &result);
 			_mm256_storeu_ps(&mat[r][i], result);
 		}
 	});
@@ -293,7 +293,7 @@ Matrix Matrix::SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 }
 
 Matrix Matrix::VectorFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), std::vector<float> scalar) {
-
+	return matrix;
 }
 
 Matrix Matrix::MatrixFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), Matrix element) {
@@ -309,7 +309,7 @@ Matrix Matrix::MatrixFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 			__m256 loaded_b = _mm256_loadu_ps(&mat[r][i]);
 			__m256 result;
 
-			operation(loaded_a, loaded_b, result);
+			(this->*operation)(loaded_a, loaded_b, &result);
 			_mm256_storeu_ps(&mat[r][i], result);
 		}
 	});
