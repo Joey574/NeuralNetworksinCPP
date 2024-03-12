@@ -51,17 +51,7 @@ float Accuracy(vector<float> predictions, vector<int> labels);
 
 int main()
 {
-	//InitializeNetwork();
-
-	Matrix a = Matrix(10, 10, 5);
-
-	a.Add(1);
-
-	a.Add(a);
-	a.Subtract(a);
-
-	a.Multiply(a);
-	a.Divide(a);
+	InitializeNetwork();
 
 	return 0;
 }
@@ -164,7 +154,7 @@ void BackwardPropogation() {
 	}
 
 	for (int i = 0; i < biases.size(); i++) {
-		//dBiases[i] = (1.0f / (float)batchSize) * dTotal[i].RowSums();
+		dBiases[i] = dTotal[i].MultiplyAndSum(1.0f / (float)batchSize);
 	}
 }
 

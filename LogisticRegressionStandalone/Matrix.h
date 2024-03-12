@@ -22,6 +22,8 @@ class Matrix
 		void SetColumn(int index, std::vector<float> column);
 		void SetRow(int index, std::vector<float> row);
 		
+		std::vector<float> MultiplyAndSum(float scalar);
+
 		std::vector<float> ColumnSums();
 		std::vector<float> RowSums();
 		

@@ -1,6 +1,7 @@
 #include "Matrix.h"
 
 // Constructors
+
 Matrix::Matrix() {
 	matrix = std::vector<std::vector<float>>(0);
 	ColumnCount = 0;
@@ -36,18 +37,18 @@ Matrix::Matrix(int rows, int columns, float lowerRand, float upperRand) {
 		matrix[i] = std::vector<float>(columns);
 	}
 
+	ColumnCount = columns;
+	RowCount = rows;
+
 	std::random_device rd;
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<float> dist(lowerRand, upperRand);
 
-	for (int r = 0; r < matrix.size(); r++) {
-		for (int c = 0; c < matrix[0].size(); c++) {
+	for (int r = 0; r < RowCount; r++) {
+		for (int c = 0; c < ColumnCount; c++) {
 			matrix[r][c] = dist(gen);
 		}
 	}
-
-	ColumnCount = columns;
-	RowCount = rows;
 }
 
 Matrix::Matrix(std::vector<std::vector<float>> matrix) {
@@ -229,6 +230,24 @@ Matrix Matrix::Multiply(float scalar) {
 		}
 	});
 	return mul;
+}
+
+std::vector<float> Matrix::MultiplyAndSum(float scalar) {
+	std::vector<std::vector<float>> mul = matrix;
+	__m256 scalarS = _mm256_set1_ps(scalar);
+
+	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&](auto&& item) {
+		size_t r = &item - matrix.data();
+		const int alignedN = item.size() - (item.size() % 8);
+		for (int i = 0; i < alignedN; i += 8) {
+			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
+			__m256 result = _mm256_mul_ps(loaded_a, scalarS);
+			_mm256_storeu_ps(&mul[r][i], result);
+		}
+		});
+	Matrix m = mul;
+
+	return m.RowSums();
 }
 
 Matrix Matrix::Multiply(std::vector<float> scalar) {
