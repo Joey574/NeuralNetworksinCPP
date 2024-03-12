@@ -53,45 +53,14 @@ int main()
 {
 	//InitializeNetwork();
 
-	std::chrono::steady_clock::time_point tStart;
-	std::chrono::steady_clock::time_point tEnd;
-	std::chrono::duration<double, std::milli> time;
+	Matrix a = Matrix(10, 10, 5);
 
-	Matrix a = Matrix(10000, 1024, 5);
-	Matrix b = Matrix(10000, 1024, 8);
+	a.Add(a);
+	a.Subtract(a);
 
-	int times = 200;
+	a.Multiply(a);
+	a.Divide(a);
 
-	vector<double> averageSIMD = vector<double>(times);
-	vector<double> averageParSIMD = vector<double>(times);
-
-	for (int i = 0; i < times; i++) {
-		tStart = std::chrono::high_resolution_clock::now();
-		a.AddSIMD(b);
-		tEnd = std::chrono::high_resolution_clock::now();
-		time = tEnd - tStart;
-		averageSIMD.push_back(time.count());
-
-		/*tStart = std::chrono::high_resolution_clock::now();
-		a.Add(b);
-		tEnd = std::chrono::high_resolution_clock::now();
-		time = tEnd - tStart;
-		averageParSIMD.push_back(time.count());*/
-	}
-
-	double sumS = 0;
-	double sumP = 0;
-	for (int i = 1; i < averageSIMD.size(); i++) {
-		sumS += averageSIMD[i];
-		//sumP += averageParSIMD[i];
-	}
-
-	double avS = sumS / times - 1;
-	//double avP = sumP / times - 1;
-
-	cout << "Average: " << avS << "ms" << endl;
-	//cout << "Average ParSIMD: " << avP << "ms" << endl;
-	
 	return 0;
 }
 

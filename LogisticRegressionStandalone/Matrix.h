@@ -29,8 +29,6 @@ class Matrix
 		Matrix Add(std::vector<float> scalar);
 		Matrix Add(Matrix element);
 
-		Matrix AddSIMD(Matrix element);
-		
 		Matrix Subtract(float scalar);
 		Matrix Subtract(std::vector<float> scalar);
 		Matrix Subtract(Matrix element);
