@@ -110,5 +110,6 @@ class Matrix
 		void SIMDSub(__m256 opOne, __m256 opTwo, __m256* result);
 		void SIMDMul(__m256 opOne, __m256 opTwo, __m256* result);
 		void SIMDDiv(__m256 opOne, __m256 opTwo, __m256* result);
+		void SIMDPow(__m256 opOne, __m256 opTwo, __m256* result);
 
 };

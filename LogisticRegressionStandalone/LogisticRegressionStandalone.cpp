@@ -51,7 +51,7 @@ float Accuracy(vector<float> predictions, vector<int> labels);
 
 int main()
 {
-	//InitializeNetwork();
+	InitializeNetwork();
 
 	return 0;
 }
@@ -82,6 +82,18 @@ void InitializeNetwork() {
 	}
 
 	cout << "Total connections: " << connections << endl;
+
+	double floatSize = (sizeof(float)) * connections;
+	double commas = connections - 1;
+	double newLines = 0;
+
+	for (int i = 0; i < weights.size(); i++) {
+		newLines += weights[i].RowCount;
+	}
+
+	double fileSize = floatSize + commas + newLines;
+
+	cout << "Predicted size of file: " << (fileSize / 1000000) << "mb" << endl;
 
 	InitializeResultMatrices(batchSize);
 

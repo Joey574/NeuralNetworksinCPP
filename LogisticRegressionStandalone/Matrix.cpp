@@ -124,20 +124,7 @@ Matrix Matrix::Add(float scalar) {
 }
 
 Matrix Matrix::Add(std::vector<float> scalar) {
-	std::vector<std::vector<float>> add = matrix;
-	for (int c = 0; c < ColumnCount; c++) {
-		for (int r = 0; r < RowCount; r++) {
-
-			add[r][c] += scalar[r];
-		}
-	}	
- 
-	// TODO: Finish parallel vector-wise add
-	/*std::for_each(std::execution::par, matrix.begin(), matrix.end(), [scalar](auto&& item) {
-		return std::transform(item.begin(), item.end(), scalar.begin(), item.begin(), std::plus<float>());
-		});*/
-
-	return add;
+	return VectorFloatOperation(&Matrix::SIMDAdd, scalar);
 }
 
 Matrix Matrix::Add(Matrix element) {
@@ -150,20 +137,7 @@ Matrix Matrix::Subtract(float scalar) {
 }
 
 Matrix Matrix::Subtract(std::vector<float> scalar) {
-	std::vector<std::vector<float>> sub = matrix;
-	for (int c = 0; c < ColumnCount; c++) {
-		for (int r = 0; r < RowCount; r++) {
-
-			sub[r][c] -= scalar[r];
-		}
-	}
-
-	// TODO: Finish parallel vector-wise add
-	/*std::for_each(std::execution::par, matrix.begin(), matrix.end(), [scalar](auto&& item) {
-		return std::transform(item.begin(), item.end(), scalar.begin(), item.begin(), std::plus<float>());
-		});*/
-
-	return sub;
+	return VectorFloatOperation(&Matrix::SIMDSub, scalar);
 }
 
 Matrix Matrix::Subtract(Matrix element) {
@@ -176,20 +150,7 @@ Matrix Matrix::Multiply(float scalar) {
 }
 
 Matrix Matrix::Multiply(std::vector<float> scalar) {
-	std::vector<std::vector<float>> mul = matrix;
-	for (int c = 0; c < ColumnCount; c++) {
-		for (int r = 0; r < RowCount; r++) {
-
-			mul[r][c] *= scalar[r];
-		}
-	}
-
-	// TODO: Finish parallel vector-wise add
-	/*std::for_each(std::execution::par, matrix.begin(), matrix.end(), [scalar](auto&& item) {
-		return std::transform(item.begin(), item.end(), scalar.begin(), item.begin(), std::plus<float>());
-		});*/
-
-	return mul;
+	return VectorFloatOperation(&Matrix::SIMDMul, scalar);
 }
 
 Matrix Matrix::Multiply(Matrix element) {
@@ -202,20 +163,7 @@ Matrix Matrix::Divide(float scalar) {
 }
 
 Matrix Matrix::Divide(std::vector<float> scalar) {
-	std::vector<std::vector<float>> div = matrix;
-	for (int c = 0; c < ColumnCount; c++) {
-		for (int r = 0; r < RowCount; r++) {
-
-			div[r][c] /= scalar[r];
-		}
-	}
-
-	// TODO: Finish parallel vector-wise add
-	/*std::for_each(std::execution::par, matrix.begin(), matrix.end(), [scalar](auto&& item) {
-		return std::transform(item.begin(), item.end(), scalar.begin(), item.begin(), std::plus<float>());
-		});*/
-
-	return div;
+	return VectorFloatOperation(&Matrix::SIMDDiv, scalar);
 }
 
 Matrix Matrix::Divide(Matrix element) {
@@ -224,52 +172,15 @@ Matrix Matrix::Divide(Matrix element) {
 
 
 Matrix Matrix::Pow(float scalar) {
-	std::vector<std::vector<float>> pow = matrix;
-	std::for_each(std::execution::par, pow.begin(), pow.end(), [scalar](auto&& item) {
-		std::for_each(std::execution::par, item.begin(), item.end(), [scalar](auto&& value) {
-			return std::pow(value, scalar);
-			});
-		});
-
-	return pow;
+	return SingleFloatOperation(&Matrix::SIMDPow, scalar);
 }
 
 Matrix Matrix::Pow(std::vector<float> scalar) {
-	std::vector<std::vector<float>> pow = matrix;
-	for (int c = 0; c < ColumnCount; c++) {
-		for (int r = 0; r < RowCount; r++) {
-
-			pow[r][c] = std::pow(matrix[r][c], scalar[r]);
-		}
-	}
-
-	// TODO: Finish parallel vector-wise add
-	/*std::for_each(std::execution::par, matrix.begin(), matrix.end(), [scalar](auto&& item) {
-		return std::transform(item.begin(), item.end(), scalar.begin(), item.begin(), std::plus<float>());
-		});*/
-
-	return pow;
+	return VectorFloatOperation(&Matrix::SIMDPow, scalar);
 }
 
 Matrix Matrix::Pow(Matrix element) {
-	std::vector<std::vector<float>> pow = matrix;
-	for (int c = 0; c < ColumnCount; c++) {
-		for (int r = 0; r < RowCount; r++) {
-
-			pow[r][c] = std::pow(matrix[r][c], element[r][c]);
-		}
-	}
-
-	// TODO: Implement parallel element-wise add with another matrix
-	/*std::for_each(std::execution::par, matrix.begin(), matrix.end(), [scalar](auto&& item) {
-		int r = std::distance(matrix.begin(), &item);
-		std::for_each(std::execution::par, item.begin(), item.end(), [scalar[r]](auto&& value) {
-			int c = std::distance(item.begin(), &value);
-			return value += scalar[c];
-			});
-		});*/
-
-	return pow;
+	return MatrixFloatOperation(&Matrix::SIMDPow, element);
 }
 
 
@@ -293,7 +204,22 @@ Matrix Matrix::SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 }
 
 Matrix Matrix::VectorFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), std::vector<float> scalar) {
-	return matrix;
+	std::vector<std::vector<float>> mat = matrix;
+
+	std::for_each(std::execution::par, mat.begin(), mat.end(), [&](auto&& item) {
+
+		const int alignedN = item.size() - (item.size() % 8);
+
+		for (int i = 0; i < alignedN; i += 8) {
+			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
+			__m256 loaded_b = _mm256_loadu_ps(&scalar[i]);
+			__m256 result;
+
+			(this->*operation)(loaded_a, loaded_b, &result);
+			_mm256_storeu_ps(&item[i], result);
+		}
+	});
+
 }
 
 Matrix Matrix::MatrixFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), Matrix element) {
@@ -328,6 +254,9 @@ void Matrix::SIMDMul(__m256 opOne, __m256 opTwo, __m256* result) {
 }
 void Matrix::SIMDDiv(__m256 opOne, __m256 opTwo, __m256 *result) {
 	*result = _mm256_div_ps(opOne, opTwo);
+}
+void Matrix::SIMDPow(__m256 opOne, __m256 opTwo, __m256* result) {
+	*result = _mm256_pow_ps(opOne, opTwo);
 }
 
 Matrix Matrix::Exp() {
