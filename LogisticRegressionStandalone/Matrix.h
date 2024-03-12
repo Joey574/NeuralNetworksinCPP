@@ -19,8 +19,8 @@ class Matrix
 		std::vector<float> Column(int index);
 		std::vector<float> Row(int index);
 
-		void SetColumn(int index, std::vector<float> column);
-		void SetRow(int index, std::vector<float> row);
+		std::vector<float> SetColumn(int index, std::vector<float> column);
+		std::vector<float> SetRow(int index, std::vector<float> row);
 		
 		std::vector<float> MultiplyAndSum(float scalar);
 
@@ -111,5 +111,4 @@ class Matrix
 		void SIMDMul(__m256 opOne, __m256 opTwo, __m256* result);
 		void SIMDDiv(__m256 opOne, __m256 opTwo, __m256* result);
 		void SIMDPow(__m256 opOne, __m256 opTwo, __m256* result);
-
 };

@@ -117,6 +117,14 @@ std::vector<float> Matrix::MultiplyAndSum(float scalar) {
 	return m.RowSums();
 }
 
+Matrix Matrix::CollapseAndLeftMultiply(Matrix element) {
+	std::vector<std::vector<float>> mat = matrix;
+	for (int i = 0; i < element.ColumnCount; i++) {
+		mat.push_back(Multiply(element[i]).ColumnSums());
+	}
+	return mat;
+}
+
 // Math Operations
 
 Matrix Matrix::Add(float scalar) {
@@ -181,6 +189,17 @@ Matrix Matrix::Pow(std::vector<float> scalar) {
 
 Matrix Matrix::Pow(Matrix element) {
 	return MatrixFloatOperation(&Matrix::SIMDPow, element);
+}
+
+
+Matrix Matrix::Exp() {
+	std::vector<std::vector<float>> exp = matrix;
+	for (int r = 0; r < RowCount; r++) {
+		for (int c = 0; c < ColumnCount; c++) {
+			exp[r][c] = std::exp(matrix[r][c]);
+		}
+	}
+	return exp;
 }
 
 
@@ -254,6 +273,7 @@ Matrix Matrix::MatrixFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 	return mat;
 }
 
+// SIMD Operations
 
 void Matrix::SIMDAdd(__m256 opOne, __m256 opTwo, __m256* result) {
 	*result = _mm256_add_ps(opOne, opTwo);
@@ -264,28 +284,9 @@ void Matrix::SIMDSub(__m256 opOne, __m256 opTwo, __m256* result) {
 void Matrix::SIMDMul(__m256 opOne, __m256 opTwo, __m256* result) {
 	*result = _mm256_mul_ps(opOne, opTwo);
 }
-void Matrix::SIMDDiv(__m256 opOne, __m256 opTwo, __m256 *result) {
+void Matrix::SIMDDiv(__m256 opOne, __m256 opTwo, __m256* result) {
 	*result = _mm256_div_ps(opOne, opTwo);
 }
 void Matrix::SIMDPow(__m256 opOne, __m256 opTwo, __m256* result) {
 	*result = _mm256_pow_ps(opOne, opTwo);
-}
-
-Matrix Matrix::Exp() {
-	std::vector<std::vector<float>> exp = matrix;
-	for (int r = 0; r < RowCount; r++) {
-		for (int c = 0; c < ColumnCount; c++) {
-			exp[r][c] = std::exp(matrix[r][c]);
-		}
-	}
-	return exp;
-}
-
-
-Matrix Matrix::CollapseAndLeftMultiply(Matrix element) {
-	std::vector<std::vector<float>> mat = matrix;
-	for (int i = 0; i < element.ColumnCount; i++) {
-		mat.push_back(Multiply(element[i]).ColumnSums());
-	}
-	return mat;
 }

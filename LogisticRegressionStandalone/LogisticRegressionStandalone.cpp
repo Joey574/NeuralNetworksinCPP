@@ -56,7 +56,7 @@ int main()
 	return 0;
 }
 
-void InitializeNetwork() {
+void InitializeNetwork()   {
 
 	auto initStart = std::chrono::high_resolution_clock::now();
 
