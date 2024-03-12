@@ -4,6 +4,7 @@
 #include <execution>
 #include <cmath>
 #include <random>
+#include <immintrin.h> 
 
 class Matrix 
 {
@@ -17,6 +18,9 @@ class Matrix
 
 		std::vector<float> Column(int index);
 		std::vector<float> Row(int index);
+
+		void SetColumn(int index, std::vector<float> column);
+		void SetRow(int index, std::vector<float> row);
 		
 		std::vector<float> ColumnSums();
 		std::vector<float> RowSums();
@@ -24,6 +28,8 @@ class Matrix
 		Matrix Add(float scalar);
 		Matrix Add(std::vector<float> scalar);
 		Matrix Add(Matrix element);
+
+		Matrix AddSIMD(Matrix element);
 		
 		Matrix Subtract(float scalar);
 		Matrix Subtract(std::vector<float> scalar);
@@ -92,7 +98,8 @@ class Matrix
 			return this->Divide(element);
 		}
 
+		std::vector<std::vector<float>> matrix;
+
 	private:
 
-		std::vector<std::vector<float>> matrix;
 };

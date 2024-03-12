@@ -31,7 +31,11 @@ vector<Matrix> aTotal;
 
 vector<Matrix> dTotal;
 vector<Matrix> dWeights;
-Matrix dBiases;
+vector<vector<float>> dBiases;
+
+// Error stuff
+Matrix YTotal;
+Matrix YBatch;
 
 // Prototypes
 
@@ -47,7 +51,48 @@ float Accuracy(vector<float> predictions, vector<int> labels);
 
 int main()
 {
-	InitializeNetwork();
+	//InitializeNetwork();
+
+	std::chrono::steady_clock::time_point tStart;
+	std::chrono::steady_clock::time_point tEnd;
+	std::chrono::duration<double, std::milli> time;
+
+	Matrix a = Matrix(10000, 1024, 5);
+	Matrix b = Matrix(10000, 1024, 8);
+
+	int times = 200;
+
+	vector<double> averageSIMD = vector<double>(times);
+	vector<double> averageParSIMD = vector<double>(times);
+
+	for (int i = 0; i < times; i++) {
+		tStart = std::chrono::high_resolution_clock::now();
+		a.AddSIMD(b);
+		tEnd = std::chrono::high_resolution_clock::now();
+		time = tEnd - tStart;
+		averageSIMD.push_back(time.count());
+
+		/*tStart = std::chrono::high_resolution_clock::now();
+		a.Add(b);
+		tEnd = std::chrono::high_resolution_clock::now();
+		time = tEnd - tStart;
+		averageParSIMD.push_back(time.count());*/
+	}
+
+	double sumS = 0;
+	double sumP = 0;
+	for (int i = 1; i < averageSIMD.size(); i++) {
+		sumS += averageSIMD[i];
+		//sumP += averageParSIMD[i];
+	}
+
+	double avS = sumS / times - 1;
+	//double avP = sumP / times - 1;
+
+	cout << "Average: " << avS << "ms" << endl;
+	//cout << "Average ParSIMD: " << avP << "ms" << endl;
+	
+	return 0;
 }
 
 void InitializeNetwork() {
@@ -126,7 +171,7 @@ void TrainNetwork() {
 }
 
 Matrix RandomizeInput(Matrix totalInput, int size) {
-
+	return totalInput;
 }
 
 void ForwardPropogation() {
@@ -137,7 +182,19 @@ void ForwardPropogation() {
 }
 
 void BackwardPropogation() {
+	dTotal[dTotal.size() - 1] = dTotal[dTotal.size() - 1] - YBatch;
 
+	for (int i = dTotal.size() - 2; i > -1; i--) {
+
+	}
+
+	for (int i = 0; i < weights.size(); i++) {
+
+	}
+
+	for (int i = 0; i < biases.size(); i++) {
+		//dBiases[i] = (1.0f / (float)batchSize) * dTotal[i].RowSums();
+	}
 }
 
 vector<float> GetPredictions(int len) {

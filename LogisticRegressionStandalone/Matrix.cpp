@@ -129,22 +129,73 @@ Matrix Matrix::Add(std::vector<float> scalar) {
 }
 
 Matrix Matrix::Add(Matrix element) {
-	std::vector<std::vector<float>> add = matrix;
-	for (int c = 0; c < ColumnCount; c++) {
-		for (int r = 0; r < RowCount; r++) {
 
-			add[r][c] += element[r][c];
+	// SIMD
+
+	//std::vector<std::vector<float>> add = matrix;
+
+	//for (int r = 0; r < RowCount; r++) {
+
+	//	const int alignedN = matrix[r].size() - matrix[r].size() % 8; // Ensure alignment for SIMD
+
+	//	for (int i = 0; i < alignedN; i += 8) {
+
+	//		// Load 4 floats from matrix and element
+	//		__m256 loaded_a = _mm256_loadu_ps(&matrix[r][i]);
+	//		__m256 loaded_b = _mm256_loadu_ps(&element[r][i]);
+
+	//		// Perform element-wise addition
+	//		__m256 result = _mm256_add_ps(loaded_a, loaded_b);
+
+	//		// Store the result back to 'c'
+	//		_mm256_storeu_ps(&add[r][i], result);
+	//	}
+	//}
+
+	// PAR SIMD
+
+	std::vector<std::vector<float>> add = element.matrix;
+
+	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&](auto&& item) {
+		
+		size_t r = &item - matrix.data();
+
+		const int alignedN = item.size() - (item.size() % 8); // Ensure alignment for SIMD
+
+		for (int i = 0; i < alignedN; i += 8) {
+
+			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
+			__m256 loaded_b = _mm256_loadu_ps(&add[r][i]);
+
+			__m256 result = _mm256_add_ps(loaded_a, loaded_b);
+
+			_mm256_storeu_ps(&add[r][i], result);
+		}
+		});
+
+	return add;
+}
+
+Matrix Matrix::AddSIMD(Matrix element) {
+	std::vector<std::vector<float>> add = matrix;
+
+	for (int r = 0; r < RowCount; r++) {
+
+		const int alignedN = matrix[r].size() - matrix[r].size() % 8; // Ensure alignment for SIMD
+
+		for (int i = 0; i < alignedN; i += 8) {
+
+			// Load 4 floats from matrix and element
+			__m256 loaded_a = _mm256_loadu_ps(&matrix[r][i]);
+			__m256 loaded_b = _mm256_loadu_ps(&element[r][i]);
+
+			// Perform element-wise addition
+			__m256 result = _mm256_add_ps(loaded_a, loaded_b);
+
+			// Store the result back to 'c'
+			_mm256_storeu_ps(&add[r][i], result);
 		}
 	}
-
-	// TODO: Implement parallel element-wise add with another matrix
-	/*std::for_each(std::execution::par, matrix.begin(), matrix.end(), [scalar](auto&& item) {
-		int r = std::distance(matrix.begin(), &item);
-		std::for_each(std::execution::par, item.begin(), item.end(), [scalar[r]](auto&& value) {
-			int c = std::distance(item.begin(), &value);
-			return value += scalar[c];
-			});
-		});*/
 
 	return add;
 }
