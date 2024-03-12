@@ -199,6 +199,10 @@ Matrix Matrix::SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 			(this->*operation)(loaded_a, _scalar, &result);
 			_mm256_storeu_ps(&mat[r][i], result);
 		}
+
+		for (int i = alignedN; i < item.size(); i++) {
+			mat[r][i] = item[i] + scalar;
+		}
 	});
 	return mat;
 }
@@ -218,8 +222,12 @@ Matrix Matrix::VectorFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 			(this->*operation)(loaded_a, loaded_b, &result);
 			_mm256_storeu_ps(&item[i], result);
 		}
-	});
 
+		for (int i = alignedN; i < item.size(); i++) {
+			item[i] += scalar[i];
+		}
+	});
+	return mat;
 }
 
 Matrix Matrix::MatrixFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), Matrix element) {
@@ -238,10 +246,14 @@ Matrix Matrix::MatrixFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 			(this->*operation)(loaded_a, loaded_b, &result);
 			_mm256_storeu_ps(&mat[r][i], result);
 		}
-	});
 
+		for (int i = alignedN; i < item.size(); i++) {
+			mat[r][i] += item[i];
+		}
+	});
 	return mat;
 }
+
 
 void Matrix::SIMDAdd(__m256 opOne, __m256 opTwo, __m256* result) {
 	*result = _mm256_add_ps(opOne, opTwo);
