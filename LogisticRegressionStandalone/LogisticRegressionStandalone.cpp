@@ -55,6 +55,8 @@ int main()
 
 	Matrix a = Matrix(10, 10, 5);
 
+	a.Add(1);
+
 	a.Add(a);
 	a.Subtract(a);
 
