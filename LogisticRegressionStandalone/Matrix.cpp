@@ -101,19 +101,7 @@ std::vector<float> Matrix::Row(int index) {
 // Math Operations
 
 Matrix Matrix::Add(float scalar) {
-	std::vector<std::vector<float>> add = matrix;
-	__m256 scalarS = _mm256_set1_ps(scalar);
-
-	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&](auto&& item) {
-		size_t r = &item - matrix.data();
-		const int alignedN = item.size() - (item.size() % 8);
-		for (int i = 0; i < alignedN; i += 8) {
-			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
-			__m256 result = _mm256_add_ps(loaded_a, scalarS);
-			_mm256_storeu_ps(&add[r][i], result);
-		}
-		});
-	return add;
+	return SingleFloatOperation(&Matrix::SIMDAdd, scalar);
 }
 
 Matrix Matrix::Add(std::vector<float> scalar) {
@@ -134,44 +122,12 @@ Matrix Matrix::Add(std::vector<float> scalar) {
 }
 
 Matrix Matrix::Add(Matrix element) {
-
-	std::vector<std::vector<float>> add = element.matrix;
-
-	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&](auto&& item) {
-		
-		size_t r = &item - matrix.data();
-
-		const int alignedN = item.size() - (item.size() % 8);
-
-		for (int i = 0; i < alignedN; i += 8) {
-
-			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
-			__m256 loaded_b = _mm256_loadu_ps(&add[r][i]);
-
-			__m256 result = _mm256_add_ps(loaded_a, loaded_b);
-
-			_mm256_storeu_ps(&add[r][i], result);
-		}
-	});
-
-	return add;
+	return MatrixFloatOperation(&Matrix::SIMDAdd, element);
 }
 
 
 Matrix Matrix::Subtract(float scalar) {
-	std::vector<std::vector<float>> sub = matrix;
-	__m256 scalarS = _mm256_set1_ps(scalar);
-
-	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&](auto&& item) {
-		size_t r = &item - matrix.data();
-		const int alignedN = item.size() - (item.size() % 8);
-		for (int i = 0; i < alignedN; i += 8) {
-			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
-			__m256 result = _mm256_sub_ps(loaded_a, scalarS);
-			_mm256_storeu_ps(&sub[r][i], result);
-		}
-	});
-	return sub;
+	return SingleFloatOperation(&Matrix::SIMDSub, scalar);
 }
 
 Matrix Matrix::Subtract(std::vector<float> scalar) {
@@ -192,43 +148,12 @@ Matrix Matrix::Subtract(std::vector<float> scalar) {
 }
 
 Matrix Matrix::Subtract(Matrix element) {
-	std::vector<std::vector<float>> sub = element.matrix;
-
-	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&](auto&& item) {
-
-		size_t r = &item - matrix.data();
-
-		const int alignedN = item.size() - (item.size() % 8);
-
-		for (int i = 0; i < alignedN; i += 8) {
-
-			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
-			__m256 loaded_b = _mm256_loadu_ps(&sub[r][i]);
-
-			__m256 result = _mm256_sub_ps(loaded_a, loaded_b);
-
-			_mm256_storeu_ps(&sub[r][i], result);
-		}
-		});
-
-	return sub;
+	return MatrixFloatOperation(&Matrix::SIMDSub, element);
 }
 
 
 Matrix Matrix::Multiply(float scalar) {
-	std::vector<std::vector<float>> mul = matrix;
-	__m256 scalarS = _mm256_set1_ps(scalar);
-
-	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&](auto&& item) {
-		size_t r = &item - matrix.data();
-		const int alignedN = item.size() - (item.size() % 8);
-		for (int i = 0; i < alignedN; i += 8) {
-			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
-			__m256 result = _mm256_mul_ps(loaded_a, scalarS);
-			_mm256_storeu_ps(&mul[r][i], result);
-		}
-	});
-	return mul;
+	return SingleFloatOperation(&Matrix::SIMDMul, scalar);
 }
 
 Matrix Matrix::Multiply(std::vector<float> scalar) {
@@ -249,43 +174,12 @@ Matrix Matrix::Multiply(std::vector<float> scalar) {
 }
 
 Matrix Matrix::Multiply(Matrix element) {
-	std::vector<std::vector<float>> mul = element.matrix;
-
-	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&](auto&& item) {
-
-		size_t r = &item - matrix.data();
-
-		const int alignedN = item.size() - (item.size() % 8);
-
-		for (int i = 0; i < alignedN; i += 8) {
-
-			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
-			__m256 loaded_b = _mm256_loadu_ps(&mul[r][i]);
-
-			__m256 result = _mm256_mul_ps(loaded_a, loaded_b);
-
-			_mm256_storeu_ps(&mul[r][i], result);
-		}
-		});
-
-	return mul;
+	return MatrixFloatOperation(&Matrix::SIMDMul, element);
 }
 
 
 Matrix Matrix::Divide(float scalar) {
-	std::vector<std::vector<float>> div = matrix;
-	__m256 scalarS = _mm256_set1_ps(scalar);
-
-	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&](auto&& item) {
-		size_t r = &item - matrix.data();
-		const int alignedN = item.size() - (item.size() % 8);
-		for (int i = 0; i < alignedN; i += 8) {
-			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
-			__m256 result = _mm256_div_ps(loaded_a, scalarS);
-			_mm256_storeu_ps(&div[r][i], result);
-		}
-	});
-	return div;
+	return SingleFloatOperation(&Matrix::SIMDDiv, scalar);
 }
 
 Matrix Matrix::Divide(std::vector<float> scalar) {
@@ -306,26 +200,7 @@ Matrix Matrix::Divide(std::vector<float> scalar) {
 }
 
 Matrix Matrix::Divide(Matrix element) {
-	std::vector<std::vector<float>> div = element.matrix;
-
-	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&](auto&& item) {
-
-		size_t r = &item - matrix.data();
-
-		const int alignedN = item.size() - (item.size() % 8);
-
-		for (int i = 0; i < alignedN; i += 8) {
-
-			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
-			__m256 loaded_b = _mm256_loadu_ps(&div[r][i]);
-
-			__m256 result = _mm256_div_ps(loaded_a, loaded_b);
-
-			_mm256_storeu_ps(&div[r][i], result);
-		}
-		});
-
-	return div;
+	return MatrixFloatOperation(&Matrix::SIMDDiv, element);
 }
 
 
@@ -378,6 +253,63 @@ Matrix Matrix::Pow(Matrix element) {
 	return pow;
 }
 
+
+Matrix Matrix::SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), float scalar) {
+	std::vector<std::vector<float>> mat = matrix;
+	__m256 _scalar = _mm256_set1_ps(scalar);
+
+	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&](auto&& item) {  
+
+		size_t r = &item - matrix.data();
+		const int alignedN = item.size() - (item.size() % 8);
+
+		for (int i = 0; i < alignedN; i += 8) {
+			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
+			__m256 result;
+			operation(loaded_a, _scalar, result);
+			_mm256_storeu_ps(&mat[r][i], result);
+		}
+	});
+	return mat;
+}
+
+Matrix Matrix::VectorFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), std::vector<float> scalar) {
+
+}
+
+Matrix Matrix::MatrixFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), Matrix element) {
+	std::vector<std::vector<float>> mat = element.matrix;
+
+	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&](auto&& item) {
+
+		size_t r = &item - matrix.data();
+		const int alignedN = item.size() - (item.size() % 8);
+
+		for (int i = 0; i < alignedN; i += 8) {
+			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
+			__m256 loaded_b = _mm256_loadu_ps(&mat[r][i]);
+			__m256 result;
+
+			operation(loaded_a, loaded_b, result);
+			_mm256_storeu_ps(&mat[r][i], result);
+		}
+	});
+
+	return mat;
+}
+
+void Matrix::SIMDAdd(__m256 opOne, __m256 opTwo, __m256* result) {
+	*result = _mm256_add_ps(opOne, opTwo);
+}
+void Matrix::SIMDSub(__m256 opOne, __m256 opTwo, __m256* result) {
+	*result = _mm256_div_ps(opOne, opTwo);
+}
+void Matrix::SIMDMul(__m256 opOne, __m256 opTwo, __m256* result) {
+	*result = _mm256_mul_ps(opOne, opTwo);
+}
+void Matrix::SIMDDiv(__m256 opOne, __m256 opTwo, __m256 *result) {
+	*result = _mm256_div_ps(opOne, opTwo);
+}
 
 Matrix Matrix::Exp() {
 	std::vector<std::vector<float>> exp = matrix;

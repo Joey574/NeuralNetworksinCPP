@@ -100,4 +100,13 @@ class Matrix
 
 	private:
 
+		Matrix SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), float scalar);
+		Matrix VectorFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), std::vector<float> scalar);
+		Matrix MatrixFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), Matrix element);
+
+		void SIMDAdd(__m256 opOne, __m256 opTwo, __m256* result);
+		void SIMDSub(__m256 opOne, __m256 opTwo, __m256* result);
+		void SIMDMul(__m256 opOne, __m256 opTwo, __m256* result);
+		void SIMDDiv(__m256 opOne, __m256 opTwo, __m256* result);
+
 };
