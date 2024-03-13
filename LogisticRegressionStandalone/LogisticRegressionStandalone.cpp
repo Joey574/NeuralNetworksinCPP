@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono>
+#include <fstream>
 
 #include "Matrix.h"
 
@@ -40,23 +41,73 @@ Matrix YBatch;
 // Prototypes
 
 Matrix ReLU(Matrix total);
+Matrix ReLUDerivative(Matrix total);
 void InitializeNetwork();
 void InitializeResultMatrices(int size);
 void ForwardPropogation();
 void BackwardPropogation();
 void UpdateNetwork();
+void LoadInput();
+int ReadBigInt(ifstream* fr);
 Matrix RandomizeInput(Matrix totalInput, int size);
 vector<float> GetPredictions(int len);
 float Accuracy(vector<float> predictions, vector<int> labels);
 
 int main()
 {
+	LoadInput();
+
 	InitializeNetwork();
 
 	return 0;
 }
 
-void InitializeNetwork()   {
+void LoadInput() {
+
+	string trainingImages = "Training Data\\train-images.idx3-ubyte";
+	string trainingLabels = "Training Data\\train-labels.idx1-ubyte";
+
+	ifstream fr = ifstream(trainingImages, std::ios::binary);
+
+	if (fr.is_open()) {
+		cout << "Loading training data" << endl;
+	}
+	else {
+		cout << "File not found" << endl;
+	}
+
+	// Read Values
+	int magicNum = ReadBigInt(&fr);
+	int imageNum = ReadBigInt(&fr);
+	int width = ReadBigInt(&fr);
+	int height = ReadBigInt(&fr);
+
+	input = Matrix((width * height), imageNum);
+
+	for (int i = 0; i < imageNum; i++) {
+
+		std::vector<uint8_t> byteData((width * height));
+		fr.read(reinterpret_cast<char*>(byteData.data()), byteData.size());
+		std::vector<int> intData(byteData.begin(), byteData.end());
+
+		input.SetColumn(i, intData);
+	}
+	fr.close();
+}
+
+int ReadBigInt(ifstream* fr) {
+
+	int littleInt;
+	fr->read(reinterpret_cast<char*>(&littleInt), sizeof(int));
+
+	unsigned char* bytes = reinterpret_cast<unsigned char*>(&littleInt);
+	std::swap(bytes[0], bytes[3]);
+	std::swap(bytes[1], bytes[2]);
+
+	return littleInt;
+}
+
+void InitializeNetwork() {
 
 	auto initStart = std::chrono::high_resolution_clock::now();
 
@@ -112,6 +163,10 @@ void InitializeResultMatrices(int size) {
 	}
 }
 
+Matrix RandomizeInput(Matrix totalInput, int size) {
+	return totalInput;
+}
+
 void TrainNetwork() {
 
 	std::chrono::steady_clock::time_point tStart;
@@ -143,10 +198,6 @@ void TrainNetwork() {
 	}
 }
 
-Matrix RandomizeInput(Matrix totalInput, int size) {
-	return totalInput;
-}
-
 void ForwardPropogation() {
 	for (int i = 0; i < aTotal.size(); i++) {
 		aTotal[i] = (weights[i].CollapseAndLeftMultiply(i == 0 ? batch : activation[i - 1])) + biases[i];
@@ -157,12 +208,16 @@ void ForwardPropogation() {
 void BackwardPropogation() {
 	dTotal[dTotal.size() - 1] = dTotal[dTotal.size() - 1] - YBatch;
 
-	for (int i = dTotal.size() - 2; i > -1; i--) {
+	// dTotal[i][r, c] = weights[i + 1].Row(r).DotProduct(dTotal[i + 1].Column(c)) * ReLUDerivative(ATotal[i][r, c]);
 
+	for (int i = dTotal.size() - 2; i > -1; i--) {
+		dTotal[i] = weights[i + 1].CollapseAndLeftMultiply(dTotal[i + 1] * ReLUDerivative(aTotal[i]));
 	}
 
-	for (int i = 0; i < weights.size(); i++) {
+	// dWeights[i][r, c] = (1.0f / (float)batchNum) * dTotal[i].Row(c).DotProduct(i == 0 ? images.Row(r) : A[i - 1].Row(r));
 
+	for (int i = 0; i < weights.size(); i++) {
+		dWeights[i] = dTotal[i].CollapseAndLeftMultiply(i == 0 ? batch : activation[i - 1]) * (1.0f / (float)batchSize);
 	}
 
 	for (int i = 0; i < biases.size(); i++) {
@@ -170,10 +225,14 @@ void BackwardPropogation() {
 	}
 }
 
+void UpdateNetwork() {
+
+}
+
 vector<float> GetPredictions(int len) {
 	vector<float> predictions = vector<float>(len);
 	for (int i = 0; i < len; i++) {
-		auto maxElementIterator = std::max_element(activation[activation.size() - 1].Column(i).begin(), 
+		auto maxElementIterator = std::max_element(activation[activation.size() - 1].Column(i).begin(),
 			activation[activation.size() - 1].Column(i).end());
 		predictions[i] = std::distance(activation[activation.size() - 1].Column(i).begin(), maxElementIterator);
 	}
@@ -193,16 +252,23 @@ float Accuracy(vector<float> predictions, vector<int> labels) {
 	return (float)correct / predictions.size();
 }
 
-void UpdateNetwork() {
-
-}
-
 Matrix ReLU(Matrix total) {
 	Matrix a = total;
 
 	for (int r = 0; r < total.RowCount; r++) {
 		for (int c = 0; c < total.ColumnCount; c++) {
 			a[r][c] = total[r][c] < 0.0f ? 0.0f : total[r][c];
+		}
+	}
+	return a;
+}
+
+Matrix ReLUDerivative(Matrix total) {
+	Matrix a = total;
+
+	for (int r = 0; r < total.RowCount; r++) {
+		for (int c = 0; c < total.ColumnCount; c++) {
+			a[r][c] = total[r][c] > 0.0f ? 1.0f : 0.0f;
 		}
 	}
 	return a;

@@ -20,7 +20,9 @@ class Matrix
 		std::vector<float> Row(int index);
 
 		std::vector<float> SetColumn(int index, std::vector<float> column);
+		std::vector<float> SetColumn(int index, std::vector<int> column);
 		std::vector<float> SetRow(int index, std::vector<float> row);
+		std::vector<float> SetRow(int index, std::vector<int> row);
 		
 		std::vector<float> MultiplyAndSum(float scalar);
 
@@ -98,9 +100,64 @@ class Matrix
 			return this->Divide(element);
 		}
 
+
+		Matrix operator += (float scalar) {
+			this->AssignVector(this->Add(scalar));
+			return matrix;
+		}
+		Matrix operator += (std::vector<float> scalar) {
+			this->AssignVector(this->Add(scalar));
+			return matrix;
+		}
+		Matrix operator += (Matrix element) {
+			this->AssignVector(this->Add(element));
+			return matrix;
+		}
+
+		Matrix operator -= (float scalar) {
+			this->AssignVector(this->Subtract(scalar));
+			return matrix;
+		}
+		Matrix operator -= (std::vector<float> scalar) {
+			this->AssignVector(this->Subtract(scalar));
+			return matrix;
+		}
+		Matrix operator -= (Matrix element) {
+			this->AssignVector(this->Subtract(element));
+			return matrix;
+		}
+
+		Matrix operator *= (float scalar) {
+			this->AssignVector(this->Multiply(scalar));
+			return matrix;
+		}
+		Matrix operator *= (std::vector<float> scalar) {
+			this->AssignVector(this->Multiply(scalar));
+			return matrix;
+		}
+		Matrix operator *= (Matrix element) {
+			this->AssignVector(this->Multiply(element));
+			return matrix;
+		}
+
+		Matrix operator /= (float scalar) {
+			this->AssignVector(this->Divide(scalar));
+			return matrix;
+		}
+		Matrix operator /= (std::vector<float> scalar) {
+			this->AssignVector(this->Divide(scalar));
+			return matrix;
+		}
+		Matrix operator /= (Matrix element) {
+			this->AssignVector(this->Divide(element));
+			return matrix;
+		}
+
 		std::vector<std::vector<float>> matrix;
 
 	private:
+
+		void AssignVector(Matrix element);
 
 		Matrix SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), float scalar);
 		Matrix VectorFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), std::vector<float> scalar);

@@ -59,6 +59,22 @@ Matrix::Matrix(std::vector<std::vector<float>> matrix) {
 
 // Util
 
+std::vector<float> Matrix::SetColumn(int index, std::vector<float> vector) {
+
+}
+
+std::vector<float> Matrix::SetColumn(int index, std::vector<int> vector) {
+
+}
+
+std::vector<float> Matrix::SetRow(int index, std::vector<float> vector) {
+
+}
+
+std::vector<float> Matrix::SetRow(int index, std::vector<int> vector) {
+
+}
+
 std::vector<float> Matrix::ColumnSums() {
 	std::vector<float> sums = std::vector<float>(ColumnCount);
 
@@ -123,6 +139,13 @@ Matrix Matrix::CollapseAndLeftMultiply(Matrix element) {
 		mat.push_back(Multiply(element[i]).ColumnSums());
 	}
 	return mat;
+}
+
+void Matrix::AssignVector(Matrix element) {
+	matrix = element.matrix;
+
+	ColumnCount = matrix[0].size();
+	RowCount = matrix.size();
 }
 
 // Math Operations
