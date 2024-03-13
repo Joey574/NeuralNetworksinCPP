@@ -1,6 +1,8 @@
 #include <iostream>
 #include <chrono>
 #include <fstream>
+#include <functional>
+#include <unordered_set>
 
 #include "Matrix.h"
 
@@ -41,17 +43,19 @@ Matrix YBatch;
 // Prototypes
 
 Matrix ReLU(Matrix total);
+Matrix SoftMax(Matrix total);
 Matrix ReLUDerivative(Matrix total);
 void InitializeNetwork();
 void InitializeResultMatrices(int size);
+void TrainNetwork();
 void ForwardPropogation();
 void BackwardPropogation();
 void UpdateNetwork();
 void LoadInput();
 int ReadBigInt(ifstream* fr);
 Matrix RandomizeInput(Matrix totalInput, int size);
-vector<float> GetPredictions(int len);
-float Accuracy(vector<float> predictions, vector<int> labels);
+vector<int> GetPredictions(int len);
+float Accuracy(vector<int> predictions, vector<int> labels);
 
 int main()
 {
@@ -59,40 +63,71 @@ int main()
 
 	InitializeNetwork();
 
+	TrainNetwork();
+
 	return 0;
 }
 
 void LoadInput() {
 
+	auto sTime = std::chrono::high_resolution_clock::now();
+
 	string trainingImages = "Training Data\\train-images.idx3-ubyte";
 	string trainingLabels = "Training Data\\train-labels.idx1-ubyte";
 
-	ifstream fr = ifstream(trainingImages, std::ios::binary);
+	ifstream trainingFR = ifstream(trainingImages, std::ios::binary);
+	ifstream trainingLabelsFR = ifstream(trainingLabels, std::ios::binary);
 
-	if (fr.is_open()) {
-		cout << "Loading training data" << endl;
+	if (trainingFR.is_open() && trainingLabelsFR.is_open()) {
+		cout << "Loading training data..." << endl;
 	}
 	else {
-		cout << "File not found" << endl;
+		std::cout << "File(s) not found" << endl;
 	}
 
-	// Read Values
-	int magicNum = ReadBigInt(&fr);
-	int imageNum = ReadBigInt(&fr);
-	int width = ReadBigInt(&fr);
-	int height = ReadBigInt(&fr);
+	// Discard
+	int magicNum = ReadBigInt(&trainingLabelsFR);
+	int imageNum = ReadBigInt(&trainingLabelsFR);
+	magicNum = ReadBigInt(&trainingFR);
+
+	// Read the important things
+	imageNum = ReadBigInt(&trainingFR);
+	int width = ReadBigInt(&trainingFR);
+	int height = ReadBigInt(&trainingFR);
 
 	input = Matrix((width * height), imageNum);
+	inputLabels = vector<int>(imageNum);
+	YTotal = Matrix(outputLayerSize, imageNum);
 
 	for (int i = 0; i < imageNum; i++) {
 
 		std::vector<uint8_t> byteData((width * height));
-		fr.read(reinterpret_cast<char*>(byteData.data()), byteData.size());
+		trainingFR.read(reinterpret_cast<char*>(byteData.data()), byteData.size());
 		std::vector<int> intData(byteData.begin(), byteData.end());
 
 		input.SetColumn(i, intData);
+
+		vector<int> y = vector<int>(outputLayerSize, 0);
+
+		char byte;
+		trainingLabelsFR.read(&byte, 1);
+		int label = static_cast<int>(static_cast<unsigned char>(byte));
+
+		inputLabels[i] = label;
+
+		y[label] = 1;
+		YTotal.SetColumn(i, y);
 	}
-	fr.close();
+
+	input = input.Divide(255);
+
+	trainingFR.close();
+	trainingLabelsFR.close();
+
+	auto eTime = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::milli> time = eTime - sTime;
+
+	cout << "Time to load input " << (time.count() / 1000.00) << " seconds" << endl;
 }
 
 int ReadBigInt(ifstream* fr) {
@@ -156,22 +191,52 @@ void InitializeNetwork() {
 void InitializeResultMatrices(int size) {
 	aTotal = vector<Matrix>(weights.size());
 	activation = vector<Matrix>(aTotal.size());
+	dTotal = vector<Matrix>(aTotal.size());
 
 	for (int i = 0; i < aTotal.size(); i++) {
 		aTotal[i] = Matrix(weights[i].ColumnCount, size);
-		activation[i] = Matrix(aTotal[i].RowCount, aTotal[i].ColumnCount);
+		activation[i] = Matrix(aTotal[i].RowCount, size);
+
+		dTotal[i] = Matrix(aTotal[i].RowCount, size);
 	}
 }
 
 Matrix RandomizeInput(Matrix totalInput, int size) {
-	return totalInput;
+	Matrix a = Matrix(totalInput.RowCount, size);
+
+	std::unordered_set<int> used = std::unordered_set<int>(size);
+
+	YBatch = Matrix(outputLayerSize, size);
+	batchLabels.clear();
+
+	srand(time(0));
+
+	while (batchLabels.size() < size) {
+
+		int c = (rand() % totalInput.ColumnCount) + 1;
+
+		if (used.find(c) == used.end()) {
+
+			used.insert(c);
+
+			a.SetColumn(batchLabels.size(), totalInput.Column(c));
+			YBatch.SetColumn(batchLabels.size(), YTotal.Column(c));
+			batchLabels.push_back(inputLabels[c]);
+		}
+	}
+
+	return a;
 }
 
 void TrainNetwork() {
 
+	cout << "TRAINING STARTED" << endl;
+
 	std::chrono::steady_clock::time_point tStart;
 	std::chrono::steady_clock::time_point tEnd;
 	std::chrono::duration<double, std::milli> time;
+
+	batch = RandomizeInput(input, batchSize);
 
 	for (int i = 0; i < iterations; i++) {
 		float acc = Accuracy(GetPredictions(batchSize), batchLabels);
@@ -201,55 +266,72 @@ void TrainNetwork() {
 void ForwardPropogation() {
 	for (int i = 0; i < aTotal.size(); i++) {
 		aTotal[i] = (weights[i].CollapseAndLeftMultiply(i == 0 ? batch : activation[i - 1])) + biases[i];
-		activation[i] = ReLU(aTotal[i]);
+		activation[i] = i < aTotal.size() - 1 ? ReLU(aTotal[i]) : SoftMax(aTotal[i]);
 	}
 }
 
 void BackwardPropogation() {
-	dTotal[dTotal.size() - 1] = dTotal[dTotal.size() - 1] - YBatch;
 
+	dTotal[dTotal.size() - 1] -= YBatch;
+	cout << "DHot Complete" << endl;
 	// dTotal[i][r, c] = weights[i + 1].Row(r).DotProduct(dTotal[i + 1].Column(c)) * ReLUDerivative(ATotal[i][r, c]);
 
 	for (int i = dTotal.size() - 2; i > -1; i--) {
-		dTotal[i] = weights[i + 1].CollapseAndLeftMultiply(dTotal[i + 1] * ReLUDerivative(aTotal[i]));
+		dTotal[i] = (weights[i + 1].CollapseAndLeftMultiply(dTotal[i + 1]) * ReLUDerivative(aTotal[i]));
 	}
+	cout << "DTotal Complete" << endl;
 
 	// dWeights[i][r, c] = (1.0f / (float)batchNum) * dTotal[i].Row(c).DotProduct(i == 0 ? images.Row(r) : A[i - 1].Row(r));
 
 	for (int i = 0; i < weights.size(); i++) {
 		dWeights[i] = dTotal[i].CollapseAndLeftMultiply(i == 0 ? batch : activation[i - 1]) * (1.0f / (float)batchSize);
 	}
+	cout << "DWeights Complete" << endl;
 
 	for (int i = 0; i < biases.size(); i++) {
 		dBiases[i] = dTotal[i].MultiplyAndSum(1.0f / (float)batchSize);
 	}
+	cout << "DBias Complete" << endl;
 }
 
 void UpdateNetwork() {
+	for (int i = 0; i < weights.size(); i++) {
+		weights[i] -= dWeights[i] * learningRate;
+	}
 
+	for (int i = 0; i < biases.size(); i++) {
+		for (int x = 0; x < biases[i].size(); x++) {
+			biases[i][x] -= dBiases[i][x] * learningRate;
+		}
+	}
 }
 
-vector<float> GetPredictions(int len) {
-	vector<float> predictions = vector<float>(len);
+vector<int> GetPredictions(int len) {
+
+	vector<int> predictions = vector<int>(len);
+
 	for (int i = 0; i < len; i++) {
-		auto maxElementIterator = std::max_element(activation[activation.size() - 1].Column(i).begin(),
-			activation[activation.size() - 1].Column(i).end());
-		predictions[i] = std::distance(activation[activation.size() - 1].Column(i).begin(), maxElementIterator);
+
+		vector<float> a = activation[activation.size() - 1].Column(i);
+
+		auto maxElementIterator = std::max_element(a.begin(),
+			a.end());
+		predictions[i] = std::distance(a.begin(), maxElementIterator);
 	}
 	return predictions;
 }
 
-float Accuracy(vector<float> predictions, vector<int> labels) {
+float Accuracy(vector<int> predictions, vector<int> labels) {
 	int correct = 0;
 
 	for (int i = 0; i < predictions.size(); i++)
 	{
-		if ((int)(predictions[i] + 0.1f) == labels[i])
+		if (predictions[i] == labels[i])
 		{
 			correct++;
 		}
 	}
-	return (float)correct / predictions.size();
+	return (float)correct / (float)predictions.size();
 }
 
 Matrix ReLU(Matrix total) {
@@ -261,6 +343,14 @@ Matrix ReLU(Matrix total) {
 		}
 	}
 	return a;
+}
+
+Matrix SoftMax(Matrix total) {
+
+	Matrix softmax = total;
+	softmax = total.Exp() / total.Exp().ColumnSums();
+
+	return softmax;
 }
 
 Matrix ReLUDerivative(Matrix total) {

@@ -60,19 +60,25 @@ Matrix::Matrix(std::vector<std::vector<float>> matrix) {
 // Util
 
 std::vector<float> Matrix::SetColumn(int index, std::vector<float> vector) {
-
+	return matrix[0];
 }
 
 std::vector<float> Matrix::SetColumn(int index, std::vector<int> vector) {
+	std::vector<float> replaced = Column(index);
 
+	for (int i = 0; i < RowCount; i++) {
+		matrix[i][index] = vector[i];
+	}
+
+	return replaced;
 }
 
 std::vector<float> Matrix::SetRow(int index, std::vector<float> vector) {
-
+	return matrix[0];
 }
 
 std::vector<float> Matrix::SetRow(int index, std::vector<int> vector) {
-
+	return matrix[0];
 }
 
 std::vector<float> Matrix::ColumnSums() {
