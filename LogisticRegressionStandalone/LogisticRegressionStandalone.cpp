@@ -263,10 +263,26 @@ void TrainNetwork() {
 }
 
 void ForwardPropogation() {
+
+	cout << "0" << endl;
+	cout << "batch: " << batch.RowCount << " :: " << batch.ColumnCount << endl;
+
+	cout << "1" << endl;
+	cout << "A: " << activation[0].RowCount << " :: " << activation[0].ColumnCount << endl;
+	cout << "ATotal: " << activation[1].RowCount << " :: " << activation[0].ColumnCount << endl;
+
 	for (int i = 0; i < aTotal.size(); i++) {
 		aTotal[i] = (weights[i].DotProduct(i == 0 ? batch : activation[i - 1]) + biases[i]);
 		activation[i] = i < aTotal.size() - 1 ? ReLU(aTotal[i]) : SoftMax(aTotal[i]);
 	}
+
+	cout << "0" << endl;
+	cout << "batch: " << batch.RowCount << " :: " << batch.ColumnCount << endl;
+
+	cout << "1" << endl;
+	cout << "A: " << activation[0].RowCount << " :: " << activation[0].ColumnCount << endl;
+	cout << "ATotal: " << activation[0].RowCount << " :: " << activation[0].ColumnCount << endl;
+
 }
 
 void BackwardPropogation() {
@@ -291,13 +307,13 @@ void BackwardPropogation() {
 
 	Actual:
 	
-	dW1 = 
-	dT1 = 
-	input = 
+	dW1 = 784 x 128
+	dT1 = 784 x 128
+	input = 784 x 500
 
-	dW2 = 
-	dT2 = 
-	a1 = 
+	dW2 = 128 x 10
+	dT2 = 10 x 500
+	a1 = 784 x 128
 
 	*/
 
