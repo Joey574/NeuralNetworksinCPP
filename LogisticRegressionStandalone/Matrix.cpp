@@ -1,5 +1,7 @@
 #include "Matrix.h"
 
+#include <iostream>
+
 // Constructors
 
 Matrix::Matrix() {
@@ -139,10 +141,33 @@ std::vector<float> Matrix::MultiplyAndSum(float scalar) {
 	return m.RowSums();
 }
 
+Matrix Matrix::DotProduct(Matrix element) {
+
+	// element == input
+
+	// input 784 x 500
+
+	// matrix == weights
+
+	// weights == 784 x 128
+
+	// final == aTotal
+
+	// 128 x 500
+
+	std::vector<std::vector<float>> mat = std::vector<std::vector<float>>();
+
+	for (int i = 0; i < ColumnCount; i++) {
+		mat.push_back(element.Multiply(this->Column(i)).ColumnSums());
+	}
+
+	return mat;
+}
+
 Matrix Matrix::CollapseAndLeftMultiply(Matrix element) {
 	std::vector<std::vector<float>> mat = matrix;
 	for (int i = 0; i < element.ColumnCount; i++) {
-		mat.push_back(Multiply(element[i]).ColumnSums());
+		mat.push_back(this->Multiply(element.Column(i)).ColumnSums());
 	}
 	return mat;
 }
@@ -150,8 +175,8 @@ Matrix Matrix::CollapseAndLeftMultiply(Matrix element) {
 void Matrix::AssignVector(Matrix element) {
 	matrix = element.matrix;
 
-	ColumnCount = matrix[0].size();
-	RowCount = matrix.size();
+	ColumnCount = element.ColumnCount;
+	RowCount = element.RowCount;
 }
 
 // Math Operations
@@ -231,6 +256,16 @@ Matrix Matrix::Exp() {
 	return exp;
 }
 
+Matrix Matrix::Transpose() {
+
+	Matrix transpose = Matrix(ColumnCount, RowCount);
+
+	for (int i = 0; i < RowCount; i++) {
+		transpose.SetColumn(i, matrix[i]);
+	}
+
+	return transpose;
+}
 
 Matrix Matrix::SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), float scalar) {
 	std::vector<std::vector<float>> mat = matrix;
@@ -256,13 +291,23 @@ Matrix Matrix::SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 }
 
 Matrix Matrix::VectorFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), std::vector<float> scalar) {
-	std::vector<std::vector<float>> mat = matrix;
 
-	std::for_each(std::execution::par, mat.begin(), mat.end(), [&](auto&& item) {
+	Matrix mat;
+
+	if (scalar.size() == ColumnCount) {
+		mat = matrix;
+	} else if (scalar.size() == RowCount) {
+		mat = this->Transpose();
+	} else { 
+		std::cout << "size no match :( " << RowCount << " :: " << ColumnCount << " b: " << scalar.size()  << std::endl;
+	}
+
+	std::for_each(std::execution::par, mat.matrix.begin(), mat.matrix.end(), [&](auto&& item) {
 
 		const int alignedN = item.size() - (item.size() % 8);
 
 		for (int i = 0; i < alignedN; i += 8) {
+
 			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
 			__m256 loaded_b = _mm256_loadu_ps(&scalar[i]);
 			__m256 result;
@@ -275,6 +320,7 @@ Matrix Matrix::VectorFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 			item[i] += scalar[i];
 		}
 	});
+
 	return mat;
 }
 

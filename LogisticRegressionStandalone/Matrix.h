@@ -25,7 +25,7 @@ class Matrix
 		std::vector<float> SetRow(int index, std::vector<int> row);
 		
 		std::vector<float> MultiplyAndSum(float scalar);
-
+		
 		std::vector<float> ColumnSums();
 		std::vector<float> RowSums();
 		
@@ -51,7 +51,10 @@ class Matrix
 
 		Matrix Exp();
 
+		Matrix Transpose();
+
 		Matrix CollapseAndLeftMultiply(Matrix element);
+		Matrix DotProduct(Matrix element);
 
 		int ColumnCount;
 		int RowCount;

@@ -60,9 +60,9 @@ float Accuracy(vector<int> predictions, vector<int> labels);
 int main()
 {
 	LoadInput();
-
+	
 	InitializeNetwork();
-
+	
 	TrainNetwork();
 
 	return 0;
@@ -196,7 +196,6 @@ void InitializeResultMatrices(int size) {
 	for (int i = 0; i < aTotal.size(); i++) {
 		aTotal[i] = Matrix(weights[i].ColumnCount, size);
 		activation[i] = Matrix(aTotal[i].RowCount, size);
-
 		dTotal[i] = Matrix(aTotal[i].RowCount, size);
 	}
 }
@@ -265,7 +264,7 @@ void TrainNetwork() {
 
 void ForwardPropogation() {
 	for (int i = 0; i < aTotal.size(); i++) {
-		aTotal[i] = (weights[i].CollapseAndLeftMultiply(i == 0 ? batch : activation[i - 1])) + biases[i];
+		aTotal[i] = (weights[i].DotProduct(i == 0 ? batch : activation[i - 1]) + biases[i]);
 		activation[i] = i < aTotal.size() - 1 ? ReLU(aTotal[i]) : SoftMax(aTotal[i]);
 	}
 }
@@ -273,18 +272,43 @@ void ForwardPropogation() {
 void BackwardPropogation() {
 
 	dTotal[dTotal.size() - 1] -= YBatch;
-	cout << "DHot Complete" << endl;
-	// dTotal[i][r, c] = weights[i + 1].Row(r).DotProduct(dTotal[i + 1].Column(c)) * ReLUDerivative(ATotal[i][r, c]);
 
 	for (int i = dTotal.size() - 2; i > -1; i--) {
-		dTotal[i] = (weights[i + 1].CollapseAndLeftMultiply(dTotal[i + 1]) * ReLUDerivative(aTotal[i]));
+		dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].Transpose())) * ReLUDerivative(aTotal[i]));
 	}
 	cout << "DTotal Complete" << endl;
 
-	// dWeights[i][r, c] = (1.0f / (float)batchNum) * dTotal[i].Row(c).DotProduct(i == 0 ? images.Row(r) : A[i - 1].Row(r));
+	/*
+	Expected:
+
+	dW1 = 784 x 128
+	dT1 = 128 x 500
+	input = 784 x 500
+	
+	dW2 128 x 10
+	dT2 = 10 x 500
+	a1 = 128 x 500
+
+	Actual:
+	
+	dW1 = 
+	dT1 = 
+	input = 
+
+	dW2 = 
+	dT2 = 
+	a1 = 
+
+	*/
 
 	for (int i = 0; i < weights.size(); i++) {
-		dWeights[i] = dTotal[i].CollapseAndLeftMultiply(i == 0 ? batch : activation[i - 1]) * (1.0f / (float)batchSize);
+		cout << i << endl;
+		cout << "dW: " << dWeights[i].RowCount << " :: " << dWeights[i].ColumnCount << endl;
+		cout << "dT: " << dTotal[i].RowCount << " :: " << dTotal[i].ColumnCount << endl;
+		if (i == 1) { cout << "A: " << activation[i - 1].RowCount << " :: " << activation[i - 1].ColumnCount << endl; }
+		else { cout << "batch: " << batch.RowCount << " :: " << batch.ColumnCount << endl; }
+
+		dWeights[i] = dTotal[i].DotProduct(i == 0 ? batch.Transpose() : activation[i - 1].Transpose()) * (1.0f / (float)batchSize);
 	}
 	cout << "DWeights Complete" << endl;
 
