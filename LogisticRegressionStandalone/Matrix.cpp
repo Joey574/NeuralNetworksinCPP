@@ -158,7 +158,7 @@ Matrix Matrix::DotProduct(Matrix element) {
 	std::vector<std::vector<float>> mat = std::vector<std::vector<float>>();
 
 	for (int i = 0; i < ColumnCount; i++) {
-		mat.push_back(element.Multiply(this->Column(i)).ColumnSums());
+		mat.push_back(element.Multiply(this->Column(i)).RowSums());
 	}
 
 	return mat;

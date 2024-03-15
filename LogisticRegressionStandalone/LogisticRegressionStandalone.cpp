@@ -264,33 +264,35 @@ void TrainNetwork() {
 
 void ForwardPropogation() {
 
-	cout << "0" << endl;
-	cout << "batch: " << batch.RowCount << " :: " << batch.ColumnCount << endl;
-
-	cout << "1" << endl;
-	cout << "A: " << activation[0].RowCount << " :: " << activation[0].ColumnCount << endl;
-	cout << "ATotal: " << activation[1].RowCount << " :: " << activation[0].ColumnCount << endl;
+	/*cout << "batch: " << batch.RowCount << " :: " << batch.ColumnCount << endl;
+	for (int i = 0; i < activation.size(); i++) {
+		cout << "A [" << i << "] " << activation[i].RowCount << " :: " << activation[i].ColumnCount << endl;
+		cout << "ATotal [" << i << "] " << aTotal[i].RowCount << " :: " << aTotal[i].ColumnCount << endl;
+		cout << "Weights [" << i << "] " << weights[i].RowCount << " :: " << weights[i].ColumnCount << endl;
+	}
+	cout << endl*/;
 
 	for (int i = 0; i < aTotal.size(); i++) {
 		aTotal[i] = (weights[i].DotProduct(i == 0 ? batch : activation[i - 1]) + biases[i]);
+		aTotal[i] = aTotal[i].Transpose();
 		activation[i] = i < aTotal.size() - 1 ? ReLU(aTotal[i]) : SoftMax(aTotal[i]);
 	}
 
-	cout << "0" << endl;
-	cout << "batch: " << batch.RowCount << " :: " << batch.ColumnCount << endl;
-
-	cout << "1" << endl;
-	cout << "A: " << activation[0].RowCount << " :: " << activation[0].ColumnCount << endl;
-	cout << "ATotal: " << activation[0].RowCount << " :: " << activation[0].ColumnCount << endl;
-
+	/*cout << "batch: " << batch.RowCount << " :: " << batch.ColumnCount << endl;
+	for (int i = 0; i < activation.size(); i++) {
+		cout << "A [" << i << "] " << activation[i].RowCount << " :: " << activation[i].ColumnCount << endl;
+		cout << "ATotal [" << i << "] " << aTotal[i].RowCount << " :: " << aTotal[i].ColumnCount << endl;
+	}
+	cout << endl;*/
 }
 
 void BackwardPropogation() {
 
 	dTotal[dTotal.size() - 1] -= YBatch;
+	cout << "DHot complete" << endl;
 
 	for (int i = dTotal.size() - 2; i > -1; i--) {
-		dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].Transpose())) * ReLUDerivative(aTotal[i]));
+		dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])) * ReLUDerivative(aTotal[i]));
 	}
 	cout << "DTotal Complete" << endl;
 
@@ -304,17 +306,6 @@ void BackwardPropogation() {
 	dW2 128 x 10
 	dT2 = 10 x 500
 	a1 = 128 x 500
-
-	Actual:
-	
-	dW1 = 784 x 128
-	dT1 = 784 x 128
-	input = 784 x 500
-
-	dW2 = 128 x 10
-	dT2 = 10 x 500
-	a1 = 784 x 128
-
 	*/
 
 	for (int i = 0; i < weights.size(); i++) {
