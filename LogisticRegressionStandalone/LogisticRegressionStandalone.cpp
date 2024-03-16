@@ -267,6 +267,7 @@ void ForwardPropogation() {
 	cout << "0" << endl;
 	cout << "batch: " << batch.RowCount << " :: " << batch.ColumnCount << endl;
 
+
 	cout << "1" << endl;
 	cout << "A: " << activation[0].RowCount << " :: " << activation[0].ColumnCount << endl;
 	cout << "ATotal: " << activation[1].RowCount << " :: " << activation[0].ColumnCount << endl;
