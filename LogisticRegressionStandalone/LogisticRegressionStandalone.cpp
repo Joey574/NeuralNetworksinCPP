@@ -270,7 +270,7 @@ void ForwardPropogation() {
 		cout << "ATotal [" << i << "] " << aTotal[i].RowCount << " :: " << aTotal[i].ColumnCount << endl;
 		cout << "Weights [" << i << "] " << weights[i].RowCount << " :: " << weights[i].ColumnCount << endl;
 	}
-	cout << endl*/;
+	cout << endl;*/
 
 	for (int i = 0; i < aTotal.size(); i++) {
 		aTotal[i] = (weights[i].DotProduct(i == 0 ? batch : activation[i - 1]) + biases[i]);
@@ -292,6 +292,12 @@ void BackwardPropogation() {
 	cout << "DHot complete" << endl;
 
 	for (int i = dTotal.size() - 2; i > -1; i--) {
+		cout << "DTotal [" << i << "] " << dTotal[i].RowCount << " :: " << activation[i].ColumnCount << endl;
+		cout << "DTotal [" << i + 1 << "] " << dTotal[i + 1].RowCount << " :: " << activation[i].ColumnCount << endl;
+		cout << "ATotal [" << i << "] " << aTotal[i].RowCount << " :: " << aTotal[i].ColumnCount << endl;
+		cout << "ReluDeriv: " << ReLUDerivative(aTotal[i]).RowCount << " :: " << ReLUDerivative(aTotal[i]).ColumnCount << endl;
+		cout << "Weights [" << i + 1 << "] " << weights[i + 1].RowCount << " :: " << weights[i].ColumnCount << endl;
+
 		dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])) * ReLUDerivative(aTotal[i]));
 	}
 	cout << "DTotal Complete" << endl;
