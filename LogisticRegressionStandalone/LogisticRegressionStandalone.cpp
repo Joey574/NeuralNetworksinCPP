@@ -290,12 +290,12 @@ void BackwardPropogation() {
 
 void UpdateNetwork() {
 	for (int i = 0; i < weights.size(); i++) {
-		weights[i] -= dWeights[i] * learningRate;
+		weights[i] -= dWeights[i].Multiply(learningRate);
 	}
 
 	for (int i = 0; i < biases.size(); i++) {
 		for (int x = 0; x < biases[i].size(); x++) {
-			biases[i][x] -= dBiases[i][x] * learningRate;
+			biases[i][x] -= (dBiases[i][x] * learningRate);
 		}
 	}
 }
@@ -308,8 +308,7 @@ vector<int> GetPredictions(int len) {
 
 		vector<float> a = activation[activation.size() - 1].Column(i);
 
-		auto maxElementIterator = std::max_element(a.begin(),
-			a.end());
+		auto maxElementIterator = std::max_element(a.begin(), a.end());
 		predictions[i] = std::distance(a.begin(), maxElementIterator);
 	}
 	return predictions;
