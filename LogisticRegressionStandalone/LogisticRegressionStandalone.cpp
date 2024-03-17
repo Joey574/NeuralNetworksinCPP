@@ -264,74 +264,28 @@ void TrainNetwork() {
 
 void ForwardPropogation() {
 
-	/*cout << "batch: " << batch.RowCount << " :: " << batch.ColumnCount << endl;
-	for (int i = 0; i < activation.size(); i++) {
-		cout << "A [" << i << "] " << activation[i].RowCount << " :: " << activation[i].ColumnCount << endl;
-		cout << "ATotal [" << i << "] " << aTotal[i].RowCount << " :: " << aTotal[i].ColumnCount << endl;
-		cout << "Weights [" << i << "] " << weights[i].RowCount << " :: " << weights[i].ColumnCount << endl;
-	}
-	cout << endl;*/
-
 	for (int i = 0; i < aTotal.size(); i++) {
 		aTotal[i] = (weights[i].DotProduct(i == 0 ? batch : activation[i - 1]) + biases[i]);
 		aTotal[i] = aTotal[i].Transpose();
 		activation[i] = i < aTotal.size() - 1 ? ReLU(aTotal[i]) : SoftMax(aTotal[i]);
 	}
-
-	/*cout << "batch: " << batch.RowCount << " :: " << batch.ColumnCount << endl;
-	for (int i = 0; i < activation.size(); i++) {
-		cout << "A [" << i << "] " << activation[i].RowCount << " :: " << activation[i].ColumnCount << endl;
-		cout << "ATotal [" << i << "] " << aTotal[i].RowCount << " :: " << aTotal[i].ColumnCount << endl;
-	}
-	cout << endl;*/
 }
 
 void BackwardPropogation() {
 
 	dTotal[dTotal.size() - 1] -= YBatch;
-	cout << "DHot complete" << endl;
 
 	for (int i = dTotal.size() - 2; i > -1; i--) {
-		/*cout << "DTotal [" << i << "] " << dTotal[i].RowCount << " :: " << dTotal[i].ColumnCount << endl;
-		cout << "DTotal [" << i + 1 << "] " << dTotal[i + 1].RowCount << " :: " << dTotal[i + 1].ColumnCount << endl;
-		cout << "ATotal [" << i << "] " << aTotal[i].RowCount << " :: " << aTotal[i].ColumnCount << endl;
-		cout << "Weights [" << i + 1 << "] " << weights[i + 1].RowCount << " :: " << weights[i + 1].ColumnCount << endl;
-		cout << "ReluDeriv: " << ReLUDerivative(aTotal[i]).RowCount << " :: " << ReLUDerivative(aTotal[i]).ColumnCount << endl;
-		cout << "DotProd Mat: " << dTotal[i + 1].DotProduct(weights[i + 1]).RowCount << " :: " << dTotal[i + 1].DotProduct(weights[i + 1]).ColumnCount << endl;*/
-
 		dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * ReLUDerivative(aTotal[i]));
 	}
-	cout << "DTotal Complete" << endl;
-
-	/*
-	Expected:
-
-	dW1 = 784 x 128
-	dT1 = 128 x 500
-	input = 784 x 500
-	
-	dW2 128 x 10
-	dT2 = 10 x 500
-	a1 = 128 x 500
-	*/
 
 	for (int i = 0; i < weights.size(); i++) {
-		/*cout << i << endl;
-		cout << "dW: " << dWeights[i].RowCount << " :: " << dWeights[i].ColumnCount << endl;
-		cout << "dT: " << dTotal[i].RowCount << " :: " << dTotal[i].ColumnCount << endl;
-		if (i == 1) { cout << "A: " << activation[i - 1].RowCount << " :: " << activation[i - 1].ColumnCount << endl; }
-		else { cout << "batch: " << batch.RowCount << " :: " << batch.ColumnCount << endl; }*/
-
 		dWeights[i] = (dTotal[i].Transpose().DotProduct(i == 0 ? batch.Transpose() : activation[i - 1].Transpose()) * (1.0f / (float)batchSize)).Transpose();
-
-		//cout << "dWAfter: " << dWeights[i].RowCount << " :: " << dWeights[i].ColumnCount << endl;
 	}
-	cout << "DWeights Complete" << endl;
 
 	for (int i = 0; i < biases.size(); i++) {
 		dBiases[i] = dTotal[i].MultiplyAndSum(1.0f / (float)batchSize);
 	}
-	cout << "DBias Complete" << endl;
 }
 
 void UpdateNetwork() {
