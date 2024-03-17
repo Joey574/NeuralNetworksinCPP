@@ -292,13 +292,14 @@ void BackwardPropogation() {
 	cout << "DHot complete" << endl;
 
 	for (int i = dTotal.size() - 2; i > -1; i--) {
-		cout << "DTotal [" << i << "] " << dTotal[i].RowCount << " :: " << activation[i].ColumnCount << endl;
-		cout << "DTotal [" << i + 1 << "] " << dTotal[i + 1].RowCount << " :: " << activation[i].ColumnCount << endl;
+		/*cout << "DTotal [" << i << "] " << dTotal[i].RowCount << " :: " << dTotal[i].ColumnCount << endl;
+		cout << "DTotal [" << i + 1 << "] " << dTotal[i + 1].RowCount << " :: " << dTotal[i + 1].ColumnCount << endl;
 		cout << "ATotal [" << i << "] " << aTotal[i].RowCount << " :: " << aTotal[i].ColumnCount << endl;
+		cout << "Weights [" << i + 1 << "] " << weights[i + 1].RowCount << " :: " << weights[i + 1].ColumnCount << endl;
 		cout << "ReluDeriv: " << ReLUDerivative(aTotal[i]).RowCount << " :: " << ReLUDerivative(aTotal[i]).ColumnCount << endl;
-		cout << "Weights [" << i + 1 << "] " << weights[i + 1].RowCount << " :: " << weights[i].ColumnCount << endl;
+		cout << "DotProd Mat: " << dTotal[i + 1].DotProduct(weights[i + 1]).RowCount << " :: " << dTotal[i + 1].DotProduct(weights[i + 1]).ColumnCount << endl;*/
 
-		dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])) * ReLUDerivative(aTotal[i]));
+		dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * ReLUDerivative(aTotal[i]));
 	}
 	cout << "DTotal Complete" << endl;
 
@@ -315,13 +316,15 @@ void BackwardPropogation() {
 	*/
 
 	for (int i = 0; i < weights.size(); i++) {
-		cout << i << endl;
+		/*cout << i << endl;
 		cout << "dW: " << dWeights[i].RowCount << " :: " << dWeights[i].ColumnCount << endl;
 		cout << "dT: " << dTotal[i].RowCount << " :: " << dTotal[i].ColumnCount << endl;
 		if (i == 1) { cout << "A: " << activation[i - 1].RowCount << " :: " << activation[i - 1].ColumnCount << endl; }
-		else { cout << "batch: " << batch.RowCount << " :: " << batch.ColumnCount << endl; }
+		else { cout << "batch: " << batch.RowCount << " :: " << batch.ColumnCount << endl; }*/
 
-		dWeights[i] = dTotal[i].DotProduct(i == 0 ? batch.Transpose() : activation[i - 1].Transpose()) * (1.0f / (float)batchSize);
+		dWeights[i] = (dTotal[i].Transpose().DotProduct(i == 0 ? batch.Transpose() : activation[i - 1].Transpose()) * (1.0f / (float)batchSize)).Transpose();
+
+		//cout << "dWAfter: " << dWeights[i].RowCount << " :: " << dWeights[i].ColumnCount << endl;
 	}
 	cout << "DWeights Complete" << endl;
 
