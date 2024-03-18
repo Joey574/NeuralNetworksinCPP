@@ -114,6 +114,7 @@ std::vector<float> Matrix::RowSums() {
 }
 
 std::vector<float> Matrix::Column(int index) {
+
 	std::vector<float> column = std::vector<float>();
 	for (int i = 0; i < RowCount; i++) {
 		column.push_back(matrix[i][index]);
