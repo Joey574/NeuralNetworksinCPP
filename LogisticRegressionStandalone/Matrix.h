@@ -171,6 +171,7 @@ class Matrix
 		}
 
 		std::vector<std::vector<float>> matrix;
+		std::vector<std::vector<float>> matrixT;
 
 	private:
 
