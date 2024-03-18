@@ -56,6 +56,8 @@ class Matrix
 		Matrix CollapseAndLeftMultiply(Matrix element);
 		Matrix DotProduct(Matrix element);
 
+		bool ContainsNaN();
+
 		int ColumnCount;
 		int RowCount;
 
@@ -105,62 +107,72 @@ class Matrix
 
 
 		Matrix operator += (float scalar) {
-			this->AssignVector(this->Add(scalar));
+			Matrix mat = Add(scalar);
+			matrix = mat.matrix;
 			return matrix;
 		}
 		Matrix operator += (std::vector<float> scalar) {
-			this->AssignVector(this->Add(scalar));
+			Matrix mat = Add(scalar);
+			matrix = mat.matrix;
 			return matrix;
 		}
 		Matrix operator += (Matrix element) {
-			this->AssignVector(this->Add(element));
+			Matrix mat = Add(element);
+			matrix = mat.matrix;
 			return matrix;
 		}
 
 		Matrix operator -= (float scalar) {
-			this->AssignVector(this->Subtract(scalar));
+			Matrix mat = Subtract(scalar);
+			matrix = mat.matrix;
 			return matrix;
 		}
 		Matrix operator -= (std::vector<float> scalar) {
-			this->AssignVector(this->Subtract(scalar));
+			Matrix mat = Subtract(scalar);
+			matrix = mat.matrix;
 			return matrix;
 		}
 		Matrix operator -= (Matrix element) {
-			this->AssignVector(this->Subtract(element));
+			Matrix mat = Subtract(element);
+			matrix = mat.matrix;
 			return matrix;
 		}
 
 		Matrix operator *= (float scalar) {
-			this->AssignVector(this->Multiply(scalar));
+			Matrix mat = Multiply(scalar);
+			matrix = mat.matrix;
 			return matrix;
 		}
 		Matrix operator *= (std::vector<float> scalar) {
-			this->AssignVector(this->Multiply(scalar));
+			Matrix mat = Multiply(scalar);
+			matrix = mat.matrix;
 			return matrix;
 		}
 		Matrix operator *= (Matrix element) {
-			this->AssignVector(this->Multiply(element));
+			Matrix mat = Multiply(element);
+			matrix = mat.matrix;
 			return matrix;
 		}
 
 		Matrix operator /= (float scalar) {
-			this->AssignVector(this->Divide(scalar));
+			Matrix mat = Divide(scalar);
+			matrix = mat.matrix;
 			return matrix;
 		}
 		Matrix operator /= (std::vector<float> scalar) {
-			this->AssignVector(this->Divide(scalar));
+			Matrix mat = Divide(scalar);
+			matrix = mat.matrix;
 			return matrix;
 		}
 		Matrix operator /= (Matrix element) {
-			this->AssignVector(this->Divide(element));
+			Matrix mat = Divide(element);
+			matrix = mat.matrix;
 			return matrix;
 		}
 
 		std::vector<std::vector<float>> matrix;
 
 	private:
-
-		void AssignVector(Matrix element);
 
 		Matrix SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), float scalar);
 		Matrix VectorFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), std::vector<float> scalar);

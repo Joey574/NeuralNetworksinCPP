@@ -62,7 +62,13 @@ Matrix::Matrix(std::vector<std::vector<float>> matrix) {
 // Util
 
 std::vector<float> Matrix::SetColumn(int index, std::vector<float> vector) {
-	return matrix[0];
+	std::vector<float> replaced = Column(index);
+
+	for (int i = 0; i < RowCount; i++) {
+		matrix[i][index] = vector[i];
+	}
+
+	return replaced;
 }
 
 std::vector<float> Matrix::SetColumn(int index, std::vector<int> vector) {
@@ -172,11 +178,18 @@ Matrix Matrix::CollapseAndLeftMultiply(Matrix element) {
 	return mat;
 }
 
-void Matrix::AssignVector(Matrix element) {
-	matrix = element.matrix;
+bool Matrix::ContainsNaN() {
+	bool hasNan = false;
 
-	ColumnCount = element.ColumnCount;
-	RowCount = element.RowCount;
+	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&hasNan](auto&& item) {
+		std::for_each(std::execution::par, item.begin(), item.end(), [&hasNan](auto&& var) {
+			if (std::isnan(var)) {
+				hasNan = true;
+			}
+		});
+	});
+
+	return hasNan;
 }
 
 // Math Operations
@@ -271,20 +284,19 @@ Matrix Matrix::SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 	std::vector<std::vector<float>> mat = matrix;
 	__m256 _scalar = _mm256_set1_ps(scalar);
 
-	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&](auto&& item) {  
+	std::for_each(std::execution::par, mat.begin(), mat.end(), [&](auto&& item) {  
 
-		size_t r = &item - matrix.data();
 		const int alignedN = item.size() - (item.size() % 8);
 
 		for (int i = 0; i < alignedN; i += 8) {
 			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
 			__m256 result;
 			(this->*operation)(loaded_a, _scalar, &result);
-			_mm256_storeu_ps(&mat[r][i], result);
+			_mm256_storeu_ps(&item[i], result);
 		}
 
 		for (int i = alignedN; i < item.size(); i++) {
-			mat[r][i] = item[i] + scalar;
+			item[i] += scalar;
 		}
 	});
 	return mat;

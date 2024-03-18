@@ -220,6 +220,7 @@ Matrix RandomizeInput(Matrix totalInput, int size) {
 
 			a.SetColumn(batchLabels.size(), totalInput.Column(c));
 			YBatch.SetColumn(batchLabels.size(), YTotal.Column(c));
+
 			batchLabels.push_back(inputLabels[c]);
 		}
 	}
@@ -265,8 +266,7 @@ void TrainNetwork() {
 void ForwardPropogation() {
 
 	for (int i = 0; i < aTotal.size(); i++) {
-		aTotal[i] = (weights[i].DotProduct(i == 0 ? batch : activation[i - 1]) + biases[i]);
-		aTotal[i] = aTotal[i].Transpose();
+		aTotal[i] = (weights[i].DotProduct(i == 0 ? batch : activation[i - 1]) + biases[i]).Transpose();
 		activation[i] = i < aTotal.size() - 1 ? ReLU(aTotal[i]) : SoftMax(aTotal[i]);
 	}
 }
