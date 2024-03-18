@@ -19,10 +19,10 @@ class Matrix
 		std::vector<float> Column(int index);
 		std::vector<float> Row(int index);
 
-		std::vector<float> SetColumn(int index, std::vector<float> column);
-		std::vector<float> SetColumn(int index, std::vector<int> column);
-		std::vector<float> SetRow(int index, std::vector<float> row);
-		std::vector<float> SetRow(int index, std::vector<int> row);
+		void SetColumn(int index, std::vector<float> column);
+		void SetColumn(int index, std::vector<int> column);
+		void SetRow(int index, std::vector<float> row);
+		void SetRow(int index, std::vector<int> row);
 		
 		std::vector<float> MultiplyAndSum(float scalar);
 		

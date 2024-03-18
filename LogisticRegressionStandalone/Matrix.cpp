@@ -61,32 +61,28 @@ Matrix::Matrix(std::vector<std::vector<float>> matrix) {
 
 // Util
 
-std::vector<float> Matrix::SetColumn(int index, std::vector<float> vector) {
-	std::vector<float> replaced = Column(index);
-
+void Matrix::SetColumn(int index, std::vector<float> vector) {
 	for (int i = 0; i < RowCount; i++) {
 		matrix[i][index] = vector[i];
 	}
-
-	return replaced;
 }
 
-std::vector<float> Matrix::SetColumn(int index, std::vector<int> vector) {
-	std::vector<float> replaced = Column(index);
-
+void Matrix::SetColumn(int index, std::vector<int> vector) {
 	for (int i = 0; i < RowCount; i++) {
 		matrix[i][index] = vector[i];
 	}
-
-	return replaced;
 }
 
-std::vector<float> Matrix::SetRow(int index, std::vector<float> vector) {
-	return matrix[0];
+void Matrix::SetRow(int index, std::vector<float> vector) {
+	for (int i = 0; i < RowCount; i++) {
+		matrix[index][i] = vector[i];
+	}
 }
 
-std::vector<float> Matrix::SetRow(int index, std::vector<int> vector) {
-	return matrix[0];
+void Matrix::SetRow(int index, std::vector<int> vector) {
+	for (int i = 0; i < RowCount; i++) {
+		matrix[index][i] = vector[i];
+	}
 }
 
 std::vector<float> Matrix::ColumnSums() {
@@ -148,18 +144,6 @@ std::vector<float> Matrix::MultiplyAndSum(float scalar) {
 }
 
 Matrix Matrix::DotProduct(Matrix element) {
-
-	// element == input
-
-	// input 784 x 500
-
-	// matrix == weights
-
-	// weights == 784 x 128
-
-	// final == aTotal
-
-	// 128 x 500
 
 	std::vector<std::vector<float>> mat = std::vector<std::vector<float>>();
 
