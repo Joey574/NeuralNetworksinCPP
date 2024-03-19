@@ -178,9 +178,12 @@ class Matrix
 
 	private:
 
-		Matrix SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), float scalar);
-		Matrix VectorFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), std::vector<float> scalar);
-		Matrix MatrixFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), Matrix element);
+		Matrix SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), 
+			float (Matrix::* remainderOperation)(float a, float b), float scalar);
+		Matrix VectorFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result),
+			float (Matrix::* remainderOperation)(float a, float b), std::vector<float> scalar);
+		Matrix MatrixFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), 
+			float (Matrix::* remainderOperation)(float a, float b), Matrix element);
 
 		void SIMDAdd(__m256 opOne, __m256 opTwo, __m256* result);
 		void SIMDSub(__m256 opOne, __m256 opTwo, __m256* result);
@@ -188,4 +191,11 @@ class Matrix
 		void SIMDDiv(__m256 opOne, __m256 opTwo, __m256* result);
 		void SIMDPow(__m256 opOne, __m256 opTwo, __m256* result);
 		void SIMDExp(__m256 opOne, __m256 opTwo, __m256* result);
+
+		float RemainderAdd(float a, float b);
+		float RemainderSub(float a, float b);
+		float RemainderMul(float a, float b);
+		float RemainderDiv(float a, float b);
+		float RemainderPow(float a, float b);
+		float RemainderExp(float a, float b);
 };

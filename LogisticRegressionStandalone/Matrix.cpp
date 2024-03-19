@@ -1,7 +1,5 @@
 #include "Matrix.h"
 
-#include <iostream>
-
 // Constructors
 
 Matrix::Matrix() {
@@ -180,72 +178,72 @@ bool Matrix::ContainsNaN() {
 // Math Operations
 
 Matrix Matrix::Add(float scalar) {
-	return SingleFloatOperation(&Matrix::SIMDAdd, scalar);
+	return SingleFloatOperation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, scalar);
 }
 
 Matrix Matrix::Add(std::vector<float> scalar) {
-	return VectorFloatOperation(&Matrix::SIMDAdd, scalar);
+	return VectorFloatOperation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, scalar);
 }
 
 Matrix Matrix::Add(Matrix element) {
-	return MatrixFloatOperation(&Matrix::SIMDAdd, element);
+	return MatrixFloatOperation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, element);
 }
 
 
 Matrix Matrix::Subtract(float scalar) {
-	return SingleFloatOperation(&Matrix::SIMDSub, scalar);
+	return SingleFloatOperation(&Matrix::SIMDSub, &Matrix::RemainderSub, scalar);
 }
 
 Matrix Matrix::Subtract(std::vector<float> scalar) {
-	return VectorFloatOperation(&Matrix::SIMDSub, scalar);
+	return VectorFloatOperation(&Matrix::SIMDSub, &Matrix::RemainderSub, scalar);
 }
 
 Matrix Matrix::Subtract(Matrix element) {
-	return MatrixFloatOperation(&Matrix::SIMDSub, element);
+	return MatrixFloatOperation(&Matrix::SIMDSub, &Matrix::RemainderSub, element);
 }
 
 
 Matrix Matrix::Multiply(float scalar) {
-	return SingleFloatOperation(&Matrix::SIMDMul, scalar);
+	return SingleFloatOperation(&Matrix::SIMDMul, &Matrix::RemainderMul, scalar);
 }
 
 Matrix Matrix::Multiply(std::vector<float> scalar) {
-	return VectorFloatOperation(&Matrix::SIMDMul, scalar);
+	return VectorFloatOperation(&Matrix::SIMDMul, &Matrix::RemainderMul, scalar);
 }
 
 Matrix Matrix::Multiply(Matrix element) {
-	return MatrixFloatOperation(&Matrix::SIMDMul, element);
+	return MatrixFloatOperation(&Matrix::SIMDMul, &Matrix::RemainderMul, element);
 }
 
 
 Matrix Matrix::Divide(float scalar) {
-	return SingleFloatOperation(&Matrix::SIMDDiv, scalar);
+	return SingleFloatOperation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, scalar);
 }
 
 Matrix Matrix::Divide(std::vector<float> scalar) {
-	return VectorFloatOperation(&Matrix::SIMDDiv, scalar);
+	return VectorFloatOperation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, scalar);
 }
 
 Matrix Matrix::Divide(Matrix element) {
-	return MatrixFloatOperation(&Matrix::SIMDDiv, element);
+	return MatrixFloatOperation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, element);
 }
 
 
 Matrix Matrix::Pow(float scalar) {
-	return SingleFloatOperation(&Matrix::SIMDPow, scalar);
+	return SingleFloatOperation(&Matrix::SIMDPow, &Matrix::RemainderPow, scalar);
 }
 
 Matrix Matrix::Pow(std::vector<float> scalar) {
-	return VectorFloatOperation(&Matrix::SIMDPow, scalar);
+	return VectorFloatOperation(&Matrix::SIMDPow, &Matrix::RemainderPow, scalar);
 }
 
 Matrix Matrix::Pow(Matrix element) {
-	return MatrixFloatOperation(&Matrix::SIMDPow, element);
+	return MatrixFloatOperation(&Matrix::SIMDPow, &Matrix::RemainderPow, element);
 }
 
 
 Matrix Matrix::Exp() {
-	return SingleFloatOperation(&Matrix::SIMDExp, std::exp(1.0));
+	return SingleFloatOperation(&Matrix::SIMDExp, &Matrix::RemainderExp, std::exp(1.0));
 }
 
 Matrix Matrix::Transpose() {
@@ -273,7 +271,8 @@ std::string Matrix::AsString() {
 	return out;
 }
 
-Matrix Matrix::SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), float scalar) {
+Matrix Matrix::SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), 
+	float (Matrix::* remainderOperation)(float a, float b), float scalar) {
 	std::vector<std::vector<float>> mat = matrix;
 	__m256 _scalar = _mm256_set1_ps(scalar);
 
@@ -289,15 +288,23 @@ Matrix Matrix::SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 		}
 
 		for (int i = alignedN; i < item.size(); i++) {
-			item[i] += scalar;
+			item[i] = (this->*remainderOperation)(item[i], scalar);
 		}
 	});
 	return mat;
 }
 
-Matrix Matrix::VectorFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), std::vector<float> scalar) {
+Matrix Matrix::VectorFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), 
+	float (Matrix::* remainderOperation)(float a, float b), std::vector<float> scalar) {
 
 	Matrix mat;
+
+	if (scalar.size() == ColumnCount) {
+		mat = matrix;
+	}
+	else if (scalar.size() == RowCount) {
+		mat = this->Transpose();
+	}
 
 	std::for_each(std::execution::par, mat.matrix.begin(), mat.matrix.end(), [&](auto&& item) {
 
@@ -314,14 +321,15 @@ Matrix Matrix::VectorFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 		}
 
 		for (int i = alignedN; i < item.size(); i++) {
-			item[i] += scalar[i];
+			item[i] = (this->*remainderOperation)(item[i], scalar[i]);
 		}
 	});
 
 	return mat;
 }
 
-Matrix Matrix::MatrixFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), Matrix element) {
+Matrix Matrix::MatrixFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), 
+	float (Matrix::* remainderOperation)(float a, float b), Matrix element) {
 	std::vector<std::vector<float>> mat = element.matrix;
 
 	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&](auto&& item) {
@@ -339,7 +347,7 @@ Matrix Matrix::MatrixFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 		}
 
 		for (int i = alignedN; i < item.size(); i++) {
-			mat[r][i] += item[i];
+			mat[r][i] = (this->*remainderOperation)(mat[r][i], item[i]);
 		}
 	});
 	return mat;
@@ -364,4 +372,23 @@ void Matrix::SIMDPow(__m256 opOne, __m256 opTwo, __m256* result) {
 }
 void Matrix::SIMDExp(__m256 opOne, __m256 opTwo, __m256* result) {
 	*result = _mm256_pow_ps(opTwo, opOne);
+}
+
+float Matrix::RemainderAdd(float a, float b) {
+	return a + b;
+}
+float Matrix::RemainderSub(float a, float b) {
+	return a - b;
+}
+float Matrix::RemainderMul(float a, float b) {
+	return a * b;
+}
+float Matrix::RemainderDiv(float a, float b) {
+	return a / b;
+}
+float Matrix::RemainderPow(float a, float b) {
+	return std::pow(a, b);
+}
+float Matrix::RemainderExp(float a, float b) {
+	return std::pow(b, a);
 }

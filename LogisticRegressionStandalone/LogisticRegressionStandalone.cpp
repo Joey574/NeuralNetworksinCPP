@@ -62,7 +62,7 @@ int main()
 	LoadInput();
 	
 	InitializeNetwork();
-	
+
 	TrainNetwork();
 
 	return 0;
