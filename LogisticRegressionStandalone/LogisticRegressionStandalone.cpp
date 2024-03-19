@@ -245,6 +245,8 @@ void TrainNetwork() {
 			batch = RandomizeInput(input, batchSize);
 		}
 
+		if (batch.ContainsNaN()) { cout << "Input contains NAN" << endl; }
+
 		cout << "Iteration: " << i << " Accuracy: " << acc << endl;
 
 		tStart = std::chrono::high_resolution_clock::now();
@@ -252,6 +254,7 @@ void TrainNetwork() {
 		tEnd = std::chrono::high_resolution_clock::now();
 		time = tEnd - tStart;
 		cout << "Forward Propogation complete (" << time.count() << "ms)" << endl;
+
 
 		for (int i = 0; i < aTotal.size(); i++) {
 			if (aTotal[i].ContainsNaN()) { cout << "aTotal [" << i << "] contains NAN" << endl; }

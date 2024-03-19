@@ -5,8 +5,6 @@ VisualStudioVersion = 17.9.34607.119
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NeuralNetworkCpp", "NeuralNetworkCpp\NeuralNetworkCpp.vcxproj", "{4F2C9DBB-F3AB-4BFD-85C3-81C3F58118C0}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MNISTLogisticRegression", "MNISTLogisticRegression\MNISTLogisticRegression.vcxproj", "{C3A93BF6-BB50-4245-A89A-3EEE9945EE96}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LogisticRegressionStandalone", "LogisticRegressionStandalone\LogisticRegressionStandalone.vcxproj", "{86747574-44FE-409B-BE3D-7B537DE0C36C}"
 EndProject
 Global
@@ -25,14 +23,6 @@ Global
 		{4F2C9DBB-F3AB-4BFD-85C3-81C3F58118C0}.Release|x64.Build.0 = Release|x64
 		{4F2C9DBB-F3AB-4BFD-85C3-81C3F58118C0}.Release|x86.ActiveCfg = Release|Win32
 		{4F2C9DBB-F3AB-4BFD-85C3-81C3F58118C0}.Release|x86.Build.0 = Release|Win32
-		{C3A93BF6-BB50-4245-A89A-3EEE9945EE96}.Debug|x64.ActiveCfg = Debug|x64
-		{C3A93BF6-BB50-4245-A89A-3EEE9945EE96}.Debug|x64.Build.0 = Debug|x64
-		{C3A93BF6-BB50-4245-A89A-3EEE9945EE96}.Debug|x86.ActiveCfg = Debug|Win32
-		{C3A93BF6-BB50-4245-A89A-3EEE9945EE96}.Debug|x86.Build.0 = Debug|Win32
-		{C3A93BF6-BB50-4245-A89A-3EEE9945EE96}.Release|x64.ActiveCfg = Release|x64
-		{C3A93BF6-BB50-4245-A89A-3EEE9945EE96}.Release|x64.Build.0 = Release|x64
-		{C3A93BF6-BB50-4245-A89A-3EEE9945EE96}.Release|x86.ActiveCfg = Release|Win32
-		{C3A93BF6-BB50-4245-A89A-3EEE9945EE96}.Release|x86.Build.0 = Release|Win32
 		{86747574-44FE-409B-BE3D-7B537DE0C36C}.Debug|x64.ActiveCfg = Debug|x64
 		{86747574-44FE-409B-BE3D-7B537DE0C36C}.Debug|x64.Build.0 = Debug|x64
 		{86747574-44FE-409B-BE3D-7B537DE0C36C}.Debug|x86.ActiveCfg = Debug|Win32

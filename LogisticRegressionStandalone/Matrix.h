@@ -54,7 +54,6 @@ class Matrix
 
 		Matrix Transpose();
 
-		Matrix CollapseAndLeftMultiply(Matrix element);
 		Matrix DotProduct(Matrix element);
 
 		bool ContainsNaN();
@@ -174,7 +173,6 @@ class Matrix
 		}
 
 		std::vector<std::vector<float>> matrix;
-		std::vector<std::vector<float>> matrixT;
 
 	private:
 

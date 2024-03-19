@@ -153,14 +153,6 @@ Matrix Matrix::DotProduct(Matrix element) {
 	return mat;
 }
 
-Matrix Matrix::CollapseAndLeftMultiply(Matrix element) {
-	std::vector<std::vector<float>> mat = matrix;
-	for (int i = 0; i < element.ColumnCount; i++) {
-		mat.push_back(this->Multiply(element.Column(i)).ColumnSums());
-	}
-	return mat;
-}
-
 bool Matrix::ContainsNaN() {
 	bool hasNan = false;
 
