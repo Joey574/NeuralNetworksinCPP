@@ -351,7 +351,7 @@ void Matrix::SIMDAdd(__m256 opOne, __m256 opTwo, __m256* result) {
 	*result = _mm256_add_ps(opOne, opTwo);
 }
 void Matrix::SIMDSub(__m256 opOne, __m256 opTwo, __m256* result) {
-	*result = _mm256_div_ps(opOne, opTwo);
+	*result = _mm256_sub_ps(opOne, opTwo);
 }
 void Matrix::SIMDMul(__m256 opOne, __m256 opTwo, __m256* result) {
 	*result = _mm256_mul_ps(opOne, opTwo);

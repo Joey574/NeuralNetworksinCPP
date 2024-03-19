@@ -253,13 +253,27 @@ void TrainNetwork() {
 		time = tEnd - tStart;
 		cout << "Forward Propogation complete (" << time.count() << "ms)" << endl;
 
+		/*for (int i = 0; i < aTotal.size(); i++) {
+			if (aTotal[i].ContainsNaN()) { cout << "aTotal [" << i << "] contains NAN" << endl; }
+			if (activation[i].ContainsNaN()) { cout << "activation [" << i << "] contains NAN" << endl; }
+		}*/
+
 		tStart = std::chrono::high_resolution_clock::now();
 		BackwardPropogation();
 		tEnd = std::chrono::high_resolution_clock::now();
 		time = tEnd - tStart;
 		cout << "Backward Propogation complete (" << time.count() << "ms)" << endl;
 
+		/*for (int i = 0; i < dTotal.size(); i++) {
+			if (dTotal[i].ContainsNaN()) { cout << "dTotal [" << i << "] contains NAN" << endl; }
+			if (dWeights[i].ContainsNaN()) { cout << "dWeights [" << i << "] contains NAN" << endl; }
+		}*/
+
 		UpdateNetwork();
+
+		/*for (int i = 0; i < weights.size(); i++) {
+			if (weights[i].ContainsNaN()) { cout << "weights [" << i << "] contains NAN" << endl; }
+		}*/
 	}
 }
 
@@ -274,6 +288,9 @@ void ForwardPropogation() {
 void BackwardPropogation() {
 
 	dTotal[dTotal.size() - 1] -= YBatch;
+
+	if (YBatch.ContainsNaN()) { cout << "YBatch contains NAN" << endl; }
+	if (dTotal[dTotal.size() - 1].ContainsNaN()) { cout << "dTotal [" << dTotal.size() - 1 << "] contains NAN" << endl; }
 
 	for (int i = dTotal.size() - 2; i > -1; i--) {
 		dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * ReLUDerivative(aTotal[i]));
