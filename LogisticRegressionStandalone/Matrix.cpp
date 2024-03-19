@@ -56,7 +56,7 @@ Matrix::Matrix(int rows, int columns, float lowerRand, float upperRand) {
 Matrix::Matrix(std::vector<std::vector<float>> matrix) {
 	this->matrix = matrix;
 	ColumnCount = matrix[0].size();
-	RowCount = matrix.size();
+	RowCount = matrix.size();		
 }
 
 // Util
@@ -245,13 +245,7 @@ Matrix Matrix::Pow(Matrix element) {
 
 
 Matrix Matrix::Exp() {
-	std::vector<std::vector<float>> exp = matrix;
-	for (int r = 0; r < RowCount; r++) {
-		for (int c = 0; c < ColumnCount; c++) {
-			exp[r][c] = std::exp(matrix[r][c]);
-		}
-	}
-	return exp;
+	return SingleFloatOperation(&Matrix::SIMDExp, std::exp(1.0));
 }
 
 Matrix Matrix::Transpose() {
@@ -263,6 +257,20 @@ Matrix Matrix::Transpose() {
 	}
 
 	return transpose;
+}
+
+std::string Matrix::AsString() {
+	std::string out = "";
+
+	for (int r = 0; r < RowCount; r++) {
+		for (int c = 0; c < ColumnCount; c++) {
+			out += std::to_string(matrix[r][c]) + " ";
+		}
+		//out += " :: " + std::to_string(this->ColumnSums()[r]);
+		out += "\n";
+	}
+
+	return out;
 }
 
 Matrix Matrix::SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), float scalar) {
@@ -290,14 +298,6 @@ Matrix Matrix::SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 Matrix Matrix::VectorFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), std::vector<float> scalar) {
 
 	Matrix mat;
-
-	if (scalar.size() == ColumnCount) {
-		mat = matrix;
-	} else if (scalar.size() == RowCount) {
-		mat = this->Transpose();
-	} else { 
-		std::cout << "size no match :( " << RowCount << " :: " << ColumnCount << " b: " << scalar.size()  << std::endl;
-	}
 
 	std::for_each(std::execution::par, mat.matrix.begin(), mat.matrix.end(), [&](auto&& item) {
 
@@ -361,4 +361,7 @@ void Matrix::SIMDDiv(__m256 opOne, __m256 opTwo, __m256* result) {
 }
 void Matrix::SIMDPow(__m256 opOne, __m256 opTwo, __m256* result) {
 	*result = _mm256_pow_ps(opOne, opTwo);
+}
+void Matrix::SIMDExp(__m256 opOne, __m256 opTwo, __m256* result) {
+	*result = _mm256_pow_ps(opTwo, opOne);
 }

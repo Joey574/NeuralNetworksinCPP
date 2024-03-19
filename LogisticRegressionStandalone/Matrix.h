@@ -5,6 +5,7 @@
 #include <cmath>
 #include <random>
 #include <immintrin.h> 
+#include <string>
 
 class Matrix 
 {
@@ -57,6 +58,8 @@ class Matrix
 		Matrix DotProduct(Matrix element);
 
 		bool ContainsNaN();
+
+		std::string AsString();
 
 		int ColumnCount;
 		int RowCount;
@@ -184,4 +187,5 @@ class Matrix
 		void SIMDMul(__m256 opOne, __m256 opTwo, __m256* result);
 		void SIMDDiv(__m256 opOne, __m256 opTwo, __m256* result);
 		void SIMDPow(__m256 opOne, __m256 opTwo, __m256* result);
+		void SIMDExp(__m256 opOne, __m256 opTwo, __m256* result);
 };
