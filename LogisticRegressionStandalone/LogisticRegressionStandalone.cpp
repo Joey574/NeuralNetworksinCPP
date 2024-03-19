@@ -63,9 +63,6 @@ int main()
 	
 	InitializeNetwork();
 	
-	cout << aTotal[0].matrix.size() << endl;
-	cout << aTotal[1].matrix.size() << endl;
-
 	TrainNetwork();
 
 	return 0;

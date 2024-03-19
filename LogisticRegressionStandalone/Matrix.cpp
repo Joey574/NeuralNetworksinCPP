@@ -266,7 +266,7 @@ std::string Matrix::AsString() {
 		for (int c = 0; c < ColumnCount; c++) {
 			out += std::to_string(matrix[r][c]) + " ";
 		}
-		//out += " :: " + std::to_string(this->ColumnSums()[r]);
+		out += " :: " + std::to_string(this->RowSums()[r]);
 		out += "\n";
 	}
 
