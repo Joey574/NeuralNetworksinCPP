@@ -59,6 +59,8 @@ float Accuracy(vector<int> predictions, vector<int> labels);
 
 int main()
 {
+	srand(time(0));
+
 	LoadInput();
 	
 	InitializeNetwork();
@@ -207,8 +209,6 @@ Matrix RandomizeInput(Matrix totalInput, int size) {
 
 	YBatch = Matrix(outputLayerSize, size);
 	batchLabels.clear();
-
-	srand(time(0));
 
 	while (batchLabels.size() < size) {
 
