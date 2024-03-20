@@ -239,6 +239,7 @@ void TrainNetwork() {
 	batch = RandomizeInput(input, batchSize);
 
 	for (int i = 0; i < iterations; i++) {
+
 		float acc = Accuracy(GetPredictions(batchSize), batchLabels);
 
 		if (acc > thresholdAccuracy) {

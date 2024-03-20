@@ -1,11 +1,13 @@
 #include "Matrix.h"
 
+
 // Constructors
 
 Matrix::Matrix() {
 	matrix = std::vector<std::vector<float>>(0);
 	ColumnCount = 0;
 	RowCount = 0;
+	transposeBuilt = false;
 }
 
 Matrix::Matrix(int rows, int columns) {
@@ -17,6 +19,7 @@ Matrix::Matrix(int rows, int columns) {
 
 	ColumnCount = columns;
 	RowCount = rows;
+	transposeBuilt = false;
 }
 
 Matrix::Matrix(int rows, int columns, float value) {
@@ -28,6 +31,7 @@ Matrix::Matrix(int rows, int columns, float value) {
 
 	ColumnCount = columns;
 	RowCount = rows;
+	transposeBuilt = false;
 }
 
 Matrix::Matrix(int rows, int columns, float lowerRand, float upperRand) {
@@ -49,12 +53,14 @@ Matrix::Matrix(int rows, int columns, float lowerRand, float upperRand) {
 			matrix[r][c] = dist(gen);
 		}
 	}
+	transposeBuilt = false;
 }
 
 Matrix::Matrix(std::vector<std::vector<float>> matrix) {
 	this->matrix = matrix;
 	ColumnCount = matrix[0].size();
-	RowCount = matrix.size();		
+	RowCount = matrix.size();
+	transposeBuilt = false;
 }
 
 // Util
@@ -63,24 +69,32 @@ void Matrix::SetColumn(int index, std::vector<float> vector) {
 	for (int i = 0; i < RowCount; i++) {
 		matrix[i][index] = vector[i];
 	}
+
+	transposeBuilt = false;
 }
 
 void Matrix::SetColumn(int index, std::vector<int> vector) {
 	for (int i = 0; i < RowCount; i++) {
 		matrix[i][index] = vector[i];
 	}
+
+	transposeBuilt = false;
 }
 
 void Matrix::SetRow(int index, std::vector<float> vector) {
 	for (int i = 0; i < RowCount; i++) {
 		matrix[index][i] = vector[i];
 	}
+
+	transposeBuilt = false;
 }
 
 void Matrix::SetRow(int index, std::vector<int> vector) {
 	for (int i = 0; i < RowCount; i++) {
 		matrix[index][i] = vector[i];
 	}
+
+	transposeBuilt = false;
 }
 
 std::vector<float> Matrix::ColumnSums() {
@@ -273,10 +287,10 @@ Matrix Matrix::SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 		const int alignedN = item.size() - (item.size() % 8);
 
 		for (int i = 0; i < alignedN; i += 8) {
-			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
+			__m256 loaded_a = _mm256_load_ps(&item[i]);
 			__m256 result;
 			(this->*operation)(loaded_a, _scalar, &result);
-			_mm256_storeu_ps(&item[i], result);
+			_mm256_store_ps(&item[i], result);
 		}
 
 		for (int i = alignedN; i < item.size(); i++) {
@@ -304,12 +318,12 @@ Matrix Matrix::VectorFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 
 		for (int i = 0; i < alignedN; i += 8) {
 
-			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
-			__m256 loaded_b = _mm256_loadu_ps(&scalar[i]);
+			__m256 loaded_a = _mm256_load_ps(&item[i]);
+			__m256 loaded_b = _mm256_load_ps(&scalar[i]);
 			__m256 result;
 
 			(this->*operation)(loaded_a, loaded_b, &result);
-			_mm256_storeu_ps(&item[i], result);
+			_mm256_store_ps(&item[i], result);
 		}
 
 		for (int i = alignedN; i < item.size(); i++) {
@@ -330,12 +344,12 @@ Matrix Matrix::MatrixFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 		const int alignedN = item.size() - (item.size() % 8);
 
 		for (int i = 0; i < alignedN; i += 8) {
-			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
-			__m256 loaded_b = _mm256_loadu_ps(&mat[r][i]);
+			__m256 loaded_a = _mm256_load_ps(&item[i]);
+			__m256 loaded_b = _mm256_load_ps(&mat[r][i]);
 			__m256 result;
 
 			(this->*operation)(loaded_a, loaded_b, &result);
-			_mm256_storeu_ps(&mat[r][i], result);
+			_mm256_store_ps(&mat[r][i], result);
 		}
 
 		for (int i = alignedN; i < item.size(); i++) {
