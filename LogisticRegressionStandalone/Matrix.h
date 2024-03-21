@@ -57,6 +57,9 @@ public:
 	Matrix DotProduct(Matrix element);
 
 	bool ContainsNaN();
+	bool ContainsInf();
+
+	Matrix ReplaceInf(float value);
 
 	std::string AsString();
 

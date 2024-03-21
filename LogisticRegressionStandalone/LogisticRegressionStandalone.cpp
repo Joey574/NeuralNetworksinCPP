@@ -299,9 +299,6 @@ void BackwardPropogation() {
 
 	for (int i = 0; i < weights.size(); i++) {
 		dWeights[i] = (dTotal[i].Transpose().DotProduct(i == 0 ? batch.Transpose() : activation[i - 1].Transpose()) * (1.0f / (float)batchSize)).Transpose();
-	}
-
-	for (int i = 0; i < biases.size(); i++) {
 		dBiases[i] = dTotal[i].MultiplyAndSum(1.0f / (float)batchSize);
 	}
 }
@@ -357,7 +354,8 @@ Matrix ReLU(Matrix total) {
 }
 
 Matrix SoftMax(Matrix total) {
-
+	//if (activation[1].ContainsNaN()) { cout << "Total: " << total.AsString() << endl << endl; cout << "Exp: " << total.Exp().AsString() << endl; }
+	if (activation[1].ContainsNaN()) { cout << activation[1].Transpose().AsString() << endl; }
 	return total.Exp() / total.Exp().ColumnSums();
 }
 

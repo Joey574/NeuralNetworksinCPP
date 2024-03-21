@@ -181,6 +181,32 @@ bool Matrix::ContainsNaN() {
 	return hasNan;
 }
 
+bool Matrix::ContainsInf() {
+	bool hasInf = false;
+
+	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&hasInf](auto&& item) {
+		std::for_each(std::execution::par, item.begin(), item.end(), [&hasInf](auto&& var) {
+			if (std::isinf(var)) {
+				hasInf = true;
+			}
+			});
+		});
+
+	return hasInf;
+}
+
+Matrix Matrix::ReplaceInf(float value) {
+
+	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&value](auto&& item) {
+		std::for_each(std::execution::par, item.begin(), item.end(), [&value](auto&& var) {
+			if (std::isinf(var)) {
+				var = value;
+			}
+		});
+	});
+	return matrix;
+}
+
 // Math Operations
 
 Matrix Matrix::Add(float scalar) {
