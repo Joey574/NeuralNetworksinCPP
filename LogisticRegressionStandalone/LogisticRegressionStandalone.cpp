@@ -11,11 +11,11 @@ using namespace std;
 // Hyperparameters
 int inputLayerSize = 784;
 int outputLayerSize = 10;
-vector<int> hiddenSize = {16};
+vector<int> hiddenSize = {128};
 
 float learningRate = 0.1f;
 float thresholdAccuracy = 0.25f;
-int batchSize = 10;
+int batchSize = 500;
 int iterations = 500;
 
 // Inputs
@@ -285,17 +285,6 @@ void ForwardPropogation() {
 	for (int i = 0; i < aTotal.size(); i++) {
 		aTotal[i] = (weights[i].DotProduct(i == 0 ? batch : activation[i - 1]) + biases[i]).Transpose();
 		activation[i] = i < aTotal.size() - 1 ? ReLU(aTotal[i]) : SoftMax(aTotal[i]);
-
-		if (i != 0) { cout << "Weights [" << i << "]: " << endl << weights[i].AsString() << endl; }
-		cout << "Biases [" << i << "]: " << endl;
-		for (int p = 0; p < biases[i].size(); p++) {
-			cout << biases[i][p] << " ";
-		}
-		cout << endl << endl;
-
-		cout << "aTotal [" << i << "]: " << endl << aTotal[i].AsString() << endl;
-
-		cout << "activation [" << i << "]: " << endl << activation[i].Transpose().AsString() << endl;
 	}
 }
 
@@ -365,9 +354,19 @@ Matrix ReLU(Matrix total) {
 
 Matrix SoftMax(Matrix total) {
 
+	/*vector<float> logs = total.LogSumExp();
+
+	cout << endl << "Total: " << endl << total.AsString() << endl;
+
+	cout << "LogSum: " << endl;
+	for (int i = 0; i < logs.size(); i++) {
+		cout << logs[i] << " ";
+	}
+	cout << endl << endl;*/
+
 	Matrix softmax = (total - total.LogSumExp()).Exp();
 
-	cout << "Softmax: " << endl << softmax.AsString() << endl;
+	//cout << "Softmax: " << endl << softmax.AsString() << endl;
 
 	return softmax;
 }

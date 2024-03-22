@@ -1,5 +1,7 @@
 #include "Matrix.h"
 
+#include <iostream>
+
 
 // Constructors
 
@@ -305,9 +307,8 @@ std::vector<float> Matrix::LogSumExp() {
 		std::vector<float> col = Column(c);
 
 		auto maxElement = std::max_element(col.begin(), col.end());
-		int max = *maxElement;
-
-		int sum = 0;
+		float max = *maxElement;
+		float sum = 0;
 
 		for (int i = 0; i < col.size(); i++) {
 			sum += std::exp(col[i] - c);
