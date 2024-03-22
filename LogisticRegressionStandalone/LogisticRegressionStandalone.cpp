@@ -354,15 +354,15 @@ Matrix ReLU(Matrix total) {
 
 Matrix SoftMax(Matrix total) {
 
-	/*vector<float> logs = total.LogSumExp();
+	//vector<float> logs = total.LogSumExp();
 
-	cout << endl << "Total: " << endl << total.AsString() << endl;
+	////cout << endl << "Total: " << endl << total.AsString() << endl;
 
-	cout << "LogSum: " << endl;
-	for (int i = 0; i < logs.size(); i++) {
-		cout << logs[i] << " ";
-	}
-	cout << endl << endl;*/
+	//cout << "\nLogSum: " << endl;
+	//for (int i = 0; i < logs.size(); i++) {
+	//	cout << logs[i] << " ";
+	//}
+	//cout << endl << endl;
 
 	Matrix softmax = (total - total.LogSumExp()).Exp();
 
