@@ -246,6 +246,7 @@ void TrainNetwork() {
 		}
 
 		if (batch.ContainsNaN()) { cout << "Input contains NAN" << endl; }
+		if (batch.ContainsInf()) { cout << "Input contains Inf" << endl; }
 
 		cout << "Iteration: " << i << " Accuracy: " << acc << endl;
 
@@ -257,7 +258,9 @@ void TrainNetwork() {
 
 		for (int i = 0; i < aTotal.size(); i++) {
 			if (aTotal[i].ContainsNaN()) { cout << "aTotal [" << i << "] contains NAN" << endl; }
+			if (aTotal[i].ContainsInf()) { cout << "aTotal [" << i << "] contains Inf" << endl; }
 			if (activation[i].ContainsNaN()) { cout << "activation [" << i << "] contains NAN" << endl; }
+			if (activation[i].ContainsInf()) { cout << "activation [" << i << "] contains Inf" << endl; }
 		}
 
 		tStart = std::chrono::high_resolution_clock::now();
@@ -268,13 +271,16 @@ void TrainNetwork() {
 
 		for (int i = 0; i < dTotal.size(); i++) {
 			if (dTotal[i].ContainsNaN()) { cout << "dTotal [" << i << "] contains NAN" << endl; }
+			if (dTotal[i].ContainsInf()) { cout << "dTotal [" << i << "] contains Inf" << endl; }
 			if (dWeights[i].ContainsNaN()) { cout << "dWeights [" << i << "] contains NAN" << endl; }
+			if (dWeights[i].ContainsInf()) { cout << "dWeights [" << i << "] contains Inf" << endl; }
 		}
 
 		UpdateNetwork();
 
 		for (int i = 0; i < weights.size(); i++) {
 			if (weights[i].ContainsNaN()) { cout << "weights [" << i << "] contains NAN" << endl; }
+			if (weights[i].ContainsInf()) { cout << "weights [" << i << "] contains Inf" << endl; }
 		}
 	}
 }
@@ -352,10 +358,7 @@ Matrix ReLU(Matrix total) {
 }
 
 Matrix SoftMax(Matrix total) {
-
-	Matrix softmax = (total - total.LogSumExp()).Exp();
-
-	return softmax;
+	return (total - total.LogSumExp()).Exp();
 }
 
 Matrix ReLUDerivative(Matrix total) {

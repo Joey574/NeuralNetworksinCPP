@@ -191,10 +191,11 @@ public:
 
 	std::vector<std::vector<float>> matrix;
 
+	bool transposeBuilt = false;
+
 private:
 
 	std::vector<std::vector<float>> matrixT;
-	bool transposeBuilt = false;
 
 	Matrix SingleFloatOperation(void (Matrix::* operation)(__m256 opOne, __m256 opTwo, __m256* result),
 		float (Matrix::* remainderOperation)(float a, float b), float scalar);
