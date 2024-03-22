@@ -51,6 +51,7 @@ public:
 	Matrix Pow(Matrix element);
 
 	Matrix Exp();
+	std::vector<float> LogSumExp();
 
 	Matrix Transpose();
 

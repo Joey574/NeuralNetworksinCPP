@@ -296,6 +296,28 @@ Matrix Matrix::Exp() {
 	return SingleFloatOperation(&Matrix::SIMDExp, &Matrix::RemainderExp, std::exp(1.0));
 }
 
+std::vector<float> Matrix::LogSumExp() {
+
+	std::vector<float> logSum = std::vector<float>(ColumnCount);
+
+	for (int c = 0; c < ColumnCount; c++) {
+
+		std::vector<float> col = Column(c);
+
+		auto maxElement = std::max_element(col.begin(), col.end());
+		int max = *maxElement;
+
+		int sum = 0;
+
+		for (int i = 0; i < col.size(); i++) {
+			sum += std::exp(col[i] - c);
+		}
+		logSum[c] = c + std::log(sum);
+	}
+	return logSum;
+}
+
+
 Matrix Matrix::Transpose() {
 
 	if (transposeBuilt) {

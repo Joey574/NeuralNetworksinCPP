@@ -11,11 +11,11 @@ using namespace std;
 // Hyperparameters
 int inputLayerSize = 784;
 int outputLayerSize = 10;
-vector<int> hiddenSize = {128};
+vector<int> hiddenSize = {16};
 
 float learningRate = 0.1f;
 float thresholdAccuracy = 0.25f;
-int batchSize = 500;
+int batchSize = 10;
 int iterations = 500;
 
 // Inputs
@@ -286,6 +286,17 @@ void ForwardPropogation() {
 	for (int i = 0; i < aTotal.size(); i++) {
 		aTotal[i] = (weights[i].DotProduct(i == 0 ? batch : activation[i - 1]) + biases[i]).Transpose();
 		activation[i] = i < aTotal.size() - 1 ? ReLU(aTotal[i]) : SoftMax(aTotal[i]);
+
+		if (i != 0) { cout << "Weights [" << i << "]: " << endl << weights[i].AsString() << endl; }
+		cout << "Biases [" << i << "]: " << endl;
+		for (int p = 0; p < biases[i].size(); p++) {
+			cout << biases[i][p] << " ";
+		}
+		cout << endl << endl;
+
+		cout << "aTotal [" << i << "]: " << endl << aTotal[i].AsString() << endl;
+
+		cout << "activation [" << i << "]: " << endl << activation[i].Transpose().AsString() << endl;
 	}
 }
 
@@ -354,10 +365,12 @@ Matrix ReLU(Matrix total) {
 }
 
 Matrix SoftMax(Matrix total) {
-	//if (activation[1].ContainsNaN()) { cout << "Total: " << total.AsString() << endl << endl; cout << "Exp: " << total.Exp().AsString() << endl; }
-	//if (activation[1].ContainsNaN()) { cout << activation[1].Transpose().AsString() << endl; }
 
-	return  total.Exp() / total.Exp().ColumnSums();
+	Matrix softmax = (total - total.LogSumExp()).Exp();
+
+	cout << "Softmax: " << endl << softmax.AsString() << endl;
+
+	return softmax;
 }
 
 Matrix ReLUDerivative(Matrix total) {
