@@ -355,8 +355,9 @@ Matrix ReLU(Matrix total) {
 
 Matrix SoftMax(Matrix total) {
 	//if (activation[1].ContainsNaN()) { cout << "Total: " << total.AsString() << endl << endl; cout << "Exp: " << total.Exp().AsString() << endl; }
-	if (activation[1].ContainsNaN()) { cout << activation[1].Transpose().AsString() << endl; }
-	return total.Exp() / total.Exp().ColumnSums();
+	//if (activation[1].ContainsNaN()) { cout << activation[1].Transpose().AsString() << endl; }
+
+	return  total.Exp() / total.Exp().ColumnSums();
 }
 
 Matrix ReLUDerivative(Matrix total) {

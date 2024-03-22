@@ -60,6 +60,7 @@ public:
 	bool ContainsInf();
 
 	Matrix ReplaceInf(float value);
+	Matrix ReplaceNAN(float value);
 
 	std::string AsString();
 
@@ -112,65 +113,77 @@ public:
 
 
 	Matrix operator += (float scalar) {
-		Matrix mat = Add(scalar);
+		transposeBuilt = false;
+		Matrix mat = this->Add(scalar);
 		matrix = mat.matrix;
 		return matrix;
 	}
 	Matrix operator += (std::vector<float> scalar) {
-		Matrix mat = Add(scalar);
+		transposeBuilt = false;
+		Matrix mat = this->Add(scalar);
 		matrix = mat.matrix;
 		return matrix;
 	}
 	Matrix operator += (Matrix element) {
-		Matrix mat = Add(element);
+		transposeBuilt = false;
+		Matrix mat = this->Add(element);
 		matrix = mat.matrix;
 		return matrix;
 	}
 
 	Matrix operator -= (float scalar) {
-		Matrix mat = Subtract(scalar);
+		transposeBuilt = false;
+		Matrix mat = this->Subtract(scalar);
 		matrix = mat.matrix;
 		return matrix;
 	}
 	Matrix operator -= (std::vector<float> scalar) {
-		Matrix mat = Subtract(scalar);
+		transposeBuilt = false;
+		Matrix mat = this->Subtract(scalar);
 		matrix = mat.matrix;
 		return matrix;
 	}
 	Matrix operator -= (Matrix element) {
-		Matrix mat = Subtract(element);
+		transposeBuilt = false;
+		Matrix mat = this->Subtract(element);
 		matrix = mat.matrix;
 		return matrix;
 	}
 
 	Matrix operator *= (float scalar) {
-		Matrix mat = Multiply(scalar);
+		transposeBuilt = false;
+		Matrix mat = this->Multiply(scalar);
 		matrix = mat.matrix;
 		return matrix;
 	}
 	Matrix operator *= (std::vector<float> scalar) {
-		Matrix mat = Multiply(scalar);
+		transposeBuilt = false;
+		Matrix mat = this->Multiply(scalar);
 		matrix = mat.matrix;
 		return matrix;
 	}
 	Matrix operator *= (Matrix element) {
-		Matrix mat = Multiply(element);
+		transposeBuilt = false;
+		Matrix mat = this->Multiply(element);
 		matrix = mat.matrix;
 		return matrix;
 	}
 
 	Matrix operator /= (float scalar) {
-		Matrix mat = Divide(scalar);
+		transposeBuilt = false;
+		Matrix mat = this->Divide(scalar);
 		matrix = mat.matrix;
 		return matrix;
 	}
 	Matrix operator /= (std::vector<float> scalar) {
-		Matrix mat = Divide(scalar);
+		transposeBuilt = false;
+		Matrix mat = this->Divide(scalar);
 		matrix = mat.matrix;
 		return matrix;
 	}
 	Matrix operator /= (Matrix element) {
-		Matrix mat = Divide(element);
+		transposeBuilt = false;
+		Matrix mat = this->Divide(element);
 		matrix = mat.matrix;
 		return matrix;
 	}
@@ -180,7 +193,7 @@ public:
 private:
 
 	std::vector<std::vector<float>> matrixT;
-	bool transposeBuilt;
+	bool transposeBuilt = false;
 
 	Matrix SingleFloatOperation(void (Matrix::* operation)(__m256 opOne, __m256 opTwo, __m256* result),
 		float (Matrix::* remainderOperation)(float a, float b), float scalar);

@@ -127,6 +127,10 @@ std::vector<float> Matrix::RowSums() {
 
 std::vector<float> Matrix::Column(int index) {
 
+	if (transposeBuilt) {
+		return matrixT[index];
+	}
+
 	std::vector<float> column = std::vector<float>();
 	for (int i = 0; i < RowCount; i++) {
 		column.push_back(matrix[i][index]);
@@ -196,6 +200,7 @@ bool Matrix::ContainsInf() {
 }
 
 Matrix Matrix::ReplaceInf(float value) {
+	transposeBuilt = false;
 
 	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&value](auto&& item) {
 		std::for_each(std::execution::par, item.begin(), item.end(), [&value](auto&& var) {
@@ -204,6 +209,19 @@ Matrix Matrix::ReplaceInf(float value) {
 			}
 		});
 	});
+	return matrix;
+}
+
+Matrix Matrix::ReplaceNAN(float value) {
+	transposeBuilt = false;
+
+	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&value](auto&& item) {
+		std::for_each(std::execution::par, item.begin(), item.end(), [&value](auto&& var) {
+			if (std::isnan(var)) {
+				var = value;
+			}
+			});
+		});
 	return matrix;
 }
 
@@ -280,13 +298,23 @@ Matrix Matrix::Exp() {
 
 Matrix Matrix::Transpose() {
 
-	Matrix transpose = Matrix(ColumnCount, RowCount);
+	if (transposeBuilt) {
+		return matrixT;
+	} else {
+		matrixT = std::vector<std::vector<float>>(ColumnCount);
 
-	for (int i = 0; i < RowCount; i++) {
-		transpose.SetColumn(i, matrix[i]);
+		for (int i = 0; i < ColumnCount; i++) {
+			matrixT[i] = std::vector<float>(RowCount);
+		}
+
+		for (int i = 0; i < ColumnCount; i++) {
+			matrixT[i] = this->Column(i);
+		}
+
+		transposeBuilt = true;
+
+		return matrixT;
 	}
-
-	return transpose;
 }
 
 std::string Matrix::AsString() {
@@ -305,6 +333,7 @@ std::string Matrix::AsString() {
 
 Matrix Matrix::SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), 
 	float (Matrix::* remainderOperation)(float a, float b), float scalar) {
+
 	std::vector<std::vector<float>> mat = matrix;
 	__m256 _scalar = _mm256_set1_ps(scalar);
 
@@ -362,6 +391,7 @@ Matrix Matrix::VectorFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 
 Matrix Matrix::MatrixFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), 
 	float (Matrix::* remainderOperation)(float a, float b), Matrix element) {
+
 	std::vector<std::vector<float>> mat = element.matrix;
 
 	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&](auto&& item) {
