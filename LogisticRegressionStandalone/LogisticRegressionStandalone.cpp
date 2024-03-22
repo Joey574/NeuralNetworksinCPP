@@ -41,7 +41,6 @@ Matrix YTotal;
 Matrix YBatch;
 
 // Prototypes
-
 Matrix ReLU(Matrix total);
 Matrix SoftMax(Matrix total);
 Matrix ReLUDerivative(Matrix total);
