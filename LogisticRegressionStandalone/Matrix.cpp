@@ -311,9 +311,9 @@ std::vector<float> Matrix::LogSumExp() {
 		float sum = 0;
 
 		for (int i = 0; i < col.size(); i++) {
-			sum += std::exp(col[i] - c);
+			sum += std::exp(col[i] - max);
 		}
-		logSum[c] = c + std::log(sum);
+		logSum[c] = max + std::log(sum);
 	}
 	return logSum;
 }

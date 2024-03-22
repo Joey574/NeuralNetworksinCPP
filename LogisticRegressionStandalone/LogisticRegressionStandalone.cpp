@@ -255,7 +255,6 @@ void TrainNetwork() {
 		time = tEnd - tStart;
 		cout << "Forward Propogation complete (" << time.count() << "ms)" << endl;
 
-
 		for (int i = 0; i < aTotal.size(); i++) {
 			if (aTotal[i].ContainsNaN()) { cout << "aTotal [" << i << "] contains NAN" << endl; }
 			if (activation[i].ContainsNaN()) { cout << "activation [" << i << "] contains NAN" << endl; }
@@ -354,19 +353,7 @@ Matrix ReLU(Matrix total) {
 
 Matrix SoftMax(Matrix total) {
 
-	//vector<float> logs = total.LogSumExp();
-
-	////cout << endl << "Total: " << endl << total.AsString() << endl;
-
-	//cout << "\nLogSum: " << endl;
-	//for (int i = 0; i < logs.size(); i++) {
-	//	cout << logs[i] << " ";
-	//}
-	//cout << endl << endl;
-
 	Matrix softmax = (total - total.LogSumExp()).Exp();
-
-	//cout << "Softmax: " << endl << softmax.AsString() << endl;
 
 	return softmax;
 }
