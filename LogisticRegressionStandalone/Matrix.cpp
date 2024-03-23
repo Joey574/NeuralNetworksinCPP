@@ -100,21 +100,25 @@ void Matrix::SetRow(int index, std::vector<int> vector) {
 }
 
 std::vector<float> Matrix::ColumnSums() {
+
 	std::vector<float> sums = std::vector<float>(ColumnCount);
 
-	for (int c = 0; c < ColumnCount; c++) {
+	if (transposeBuilt) {
 		for (int r = 0; r < RowCount; r++) {
-			sums[c] += matrix[r][c];
+			sums[r] = std::reduce(matrixT[r].begin(), matrixT[r].end());
 		}
+
+		return sums;
 	}
+	else {
+		for (int c = 0; c < ColumnCount; c++) {
+			for (int r = 0; r < RowCount; r++) {
+				sums[c] += matrix[r][c];
+			}
+		}
 
-	// TODO: Implement parallel sum loop
-	/*std::for_each(std::execution::par, matrix.begin(), matrix.end(), [sums, matrix](auto&& item) {
-		int index = std::distance(matrix.begin(), &item)
-		sums[index] = matrix[index].accumulate(item.begin(), item.end());
-		});*/
-
-	return sums;
+		return sums;
+	}
 }
 
 std::vector<float> Matrix::RowSums() {

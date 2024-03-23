@@ -357,10 +357,6 @@ Matrix ReLU(Matrix total) {
 	return a;
 }
 
-Matrix SoftMax(Matrix total) {
-	return (total - total.LogSumExp()).Exp();
-}
-
 Matrix ReLUDerivative(Matrix total) {
 	Matrix a = total;
 
@@ -370,4 +366,8 @@ Matrix ReLUDerivative(Matrix total) {
 		}
 	}
 	return a;
+}
+
+Matrix SoftMax(Matrix total) {
+	return (total - total.LogSumExp()).Exp();
 }
