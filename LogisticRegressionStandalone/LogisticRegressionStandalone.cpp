@@ -16,7 +16,7 @@ vector<int> hiddenSize = {128};
 float learningRate = 0.1f;
 float thresholdAccuracy = 0.25f;
 int batchSize = 500;
-int iterations = 500;
+int iterations = 100;
 
 // Inputs
 Matrix input;
@@ -231,9 +231,14 @@ void TrainNetwork() {
 
 	cout << "TRAINING STARTED" << endl;
 
+	std::chrono::steady_clock::time_point totalStart;
+	std::chrono::steady_clock::time_point totalEnd;
+
 	std::chrono::steady_clock::time_point tStart;
 	std::chrono::steady_clock::time_point tEnd;
 	std::chrono::duration<double, std::milli> time;
+
+	totalStart = std::chrono::high_resolution_clock::now();
 
 	batch = RandomizeInput(input, batchSize);
 
@@ -283,6 +288,13 @@ void TrainNetwork() {
 			if (weights[i].ContainsInf()) { cout << "weights [" << i << "] contains Inf" << endl; }
 		}
 	}
+
+	totalEnd = std::chrono::high_resolution_clock::now();
+
+	time = (totalEnd - totalStart) / 1000.00;
+
+	cout << "Total Training Time: " << time.count() << " seconds" << endl;
+
 }
 
 void ForwardPropogation() {
