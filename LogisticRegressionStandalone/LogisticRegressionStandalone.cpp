@@ -11,7 +11,7 @@ using namespace std;
 // Hyperparameters
 int inputLayerSize = 784;
 int outputLayerSize = 10;
-vector<int> hiddenSize = {128, 128, 128};
+vector<int> hiddenSize = {128};
 
 float learningRate = 0.1f;
 float thresholdAccuracy = 0.2f;
@@ -250,9 +250,6 @@ void TrainNetwork() {
 			batch = RandomizeInput(input, batchSize);
 		}
 
-		if (batch.ContainsNaN()) { cout << "Input contains NAN" << endl; }
-		if (batch.ContainsInf()) { cout << "Input contains Inf" << endl; }
-
 		cout << "Iteration: " << i << " Accuracy: " << acc << endl;
 
 		tStart = std::chrono::high_resolution_clock::now();
@@ -261,32 +258,13 @@ void TrainNetwork() {
 		time = tEnd - tStart;
 		cout << "Forward Propogation complete (" << time.count() << "ms)" << endl;
 
-		for (int i = 0; i < aTotal.size(); i++) {
-			if (aTotal[i].ContainsNaN()) { cout << "aTotal [" << i << "] contains NAN" << endl; }
-			if (aTotal[i].ContainsInf()) { cout << "aTotal [" << i << "] contains Inf" << endl; }
-			if (activation[i].ContainsNaN()) { cout << "activation [" << i << "] contains NAN" << endl; }
-			if (activation[i].ContainsInf()) { cout << "activation [" << i << "] contains Inf" << endl; }
-		}
-
 		tStart = std::chrono::high_resolution_clock::now();
 		BackwardPropogation();
 		tEnd = std::chrono::high_resolution_clock::now();
 		time = tEnd - tStart;
 		cout << "Backward Propogation complete (" << time.count() << "ms)" << endl;
 
-		for (int i = 0; i < dTotal.size(); i++) {
-			if (dTotal[i].ContainsNaN()) { cout << "dTotal [" << i << "] contains NAN" << endl; }
-			if (dTotal[i].ContainsInf()) { cout << "dTotal [" << i << "] contains Inf" << endl; }
-			if (dWeights[i].ContainsNaN()) { cout << "dWeights [" << i << "] contains NAN" << endl; }
-			if (dWeights[i].ContainsInf()) { cout << "dWeights [" << i << "] contains Inf" << endl; }
-		}
-
 		UpdateNetwork();
-
-		for (int i = 0; i < weights.size(); i++) {
-			if (weights[i].ContainsNaN()) { cout << "weights [" << i << "] contains NAN" << endl; }
-			if (weights[i].ContainsInf()) { cout << "weights [" << i << "] contains Inf" << endl; }
-		}
 	}
 
 	totalEnd = std::chrono::high_resolution_clock::now();
@@ -294,7 +272,6 @@ void TrainNetwork() {
 	time = (totalEnd - totalStart) / 1000.00;
 
 	cout << "Total Training Time: " << time.count() << " seconds" << endl;
-
 }
 
 void ForwardPropogation() {
