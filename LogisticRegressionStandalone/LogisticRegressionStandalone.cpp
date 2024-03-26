@@ -15,8 +15,8 @@ vector<int> hiddenSize = {128};
 
 float learningRate = 0.1f;
 float thresholdAccuracy = 0.25f;
-int batchSize = 500;
-int iterations = 100;
+int batchSize = 800;
+int iterations = 5000;
 
 // Inputs
 Matrix input;
@@ -120,10 +120,10 @@ void LoadInput() {
 		YTotal.SetColumn(i, y);
 	}
 
-	input = input.Divide(255);
-
 	trainingFR.close();
 	trainingLabelsFR.close();
+
+	input = input.Divide(255);
 
 	auto eTime = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> time = eTime - sTime;
