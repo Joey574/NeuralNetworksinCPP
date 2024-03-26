@@ -3,6 +3,7 @@
 #include <fstream>
 #include <functional>
 #include <unordered_set>
+#include <windows.h>
 
 #include "Matrix.h"
 
@@ -11,12 +12,12 @@ using namespace std;
 // Hyperparameters
 int inputLayerSize = 784;
 int outputLayerSize = 10;
-vector<int> hiddenSize = {128};
+vector<int> hiddenSize = {128, 128, 64};
 
-float learningRate = 0.1f;
-float thresholdAccuracy = 0.2f;
+float learningRate = 0.05f;
+float thresholdAccuracy = 0.15f;
 int batchSize = 500;
-int iterations = 5000;
+int iterations = 500;
 
 // Inputs
 Matrix input;
@@ -47,6 +48,7 @@ Matrix ReLUDerivative(Matrix total);
 void InitializeNetwork();
 void InitializeResultMatrices(int size);
 void TrainNetwork();
+void TestNetwork();
 void ForwardPropogation();
 void BackwardPropogation();
 void UpdateNetwork();
@@ -58,6 +60,8 @@ float Accuracy(vector<int> predictions, vector<int> labels);
 
 int main()
 {
+	SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
+
 	srand(time(0));
 
 	LoadInput();
@@ -65,6 +69,8 @@ int main()
 	InitializeNetwork();
 
 	TrainNetwork();
+
+	TestNetwork();
 
 	return 0;
 }
@@ -271,7 +277,7 @@ void TrainNetwork() {
 
 	time = (totalEnd - totalStart) / 1000.00;
 
-	cout << "Total Training Time: " << time.count() << " seconds" << endl;
+	cout << "Total Training Time: " << time.count() << " seconds :: " << (time.count() / 60.00) << " minutes :: " << (time.count() / 3600.00) << " hours" << endl;
 }
 
 void ForwardPropogation() {
@@ -306,6 +312,61 @@ void UpdateNetwork() {
 			biases[i][x] -= (dBiases[i][x] * learningRate);
 		}
 	}
+}
+
+void TestNetwork() {
+	string testingImages = "Testing Data\\t10k-images.idx3-ubyte";
+	string testingLabels = "Testing Data\\t10k-labels.idx1-ubyte";
+
+	ifstream testingFR = ifstream(testingImages, std::ios::binary);
+	ifstream testingLabelFR = ifstream(testingLabels, std::ios::binary);
+
+	if (testingFR.is_open() && testingLabelFR.is_open()) {
+		cout << "Loading testing data..." << endl;
+	}
+	else {
+		std::cout << "File(s) not found" << endl;
+	}
+
+	// Discard
+	int magicNum = ReadBigInt(&testingLabelFR);
+	int imageNum = ReadBigInt(&testingLabelFR);
+	magicNum = ReadBigInt(&testingFR);
+
+	// Read the important things
+	imageNum = ReadBigInt(&testingFR);
+	int width = ReadBigInt(&testingFR);
+	int height = ReadBigInt(&testingFR);
+
+	input = Matrix((width * height), imageNum);
+	inputLabels = vector<int>(imageNum);
+
+	for (int i = 0; i < imageNum; i++) {
+
+		std::vector<uint8_t> byteData((width * height));
+		testingFR.read(reinterpret_cast<char*>(byteData.data()), byteData.size());
+		std::vector<int> intData(byteData.begin(), byteData.end());
+
+		input.SetColumn(i, intData);
+
+		char byte;
+		testingLabelFR.read(&byte, 1);
+		inputLabels[i] = static_cast<int>(static_cast<unsigned char>(byte));
+	}
+	testingFR.close();
+	testingLabelFR.close();
+
+	input = input.Divide(255);
+
+	InitializeResultMatrices(input.ColumnCount);
+
+	batch = input;
+
+	ForwardPropogation();
+
+	float acc = Accuracy(GetPredictions(input.ColumnCount), inputLabels);
+
+	cout << "Final Accuracy: " << acc << endl;
 }
 
 vector<int> GetPredictions(int len) {
