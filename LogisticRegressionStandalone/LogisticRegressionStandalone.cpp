@@ -295,7 +295,7 @@ void ForwardPropogation() {
 
 void BackwardPropogation() {
 
-	dTotal[dTotal.size() - 1] -= YBatch;
+	dTotal[dTotal.size() - 1] = activation[activation.size() - 1] - YBatch;
 
 	for (int i = dTotal.size() - 2; i > -1; i--) {
 		dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * ReLUDerivative(aTotal[i]));
