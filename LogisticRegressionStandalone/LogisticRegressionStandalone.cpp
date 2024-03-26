@@ -11,11 +11,11 @@ using namespace std;
 // Hyperparameters
 int inputLayerSize = 784;
 int outputLayerSize = 10;
-vector<int> hiddenSize = {128};
+vector<int> hiddenSize = {128, 128, 128};
 
 float learningRate = 0.1f;
-float thresholdAccuracy = 0.25f;
-int batchSize = 800;
+float thresholdAccuracy = 0.2f;
+int batchSize = 500;
 int iterations = 5000;
 
 // Inputs

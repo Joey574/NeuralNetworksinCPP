@@ -135,13 +135,13 @@ std::vector<float> Matrix::Column(int index) {
 
 	if (transposeBuilt) {
 		return matrixT[index];
+	} else {
+		std::vector<float> column = std::vector<float>();
+		for (int i = 0; i < RowCount; i++) {
+			column.push_back(matrix[i][index]);
+		}
+		return column;
 	}
-
-	std::vector<float> column = std::vector<float>();
-	for (int i = 0; i < RowCount; i++) {
-		column.push_back(matrix[i][index]);
-	}
-	return column;
 }
 
 std::vector<float> Matrix::Row(int index) {
@@ -150,20 +150,25 @@ std::vector<float> Matrix::Row(int index) {
 
 std::vector<float> Matrix::MultiplyAndSum(float scalar) {
 	std::vector<std::vector<float>> mul = matrix;
-	__m256 scalarS = _mm256_set1_ps(scalar);
+	__m256 scalar_ = _mm256_set1_ps(scalar);
 
 	std::for_each(std::execution::par, matrix.begin(), matrix.end(), [&](auto&& item) {
 		size_t r = &item - matrix.data();
 		const int alignedN = item.size() - (item.size() % 8);
 		for (int i = 0; i < alignedN; i += 8) {
 			__m256 loaded_a = _mm256_loadu_ps(&item[i]);
-			__m256 result = _mm256_mul_ps(loaded_a, scalarS);
+			__m256 result = _mm256_mul_ps(loaded_a, scalar_);
 			_mm256_storeu_ps(&mul[r][i], result);
 		}
 		});
-	Matrix m = mul;
+	
+	std::vector<float> sums = std::vector<float>(mul.size());
 
-	return m.RowSums();
+	for (int r = 0; r < mul.size(); r++) {
+		sums[r] = std::reduce(mul[r].begin(), mul[r].end());
+	}
+
+	return sums;
 }
 
 Matrix Matrix::DotProduct(Matrix element) {
