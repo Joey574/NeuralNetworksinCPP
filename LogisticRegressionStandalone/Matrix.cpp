@@ -423,23 +423,21 @@ Matrix Matrix::MatrixFloatOperation(void (Matrix::* operation)(__m256 opOne, __m
 }
 
 std::vector<float> Matrix::HorizontalSum(std::vector<std::vector<float>> *element) {
-	std::vector<std::vector<float>> mat = *element;
-	std::vector<float> sums = std::vector<float>(mat.size());
+	std::vector<float> sums = std::vector<float>(element->size());
 
-	for (int r = 0; r < mat.size(); r++) {
-		sums[r] = std::reduce(mat[r].begin(), mat[r].end());
+	for (int r = 0; r < element->size(); r++) {
+		sums[r] = std::reduce(element->at(r).begin(), element->at(r).end());
 	}
-
+	
 	return sums;
 }
 
 std::vector<float> Matrix::VerticalSum(std::vector<std::vector<float>>* element) {
-	std::vector<std::vector<float>> mat = *element;
-	std::vector<float> sums = std::vector<float>(mat[0].size());
+	std::vector<float> sums = std::vector<float>(element->at(0).size());
 
-	for (int c = 0; c < mat[0].size(); c++) {
-		for (int r = 0; r < mat.size(); r++) {
-			sums[c] += mat[r][c];
+	for (int c = 0; c < element->at(0).size(); c++) {
+		for (int r = 0; r < element->size(); r++) {
+			sums[c] += element->at(r)[c];
 		}
 	}
 

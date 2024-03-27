@@ -275,9 +275,14 @@ void TrainNetwork() {
 
 	totalEnd = std::chrono::high_resolution_clock::now();
 
-	time = (totalEnd - totalStart) / 1000.00;
+	time = (totalEnd - totalStart);
+
+	float avgTime = time.count() / iterations;
+
+	time /= 1000.00;
 
 	cout << "Total Training Time: " << time.count() << " seconds :: " << (time.count() / 60.00) << " minutes :: " << (time.count() / 3600.00) << " hours" << endl;
+	cout << "Average Iteration Time: " << avgTime << " ms" << endl;
 }
 
 void ForwardPropogation() {
