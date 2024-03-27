@@ -29,6 +29,7 @@ public:
 
 	std::vector<float> ColumnSums();
 	std::vector<float> RowSums();
+	std::vector<float> RowSumsSeq();
 
 	Matrix Add(float scalar);
 	Matrix Add(std::vector<float> scalar);

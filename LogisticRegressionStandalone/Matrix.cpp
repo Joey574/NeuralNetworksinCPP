@@ -146,31 +146,47 @@ std::vector<float> Matrix::ColumnSums() {
 std::vector<float> Matrix::RowSums() {
 	std::vector<float> sums = std::vector<float>(RowCount);
 
-	const int alignedN = RowCount - (RowCount % 8);
+
+	if (RowCount > 1.5f * ColumnCount) {
+		const int alignedN = RowCount - (RowCount % 8);
+		float fSumA[8];
+
+		for (int r = 0; r < RowCount; r++) {
+
+			__m256 s = _mm256_setzero_ps();
+
+			for (int i = 0; i < alignedN; i += 8) {
+				__m256 loaded = _mm256_load_ps(&matrix[r][i]);
+				s = _mm256_add_ps(s, loaded);
+			}
+
+			_mm256_store_ps(fSumA, s);
+
+			float fSum = 0.0f;
+
+			for (int i = 0; i < 8; i++) {
+				fSum += fSumA[i];
+			}
+
+			for (int i = alignedN; i < RowCount; i++) {
+				fSum += matrix[r][i];
+			}
+
+			sums[r] = fSum;
+		}
+
+		return sums;
+	}
+	else {
+		return RowSumsSeq();
+	}
+}
+
+std::vector<float> Matrix::RowSumsSeq() {
+	std::vector<float> sums = std::vector<float>(RowCount);
 
 	for (int r = 0; r < RowCount; r++) {
-
-		__m256 s = _mm256_setzero_ps();
-
-		for (int i = 0; i < alignedN; i += 8) {
-			__m256 loaded = _mm256_load_ps(&matrix[r][i]);
-			s = _mm256_add_ps(s, loaded);
-		}
-
-		float fSumA[8];
-		_mm256_store_ps(fSumA, s);
-
-		float fSum = 0.0f;
-
-		for (int i = 0; i < 8; i++) {
-			fSum += fSumA[i];
-		}
-
-		for (int i = alignedN; i < RowCount; i++) {
-			fSum += matrix[r][i];
-		}
-
-		sums[r] = fSum;
+		sums[r] = std::reduce(matrix[r].begin(), matrix[r].end());
 	}
 
 	return sums;
@@ -217,7 +233,8 @@ Matrix Matrix::DotProduct(Matrix element) {
 	std::vector<std::vector<float>> mat = std::vector<std::vector<float>>();
 
 	for (int i = 0; i < ColumnCount; i++) {
-		mat.push_back(element.Multiply(this->Column(i)).RowSums());
+
+		mat.push_back(element.Multiply(this->Column(i)).RowSumsSeq());
 	}
 
 	return mat;
