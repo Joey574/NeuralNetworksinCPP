@@ -12,7 +12,7 @@ using namespace std;
 // Hyperparameters
 int inputLayerSize = 784;
 int outputLayerSize = 10;
-vector<int> hiddenSize = { 128, 128, 64 };
+vector<int> hiddenSize = { 128 };
 
 float learningRate = 0.05f;
 float thresholdAccuracy = 0.15f;

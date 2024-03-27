@@ -100,35 +100,15 @@ void Matrix::SetRow(int index, std::vector<int> vector) {
 }
 
 std::vector<float> Matrix::ColumnSums() {
-
-	std::vector<float> sums = std::vector<float>(ColumnCount);
-
 	if (transposeBuilt) {
-		for (int r = 0; r < RowCount; r++) {
-			sums[r] = std::reduce(matrixT[r].begin(), matrixT[r].end());
-		}
-
-		return sums;
-	}
-	else {
-		for (int c = 0; c < ColumnCount; c++) {
-			for (int r = 0; r < RowCount; r++) {
-				sums[c] += matrix[r][c];
-			}
-		}
-
-		return sums;
+		return HorizontalSum(&matrixT);
+	} else {
+		return VerticalSum(&matrix);
 	}
 }
 
 std::vector<float> Matrix::RowSums() {
-	std::vector<float> sums = std::vector<float>(RowCount);
-
-	for (int r = 0; r < RowCount; r++) {
-		sums[r] = std::reduce(matrix[r].begin(), matrix[r].end());
-	}
-
-	return sums;
+	return HorizontalSum(&matrix);
 }
 
 std::vector<float> Matrix::Column(int index) {
@@ -162,14 +142,7 @@ std::vector<float> Matrix::MultiplyAndSum(float scalar) {
 			_mm256_storeu_ps(&mul[r][i], result);
 		}
 		});
-
-	std::vector<float> sums = std::vector<float>(mul.size());
-
-	for (int r = 0; r < mul.size(); r++) {
-		sums[r] = std::reduce(mul[r].begin(), mul[r].end());
-	}
-
-	return sums;
+	return HorizontalSum(&mul);
 }
 
 Matrix Matrix::DotProduct(Matrix element) {
@@ -447,6 +420,30 @@ Matrix Matrix::MatrixFloatOperation(void (Matrix::* operation)(__m256 opOne, __m
 		}
 		});
 	return mat;
+}
+
+std::vector<float> Matrix::HorizontalSum(std::vector<std::vector<float>> *element) {
+	std::vector<std::vector<float>> mat = *element;
+	std::vector<float> sums = std::vector<float>(mat.size());
+
+	for (int r = 0; r < mat.size(); r++) {
+		sums[r] = std::reduce(mat[r].begin(), mat[r].end());
+	}
+
+	return sums;
+}
+
+std::vector<float> Matrix::VerticalSum(std::vector<std::vector<float>>* element) {
+	std::vector<std::vector<float>> mat = *element;
+	std::vector<float> sums = std::vector<float>(mat[0].size());
+
+	for (int c = 0; c < mat[0].size(); c++) {
+		for (int r = 0; r < mat.size(); r++) {
+			sums[c] += mat[r][c];
+		}
+	}
+
+	return sums;
 }
 
 // SIMD Operations
