@@ -100,18 +100,28 @@ void Matrix::SetRow(int index, std::vector<int> vector) {
 }
 
 std::vector<float> Matrix::ColumnSums() {
+
+	std::vector<float> sums = std::vector<float>(ColumnCount);
+
 	if (transposeBuilt) {
-		return HorizontalSum(&matrixT);
-	} else {
-		return VerticalSum(&matrix);
+		for (int r = 0; r < RowCount; r++) {
+			sums[r] = std::reduce(matrixT[r].begin(), matrixT[r].end());
+		}
+
+		return sums;
+	}
+	else {
+		for (int c = 0; c < ColumnCount; c++) {
+			for (int r = 0; r < RowCount; r++) {
+				sums[c] += matrix[r][c];
+			}
+		}
+
+		return sums;
 	}
 }
 
 std::vector<float> Matrix::RowSums() {
-	return HorizontalSum(&matrix);
-}
-
-std::vector<float> Matrix::RowSumsSeq() {
 	std::vector<float> sums = std::vector<float>(RowCount);
 
 	for (int r = 0; r < RowCount; r++) {
@@ -125,7 +135,8 @@ std::vector<float> Matrix::Column(int index) {
 
 	if (transposeBuilt) {
 		return matrixT[index];
-	} else {
+	}
+	else {
 		std::vector<float> column = std::vector<float>();
 		for (int i = 0; i < RowCount; i++) {
 			column.push_back(matrix[i][index]);
@@ -150,9 +161,15 @@ std::vector<float> Matrix::MultiplyAndSum(float scalar) {
 			__m256 result = _mm256_mul_ps(loaded_a, scalar_);
 			_mm256_storeu_ps(&mul[r][i], result);
 		}
-	});
-	
-	return this->RowSums();
+		});
+
+	std::vector<float> sums = std::vector<float>(mul.size());
+
+	for (int r = 0; r < mul.size(); r++) {
+		sums[r] = std::reduce(mul[r].begin(), mul[r].end());
+	}
+
+	return sums;
 }
 
 Matrix Matrix::DotProduct(Matrix element) {
@@ -160,7 +177,6 @@ Matrix Matrix::DotProduct(Matrix element) {
 	std::vector<std::vector<float>> mat = std::vector<std::vector<float>>();
 
 	for (int i = 0; i < ColumnCount; i++) {
-
 		mat.push_back(element.Multiply(this->Column(i)).RowSums());
 	}
 
@@ -175,8 +191,8 @@ bool Matrix::ContainsNaN() {
 			if (std::isnan(var)) {
 				hasNan = true;
 			}
+			});
 		});
-	});
 
 	return hasNan;
 }
@@ -203,8 +219,8 @@ Matrix Matrix::ReplaceInf(float value) {
 			if (std::isinf(var)) {
 				var = value;
 			}
+			});
 		});
-	});
 	return matrix;
 }
 
@@ -317,7 +333,8 @@ Matrix Matrix::Transpose() {
 
 	if (transposeBuilt) {
 		return matrixT;
-	} else {
+	}
+	else {
 		matrixT = std::vector<std::vector<float>>(ColumnCount);
 
 		for (int i = 0; i < ColumnCount; i++) {
@@ -348,13 +365,13 @@ std::string Matrix::AsString() {
 	return out;
 }
 
-Matrix Matrix::SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), 
+Matrix Matrix::SingleFloatOperation(void (Matrix::* operation)(__m256 opOne, __m256 opTwo, __m256* result),
 	float (Matrix::* remainderOperation)(float a, float b), float scalar) {
 
 	std::vector<std::vector<float>> mat = matrix;
 	__m256 _scalar = _mm256_set1_ps(scalar);
 
-	std::for_each(std::execution::par, mat.begin(), mat.end(), [&](auto&& item) {  
+	std::for_each(std::execution::par, mat.begin(), mat.end(), [&](auto&& item) {
 
 		const int alignedN = item.size() - (item.size() % 8);
 
@@ -368,11 +385,11 @@ Matrix Matrix::SingleFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 		for (int i = alignedN; i < item.size(); i++) {
 			item[i] = (this->*remainderOperation)(item[i], scalar);
 		}
-	});
+		});
 	return mat;
 }
 
-Matrix Matrix::VectorFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), 
+Matrix Matrix::VectorFloatOperation(void (Matrix::* operation)(__m256 opOne, __m256 opTwo, __m256* result),
 	float (Matrix::* remainderOperation)(float a, float b), std::vector<float> scalar) {
 
 	Matrix mat;
@@ -401,12 +418,12 @@ Matrix Matrix::VectorFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 		for (int i = alignedN; i < item.size(); i++) {
 			item[i] = (this->*remainderOperation)(item[i], scalar[i]);
 		}
-	});
+		});
 
 	return mat;
 }
 
-Matrix Matrix::MatrixFloatOperation(void (Matrix::*operation)(__m256 opOne, __m256 opTwo, __m256* result), 
+Matrix Matrix::MatrixFloatOperation(void (Matrix::* operation)(__m256 opOne, __m256 opTwo, __m256* result),
 	float (Matrix::* remainderOperation)(float a, float b), Matrix element) {
 
 	std::vector<std::vector<float>> mat = element.matrix;
@@ -428,63 +445,8 @@ Matrix Matrix::MatrixFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 		for (int i = alignedN; i < item.size(); i++) {
 			mat[r][i] = (this->*remainderOperation)(mat[r][i], item[i]);
 		}
-	});
+		});
 	return mat;
-}
-
-std::vector<float> Matrix::HorizontalSum(std::vector<std::vector<float>>* element) {
-
-	std::vector<std::vector<float>> mat = *element;
-	std::vector<float> sums = std::vector<float>();
-
-	if (mat[0].size() > 1.5f * mat.size()) {
-
-		const int alignedN = mat[0].size() - (mat[0].size() % 8);
-		float fSumA[8];
-
-		for (int r = 0; r < mat.size(); r++) {
-
-			__m256 s = _mm256_setzero_ps();
-
-			for (int i = 0; i < alignedN; i += 8) {
-				__m256 loaded = _mm256_load_ps(&mat[r][i]);
-				s = _mm256_add_ps(s, loaded);
-			}
-
-			_mm256_store_ps(fSumA, s);
-
-			float fSum = 0.0f;
-
-			for (int i = 0; i < 8; i++) {
-				fSum += fSumA[i];
-			}
-
-			for (int i = alignedN; i < mat[r].size(); i++) {
-				fSum += mat[r][i];
-			}
-			sums.push_back(fSum);
-		}
-	} else {
-		for (int r = 0; r < mat.size(); r++) {
-			sums.push_back(std::reduce(mat[r].begin(), mat[r].end()));
-		}
-	}
-	return sums;
-}
-
-std::vector<float> Matrix::VerticalSum(std::vector<std::vector<float>>* element) {
-
-	std::vector<std::vector<float>> mat = *element;
-	std::vector<float> sums = std::vector<float>();
-
-	for (int c = 0; c < mat[0].size(); c++) {
-		float s = 0;
-		for (int r = 0; r < mat.size(); r++) {
-			s += mat[r][c];
-		}
-		sums.push_back(s);
-	}
-	return sums;
 }
 
 // SIMD Operations
