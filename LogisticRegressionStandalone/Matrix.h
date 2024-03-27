@@ -29,7 +29,6 @@ public:
 
 	std::vector<float> ColumnSums();
 	std::vector<float> RowSums();
-	std::vector<float> RowSumsSeq();
 
 	Matrix Add(float scalar);
 	Matrix Add(std::vector<float> scalar);
@@ -57,12 +56,6 @@ public:
 	Matrix Transpose();
 
 	Matrix DotProduct(Matrix element);
-
-	bool ContainsNaN();
-	bool ContainsInf();
-
-	Matrix ReplaceInf(float value);
-	Matrix ReplaceNAN(float value);
 
 	std::string AsString();
 

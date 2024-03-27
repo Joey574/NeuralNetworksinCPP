@@ -301,10 +301,12 @@ void BackwardPropogation() {
 		dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * ReLUDerivative(aTotal[i]));
 	}
 
-	for (int i = 0; i < weights.size(); i++) {
+	std::for_each(std::execution::par, dWeights.begin(), dWeights.end(), [&](auto&& item) {
+		size_t i = &item - dWeights.data();
 		dWeights[i] = (dTotal[i].Transpose().DotProduct(i == 0 ? batch.Transpose() : activation[i - 1].Transpose()) * (1.0f / (float)batchSize)).Transpose();
 		dBiases[i] = dTotal[i].MultiplyAndSum(1.0f / (float)batchSize);
-	}
+	});
+		
 }
 
 void UpdateNetwork() {
