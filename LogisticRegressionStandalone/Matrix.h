@@ -25,8 +25,6 @@ public:
 	void SetRow(int index, std::vector<float> row);
 	void SetRow(int index, std::vector<int> row);
 
-	std::vector<float> MultiplyAndSum(float scalar);
-
 	std::vector<float> ColumnSums();
 	std::vector<float> RowSums();
 
@@ -51,13 +49,17 @@ public:
 	Matrix Pow(Matrix element);
 
 	Matrix Exp();
+	Matrix Exp(float base);
+	Matrix Exp(std::vector<float> base);
+	Matrix Exp(Matrix base);
+
 	std::vector<float> LogSumExp();
 
 	Matrix Transpose();
 
 	Matrix DotProduct(Matrix element);
 
-	std::string AsString();
+	std::string ToString();
 
 	int ColumnCount;
 	int RowCount;

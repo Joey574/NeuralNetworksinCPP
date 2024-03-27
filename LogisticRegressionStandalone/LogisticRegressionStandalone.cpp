@@ -12,12 +12,12 @@ using namespace std;
 // Hyperparameters
 int inputLayerSize = 784;
 int outputLayerSize = 10;
-vector<int> hiddenSize = { 128, 128, 64 };
+vector<int> hiddenSize = { 128 };
 
 float learningRate = 0.05f;
 float thresholdAccuracy = 0.15f;
 int batchSize = 500;
-int iterations = 800;
+int iterations = 500;
 
 // Inputs
 Matrix input;
@@ -57,6 +57,7 @@ int ReadBigInt(ifstream* fr);
 Matrix RandomizeInput(Matrix totalInput, int size);
 vector<int> GetPredictions(int len);
 float Accuracy(vector<int> predictions, vector<int> labels);
+void SaveNetwork();
 
 int main()
 {
@@ -71,6 +72,8 @@ int main()
 	TrainNetwork();
 
 	TestNetwork();
+
+	SaveNetwork();
 
 	return 0;
 }
@@ -186,7 +189,7 @@ void InitializeNetwork() {
 
 	double fileSize = floatSize + commas + newLines;
 
-	cout << "Predicted size of file: " << (fileSize / 1000000) << "mb" << endl;
+	cout << "Predicted size of file: " << (fileSize / 1000000) * 1.92f << "mb" << endl;
 
 	InitializeResultMatrices(batchSize);
 
@@ -304,7 +307,7 @@ void BackwardPropogation() {
 	std::for_each(std::execution::par, dWeights.begin(), dWeights.end(), [&](auto&& item) {
 		size_t i = &item - dWeights.data();
 		dWeights[i] = (dTotal[i].Transpose().DotProduct(i == 0 ? batch.Transpose() : activation[i - 1].Transpose()) * (1.0f / (float)batchSize)).Transpose();
-		dBiases[i] = dTotal[i].MultiplyAndSum(1.0f / (float)batchSize);
+		dBiases[i] = dTotal[i].Multiply(1.0f / (float)batchSize).RowSums();
 	});
 		
 }
@@ -427,4 +430,30 @@ Matrix ReLUDerivative(Matrix total) {
 
 Matrix SoftMax(Matrix total) {
 	return (total - total.LogSumExp()).Exp();
+}
+
+void SaveNetwork() {
+	ofstream fw = ofstream("Network.txt");
+
+	for (int i = 0; i < weights.size(); i++) {
+		fw << "$";
+		for (int r = 0; r < weights[i].RowCount; r++) {
+			for (int c = 0; c < weights[i].ColumnCount; c++) {
+				fw << weights[i][r][c];
+				c == weights[i].ColumnCount - 1 ? fw << "\n" : fw << ",";
+			}
+		}
+	}
+
+	for (int i = 0; i < biases.size(); i++) {
+		fw << "#";
+		for (int x = 0; x < biases[i].size(); x++) {
+			fw << biases[i][x];
+			x == biases[i].size() - 1 ? fw << "\n" : fw << ",";
+		}
+	}
+
+	cout << "NETWORK SAVED" << endl;
+
+	fw.close();
 }

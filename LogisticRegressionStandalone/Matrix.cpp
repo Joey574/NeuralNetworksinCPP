@@ -130,20 +130,7 @@ std::vector<float> Matrix::Row(int index) {
 	return matrix[index];
 }
 
-std::vector<float> Matrix::MultiplyAndSum(float scalar) {
-	std::vector<std::vector<float>> mul = matrix;
-	__m256 scalar_ = _mm256_set1_ps(scalar);
-
-	for (int r = 0; r < matrix.size(); r++) {
-		const int alignedN = matrix[r].size() - (matrix[r].size() % 8);
-		for (int i = 0; i < alignedN; i += 8) {
-			__m256 loaded_a = _mm256_loadu_ps(&matrix[r][i]);
-			__m256 result = _mm256_mul_ps(loaded_a, scalar_);
-			_mm256_storeu_ps(&mul[r][i], result);
-		}
-	}
-	return HorizontalSum(&mul);
-}
+// Math Operations
 
 Matrix Matrix::DotProduct(Matrix element) {
 
@@ -156,7 +143,6 @@ Matrix Matrix::DotProduct(Matrix element) {
 	return mat;
 }
 
-// Math Operations
 
 Matrix Matrix::Add(float scalar) {
 	return SingleFloatOperation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, scalar);
@@ -227,6 +213,19 @@ Matrix Matrix::Exp() {
 	return SingleFloatOperation(&Matrix::SIMDExp, &Matrix::RemainderExp, std::exp(1.0));
 }
 
+Matrix Matrix::Exp(float base) {
+	return SingleFloatOperation(&Matrix::SIMDExp, &Matrix::RemainderExp, base);
+}
+
+Matrix Matrix::Exp(std::vector<float> base) {
+	return VectorFloatOperation(&Matrix::SIMDExp, &Matrix::RemainderExp, base);
+}
+
+Matrix Matrix::Exp(Matrix base) {
+	return MatrixFloatOperation(&Matrix::SIMDExp, &Matrix::RemainderExp, base);
+}
+
+
 std::vector<float> Matrix::LogSumExp() {
 
 	std::vector<float> logSum = std::vector<float>(ColumnCount);
@@ -245,43 +244,6 @@ std::vector<float> Matrix::LogSumExp() {
 		logSum[c] = max + std::log(sum);
 	}
 	return logSum;
-}
-
-
-Matrix Matrix::Transpose() {
-
-	if (transposeBuilt) {
-		return matrixT;
-	}
-	else {
-		matrixT = std::vector<std::vector<float>>(ColumnCount);
-
-		for (int i = 0; i < ColumnCount; i++) {
-			matrixT[i] = std::vector<float>(RowCount);
-		}
-
-		for (int i = 0; i < ColumnCount; i++) {
-			matrixT[i] = this->Column(i);
-		}
-
-		transposeBuilt = true;
-
-		return matrixT;
-	}
-}
-
-std::string Matrix::AsString() {
-	std::string out = "";
-
-	for (int r = 0; r < RowCount; r++) {
-		for (int c = 0; c < ColumnCount; c++) {
-			out += std::to_string(matrix[r][c]) + " ";
-		}
-		out += " :: " + std::to_string(this->RowSums()[r]);
-		out += "\n";
-	}
-
-	return out;
 }
 
 
@@ -422,4 +384,42 @@ float Matrix::RemainderPow(float a, float b) {
 }
 float Matrix::RemainderExp(float a, float b) {
 	return std::pow(b, a);
+}
+
+// MISC
+
+std::string Matrix::ToString() {
+	std::string out = "";
+
+	for (int r = 0; r < RowCount; r++) {
+		for (int c = 0; c < ColumnCount; c++) {
+			out += std::to_string(matrix[r][c]) + " ";
+		}
+		out += " :: " + std::to_string(this->RowSums()[r]);
+		out += "\n";
+	}
+
+	return out;
+}
+
+Matrix Matrix::Transpose() {
+
+	if (transposeBuilt) {
+		return matrixT;
+	}
+	else {
+		matrixT = std::vector<std::vector<float>>(ColumnCount);
+
+		for (int i = 0; i < ColumnCount; i++) {
+			matrixT[i] = std::vector<float>(RowCount);
+		}
+
+		for (int i = 0; i < ColumnCount; i++) {
+			matrixT[i] = this->Column(i);
+		}
+
+		transposeBuilt = true;
+
+		return matrixT;
+	}
 }
