@@ -104,8 +104,31 @@ std::vector<float> Matrix::ColumnSums() {
 	std::vector<float> sums = std::vector<float>(ColumnCount);
 
 	if (transposeBuilt) {
+		const int alignedN = RowCount - (RowCount % 8);
+
 		for (int r = 0; r < RowCount; r++) {
-			sums[r] = std::reduce(matrixT[r].begin(), matrixT[r].end());
+
+			__m256 s = _mm256_setzero_ps();
+
+			for (int i = 0; i < alignedN; i += 8) {
+				__m256 loaded = _mm256_load_ps(&matrix[r][i]);
+				s = _mm256_add_ps(s, loaded);
+			}
+
+			float fSumA[8];
+			_mm256_store_ps(fSumA, s);
+
+			float fSum = 0.0f;
+
+			for (int i = 0; i < 8; i++) {
+				fSum += fSumA[i];
+			}
+
+			for (int i = alignedN; i < RowCount; i++) {
+				fSum += matrix[r][i];
+			}
+
+			sums[r] = fSum;
 		}
 
 		return sums;
@@ -116,7 +139,6 @@ std::vector<float> Matrix::ColumnSums() {
 				sums[c] += matrix[r][c];
 			}
 		}
-
 		return sums;
 	}
 }
@@ -124,8 +146,31 @@ std::vector<float> Matrix::ColumnSums() {
 std::vector<float> Matrix::RowSums() {
 	std::vector<float> sums = std::vector<float>(RowCount);
 
+	const int alignedN = RowCount - (RowCount % 8);
+
 	for (int r = 0; r < RowCount; r++) {
-		sums[r] = std::reduce(matrix[r].begin(), matrix[r].end());
+
+		__m256 s = _mm256_setzero_ps();
+
+		for (int i = 0; i < alignedN; i += 8) {
+			__m256 loaded = _mm256_load_ps(&matrix[r][i]);
+			s = _mm256_add_ps(s, loaded);
+		}
+
+		float fSumA[8];
+		_mm256_store_ps(fSumA, s);
+
+		float fSum = 0.0f;
+
+		for (int i = 0; i < 8; i++) {
+			fSum += fSumA[i];
+		}
+
+		for (int i = alignedN; i < RowCount; i++) {
+			fSum += matrix[r][i];
+		}
+
+		sums[r] = fSum;
 	}
 
 	return sums;
@@ -160,13 +205,9 @@ std::vector<float> Matrix::MultiplyAndSum(float scalar) {
 			__m256 result = _mm256_mul_ps(loaded_a, scalar_);
 			_mm256_storeu_ps(&mul[r][i], result);
 		}
-		});
+	});
 	
-	std::vector<float> sums = std::vector<float>(mul.size());
-
-	for (int r = 0; r < mul.size(); r++) {
-		sums[r] = std::reduce(mul[r].begin(), mul[r].end());
-	}
+	std::vector<float> sums = this->RowSums();
 
 	return sums;
 }
