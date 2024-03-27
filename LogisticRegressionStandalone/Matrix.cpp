@@ -101,14 +101,14 @@ void Matrix::SetRow(int index, std::vector<int> vector) {
 
 std::vector<float> Matrix::ColumnSums() {
 	if (transposeBuilt) {
-		return RSum(&matrixT);
+		return HorizontalSum(&matrixT);
 	} else {
-		return CSum(&matrix);
+		return VerticalSum(&matrix);
 	}
 }
 
 std::vector<float> Matrix::RowSums() {
-	return RSum(&matrix);
+	return HorizontalSum(&matrix);
 }
 
 std::vector<float> Matrix::RowSumsSeq() {
@@ -161,7 +161,7 @@ Matrix Matrix::DotProduct(Matrix element) {
 
 	for (int i = 0; i < ColumnCount; i++) {
 
-		mat.push_back(element.Multiply(this->Column(i)).RowSumsSeq());
+		mat.push_back(element.Multiply(this->Column(i)).RowSums());
 	}
 
 	return mat;
@@ -432,10 +432,10 @@ Matrix Matrix::MatrixFloatOperation(void (Matrix::*operation)(__m256 opOne, __m2
 	return mat;
 }
 
-std::vector<float> Matrix::RSum(std::vector<std::vector<float>>* element) {
+std::vector<float> Matrix::HorizontalSum(std::vector<std::vector<float>>* element) {
 
 	std::vector<std::vector<float>> mat = *element;
-	std::vector<float> sums = std::vector<float>(mat.size());
+	std::vector<float> sums = std::vector<float>();
 
 	if (mat[0].size() > 1.5f * mat.size()) {
 
@@ -462,27 +462,27 @@ std::vector<float> Matrix::RSum(std::vector<std::vector<float>>* element) {
 			for (int i = alignedN; i < mat[r].size(); i++) {
 				fSum += mat[r][i];
 			}
-
-			sums[r] = fSum;
+			sums.push_back(fSum);
 		}
-
 	} else {
 		for (int r = 0; r < mat.size(); r++) {
-			sums[r] = std::reduce(mat[r].begin(), mat[r].end());
+			sums.push_back(std::reduce(mat[r].begin(), mat[r].end()));
 		}
 	}
 	return sums;
 }
 
-std::vector<float> Matrix::CSum(std::vector<std::vector<float>>* element) {
+std::vector<float> Matrix::VerticalSum(std::vector<std::vector<float>>* element) {
 
 	std::vector<std::vector<float>> mat = *element;
-	std::vector<float> sums = std::vector<float>(mat[0].size());
+	std::vector<float> sums = std::vector<float>();
 
 	for (int c = 0; c < mat[0].size(); c++) {
+		float s = 0;
 		for (int r = 0; r < mat.size(); r++) {
-			sums[c] += mat[r][c];
+			s += mat[r][c];
 		}
+		sums.push_back(s);
 	}
 	return sums;
 }

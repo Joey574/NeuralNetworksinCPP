@@ -205,8 +205,8 @@ private:
 	Matrix MatrixFloatOperation(void (Matrix::* operation)(__m256 opOne, __m256 opTwo, __m256* result),
 		float (Matrix::* remainderOperation)(float a, float b), Matrix element);
 
-	std::vector<float> RSum(std::vector<std::vector<float>>* element);
-	std::vector<float> CSum(std::vector<std::vector<float>>* element);
+	std::vector<float> HorizontalSum(std::vector<std::vector<float>>* element);
+	std::vector<float> VerticalSum(std::vector<std::vector<float>>* element);
 
 	void SIMDAdd(__m256 opOne, __m256 opTwo, __m256* result);
 	void SIMDSub(__m256 opOne, __m256 opTwo, __m256* result);
