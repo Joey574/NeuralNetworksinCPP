@@ -17,7 +17,7 @@ vector<int> hiddenSize = { 128 };
 float learningRate = 0.05f;
 float thresholdAccuracy = 0.15f;
 int batchSize = 500;
-int iterations = 500;
+int iterations = 20;
 
 // Inputs
 Matrix input;
@@ -179,17 +179,20 @@ void InitializeNetwork() {
 
 	cout << "Total connections: " << connections << endl;
 
-	double floatSize = (sizeof(float)) * connections;
-	double commas = connections - 1;
-	double newLines = 0;
+	double floatSize = (8) * (connections);
 
+	double newLines = 0;
 	for (int i = 0; i < weights.size(); i++) {
 		newLines += weights[i].RowCount;
 	}
+	newLines += biases.size();
 
-	double fileSize = floatSize + commas + newLines;
-
-	cout << "Predicted size of file: " << (fileSize / 1000000) * 1.92f << "mb" << endl;
+	double commas = connections - newLines;
+	double symbols = weights.size() + biases.size();
+	double fileSizeLow = floatSize + commas + newLines + symbols;
+	double fileSizeHigh = (2 * floatSize) + commas + newLines + symbols;
+	// 1048576
+	cout << "Predicted size of file: " << (fileSizeLow / 1000000.00) << " - " << (fileSizeHigh / 1000000.00) << "mb" << endl;
 
 	InitializeResultMatrices(batchSize);
 
