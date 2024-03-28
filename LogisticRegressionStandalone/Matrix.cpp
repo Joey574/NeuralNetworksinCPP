@@ -84,7 +84,7 @@ void Matrix::SetColumn(int index, std::vector<int> vector) {
 }
 
 void Matrix::SetRow(int index, std::vector<float> vector) {
-	for (int i = 0; i < RowCount; i++) {
+	for (int i = 0; i < ColumnCount; i++) {
 		matrix[index][i] = vector[i];
 	}
 
@@ -92,7 +92,7 @@ void Matrix::SetRow(int index, std::vector<float> vector) {
 }
 
 void Matrix::SetRow(int index, std::vector<int> vector) {
-	for (int i = 0; i < RowCount; i++) {
+	for (int i = 0; i < ColumnCount; i++) {
 		matrix[index][i] = vector[i];
 	}
 

@@ -15,9 +15,14 @@ int outputLayerSize = 10;
 vector<int> hiddenSize = { 128 };
 
 float learningRate = 0.05f;
-float thresholdAccuracy = 0.15f;
+float thresholdAccuracy = 0.2f;
 int batchSize = 500;
-int iterations = 2000;
+int iterations = 25;
+
+// Save / Load
+bool SaveOnComplete = true;
+bool LoadOnInit = false;
+string NetworkPath = "Network.txt";
 
 // Inputs
 Matrix input;
@@ -57,24 +62,28 @@ int ReadBigInt(ifstream* fr);
 Matrix RandomizeInput(Matrix totalInput, int size);
 vector<int> GetPredictions(int len);
 float Accuracy(vector<int> predictions, vector<int> labels);
-void SaveNetwork();
-void LoadNetwork();
+void SaveNetwork(string filename);
+void LoadNetwork(string filename);
 
 int main()
 {
-	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+	SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
 
 	srand(time(0));
 
 	LoadInput();
 
-	InitializeNetwork();
+	if (LoadOnInit) {
+		LoadNetwork(NetworkPath);
+	} else {
+		InitializeNetwork();
+	}
 
 	TrainNetwork();
 
 	TestNetwork();
 
-	SaveNetwork();
+	if (SaveOnComplete) { SaveNetwork(NetworkPath); }
 
 	return 0;
 }
@@ -180,20 +189,10 @@ void InitializeNetwork() {
 
 	cout << "Total connections: " << connections << endl;
 
-	double floatSize = (8) * (connections);
+	double fileSize = ((sizeof(float)) * (connections)) + ((sizeof(int) * hiddenSize.size() + 1));
 
-	double newLines = 0;
-	for (int i = 0; i < weights.size(); i++) {
-		newLines += weights[i].RowCount;
-	}
-	newLines += biases.size();
-
-	double commas = connections - newLines;
-	double symbols = weights.size() + biases.size();
-	double fileSizeLow = floatSize + commas + newLines + symbols;
-	double fileSizeHigh = (2 * floatSize) + commas + newLines + symbols;
 	// 1048576
-	cout << "Predicted size of file: " << (fileSizeLow / 1000000.00) << " - " << (fileSizeHigh / 1000000.00) << "mb" << endl;
+	cout << "Predicted size of file: " << (fileSize / 1000000.00) << "mb" << endl;
 
 	InitializeResultMatrices(batchSize);
 
@@ -254,6 +253,7 @@ void TrainNetwork() {
 	totalStart = std::chrono::high_resolution_clock::now();
 
 	batch = RandomizeInput(input, batchSize);
+	ForwardPropogation();
 
 	for (int i = 0; i < iterations; i++) {
 
@@ -436,25 +436,27 @@ Matrix SoftMax(Matrix total) {
 	return (total - total.LogSumExp()).Exp();
 }
 
-void SaveNetwork() {
-	ofstream fw = ofstream("Network.txt");
+void SaveNetwork(string filename) {
+	ofstream fw = ofstream(filename, ios::out | ios::binary);
+
+	int s = weights.size() - 1;
+	fw.write(reinterpret_cast<const char*>(&s), sizeof(int));
+
+	vector<int> dimensions = vector<int>(weights.size() - 1);
+	for (int i = 0; i < dimensions.size(); i++) {
+		dimensions[i] = weights[i].ColumnCount;
+	}
+
+	fw.write(reinterpret_cast<const char*>(dimensions.data()), dimensions.size() * sizeof(int));
 
 	for (int i = 0; i < weights.size(); i++) {
-		fw << "$";
 		for (int r = 0; r < weights[i].RowCount; r++) {
-			for (int c = 0; c < weights[i].ColumnCount; c++) {
-				fw << weights[i][r][c];
-				c == weights[i].ColumnCount - 1 ? fw << "\n" : fw << ",";
-			}
+			fw.write(reinterpret_cast<const char*>(weights[i].Row(r).data()), weights[i].Row(r).size() * sizeof(float));
 		}
 	}
 
 	for (int i = 0; i < biases.size(); i++) {
-		fw << "#";
-		for (int x = 0; x < biases[i].size(); x++) {
-			fw << biases[i][x];
-			x == biases[i].size() - 1 ? fw << "\n" : fw << ",";
-		}
+		fw.write(reinterpret_cast<const char*>(biases[i].data()), biases[i].size() * sizeof(float));
 	}
 
 	cout << "NETWORK SAVED" << endl;
@@ -462,6 +464,43 @@ void SaveNetwork() {
 	fw.close();
 }
 
-void LoadNetwork() {
+void LoadNetwork(string filename) {
+	ifstream fr = ifstream(filename, ios::in | ios::binary);
 
+	if (fr.is_open()) {
+		cout << "Loading Network..." << endl;
+	} else {
+		cout << "Network not found..." << endl;
+	}
+
+	int s;
+	fr.read(reinterpret_cast<char*>(&s), sizeof(int));
+
+	vector<int> dimensions = vector<int>(s);
+	fr.read(reinterpret_cast<char*>(dimensions.data()), s * sizeof(int));
+
+	hiddenSize = vector<int>(dimensions.size());
+
+	for (int i = 0; i < dimensions.size(); i++) {
+		hiddenSize[i] = dimensions[i];
+	}
+
+	InitializeNetwork();
+
+	for (int i = 0; i < weights.size(); i++) {
+		for (int r = 0; r < weights[i].RowCount; r++) {
+			vector<float> row = vector<float>(weights[i].ColumnCount);
+			fr.read(reinterpret_cast<char*>(row.data()), row.size() * sizeof(float));
+
+			weights[i].SetRow(r, row);
+		}
+	}
+
+	for (int i = 0; i < biases.size(); i++) {
+		fr.read(reinterpret_cast<char*>(biases[i].data()), biases[i].size() * sizeof(float));
+	}
+
+	fr.close();
+
+	cout << "NETWORK LOADED" << endl;
 }
