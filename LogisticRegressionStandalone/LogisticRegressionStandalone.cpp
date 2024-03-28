@@ -17,7 +17,7 @@ vector<int> hiddenSize = { 128 };
 float learningRate = 0.05f;
 float thresholdAccuracy = 0.15f;
 int batchSize = 500;
-int iterations = 20;
+int iterations = 2000;
 
 // Inputs
 Matrix input;
@@ -58,10 +58,11 @@ Matrix RandomizeInput(Matrix totalInput, int size);
 vector<int> GetPredictions(int len);
 float Accuracy(vector<int> predictions, vector<int> labels);
 void SaveNetwork();
+void LoadNetwork();
 
 int main()
 {
-	SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
+	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 
 	srand(time(0));
 
@@ -459,4 +460,8 @@ void SaveNetwork() {
 	cout << "NETWORK SAVED" << endl;
 
 	fw.close();
+}
+
+void LoadNetwork() {
+
 }
