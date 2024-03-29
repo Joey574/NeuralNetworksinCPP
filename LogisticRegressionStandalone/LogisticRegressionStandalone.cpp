@@ -20,7 +20,7 @@ int batchSize = 500;
 int iterations = 25;
 
 // Save / Load
-bool SaveOnComplete = true;
+bool SaveOnComplete = false;
 bool LoadOnInit = false;
 string NetworkPath = "Network.txt";
 
@@ -253,18 +253,8 @@ void TrainNetwork() {
 	totalStart = std::chrono::high_resolution_clock::now();
 
 	batch = RandomizeInput(input, batchSize);
-	ForwardPropogation();
 
 	for (int i = 0; i < iterations; i++) {
-
-		float acc = Accuracy(GetPredictions(batchSize), batchLabels);
-
-		if (acc > thresholdAccuracy) {
-			batch = RandomizeInput(input, batchSize);
-		}
-
-		cout << "Iteration: " << i << " Accuracy: " << acc << endl;
-
 		tStart = std::chrono::high_resolution_clock::now();
 		ForwardPropogation();
 		tEnd = std::chrono::high_resolution_clock::now();
@@ -278,6 +268,14 @@ void TrainNetwork() {
 		cout << "Backward Propogation complete (" << time.count() << "ms)" << endl;
 
 		UpdateNetwork();
+
+		float acc = Accuracy(GetPredictions(batchSize), batchLabels);
+
+		if (acc > thresholdAccuracy) {
+			batch = RandomizeInput(input, batchSize);
+		}
+
+		cout << "Iteration: " << i << " Accuracy: " << acc << endl;
 	}
 
 	totalEnd = std::chrono::high_resolution_clock::now();
