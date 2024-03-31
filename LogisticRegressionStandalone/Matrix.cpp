@@ -1,8 +1,5 @@
 #include "Matrix.h"
 
-#include <iostream>
-
-
 // Constructors
 
 Matrix::Matrix() {
@@ -99,17 +96,50 @@ void Matrix::SetRow(int index, std::vector<int> vector) {
 	transposeBuilt = false;
 }
 
+void Matrix::Insert(int startRow, Matrix element) {
+	for (int i = 0; i < element.RowCount; i++) {
+		this->SetRow(i + startRow, element.Row(i));
+	}
+}
+
+Matrix Matrix::Segment(int startRow, int endRow) {
+	Matrix a = Matrix(endRow - startRow, ColumnCount);
+
+	for (int i = 0; i < a.RowCount; i++) {
+		a.SetRow(i, this->Row(i + startRow));
+	}
+
+	return a;
+}
+
+Matrix Matrix::Segment(int startRow) {
+	Matrix a = Matrix(RowCount - startRow, ColumnCount);
+
+	for (int i = 0; i < a.RowCount; i++) {
+		a.SetRow(i, this->Row(i + startRow));
+	}
+
+	return a;
+}
+
+
 std::vector<float> Matrix::ColumnSums() {
 	if (transposeBuilt) {
-		return HorizontalSum(&matrixT);
+		return HorizontalSum(matrixT);
 	}
 	else {
-		return VerticalSum(&matrix);
+		return VerticalSum(matrix);
 	}
 }
 
 std::vector<float> Matrix::RowSums() {
-	return HorizontalSum(&matrix);
+	std::vector<float> sums = std::vector<float>(matrix.size());
+
+	for (int r = 0; r < matrix.size(); r++) {
+		sums[r] = std::reduce(matrix[r].begin(), matrix[r].end());
+	}
+
+	return sums;
 }
 
 std::vector<float> Matrix::Column(int index) {
@@ -324,22 +354,22 @@ Matrix Matrix::MatrixFloatOperation(void (Matrix::* operation)(__m256 opOne, __m
 }
 
 
-std::vector<float> Matrix::HorizontalSum(std::vector<std::vector<float>>* element) {
-	std::vector<float> sums = std::vector<float>(element->size());
+std::vector<float> Matrix::HorizontalSum(std::vector<std::vector<float>> element) {
+	std::vector<float> sums = std::vector<float>(element.size());
 
-	for (int r = 0; r < element->size(); r++) {
-		sums[r] = std::reduce(element->at(r).begin(), element->at(r).end());
+	for (int r = 0; r < element.size(); r++) {
+		sums[r] = std::reduce(element[r].begin(), element[r].end());
 	}
 
 	return sums;
 }
 
-std::vector<float> Matrix::VerticalSum(std::vector<std::vector<float>>* element) {
-	std::vector<float> sums = std::vector<float>(element->at(0).size());
+std::vector<float> Matrix::VerticalSum(std::vector<std::vector<float>> element) {
+	std::vector<float> sums = std::vector<float>(element[0].size());
 
-	for (int c = 0; c < element->at(0).size(); c++) {
-		for (int r = 0; r < element->size(); r++) {
-			sums[c] += element->at(r)[c];
+	for (int c = 0; c < element[0].size(); c++) {
+		for (int r = 0; r < element.size(); r++) {
+			sums[c] += element[r][c];
 		}
 	}
 
@@ -423,3 +453,19 @@ Matrix Matrix::Transpose() {
 		return matrixT;
 	}
 }
+
+Matrix Matrix::Combine(Matrix element) {
+
+	Matrix combine = Matrix(RowCount + element.RowCount, ColumnCount);
+
+	for (int i = 0; i < element.RowCount; i++) {
+		combine.SetRow(i, element.Row(i));
+	}
+
+	for (int i = 0; i < RowCount; i++) {
+		combine.SetRow(i + element.RowCount, this->Row(i));
+	}
+
+	return combine;
+}
+

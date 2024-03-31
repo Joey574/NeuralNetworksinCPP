@@ -25,6 +25,11 @@ public:
 	void SetRow(int index, std::vector<float> row);
 	void SetRow(int index, std::vector<int> row);
 
+	void Insert(int startRow, Matrix element);
+
+	Matrix Segment(int startRow, int endRow);
+	Matrix Segment(int startRow);
+
 	std::vector<float> ColumnSums();
 	std::vector<float> RowSums();
 
@@ -56,6 +61,7 @@ public:
 	std::vector<float> LogSumExp();
 
 	Matrix Transpose();
+	Matrix Combine(Matrix element);
 
 	Matrix DotProduct(Matrix element);
 
@@ -200,8 +206,8 @@ private:
 	Matrix MatrixFloatOperation(void (Matrix::* operation)(__m256 opOne, __m256 opTwo, __m256* result),
 		float (Matrix::* remainderOperation)(float a, float b), Matrix element);
 
-	std::vector<float> HorizontalSum(std::vector<std::vector<float>> *element);
-	std::vector<float> VerticalSum(std::vector<std::vector<float>> *element);
+	std::vector<float> HorizontalSum(std::vector<std::vector<float>> element);
+	std::vector<float> VerticalSum(std::vector<std::vector<float>> element);
 
 	void SIMDAdd(__m256 opOne, __m256 opTwo, __m256* result);
 	void SIMDSub(__m256 opOne, __m256 opTwo, __m256* result);

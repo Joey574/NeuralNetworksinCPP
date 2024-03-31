@@ -138,10 +138,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ActivationFunctions.cpp" />
     <ClCompile Include="LogisticRegressionStandalone.cpp" />
     <ClCompile Include="Matrix.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ActivationFunctions.h" />
     <ClInclude Include="Matrix.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

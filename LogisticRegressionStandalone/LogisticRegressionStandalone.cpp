@@ -4,20 +4,23 @@
 #include <functional>
 #include <unordered_set>
 #include <windows.h>
+#include <thread>
 
 #include "Matrix.h"
+#include "ActivationFunctions.h"
 
 using namespace std;
 
 // Hyperparameters
 int inputLayerSize = 784;
 int outputLayerSize = 10;
-vector<int> hiddenSize = { 128 };
+vector<int> hiddenSize = { 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30 };
+vector<bool> resNet = { 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0 };
 
 float learningRate = 0.05f;
 float thresholdAccuracy = 0.2f;
 int batchSize = 500;
-int iterations = 25;
+int iterations = 25000;
 
 // Save / Load
 bool SaveOnComplete = false;
@@ -47,9 +50,7 @@ Matrix YTotal;
 Matrix YBatch;
 
 // Prototypes
-Matrix ReLU(Matrix total);
-Matrix SoftMax(Matrix total);
-Matrix ReLUDerivative(Matrix total);
+
 void InitializeNetwork();
 void InitializeResultMatrices(int size);
 void TrainNetwork();
@@ -175,7 +176,11 @@ void InitializeNetwork() {
 	dBiases = vector<vector<float>>(biases.size());
 
 	for (int i = 0; i < weights.size(); i++) {
-		weights[i] = Matrix(i == 0 ? inputLayerSize : hiddenSize[i - 1], i == weights.size() - 1 ? outputLayerSize : hiddenSize[i], -0.5f, 0.5f);
+		if (i != 0 && resNet[i - 1]) {
+			weights[i] = Matrix(i == 0 ? inputLayerSize + inputLayerSize : hiddenSize[i - 1] + inputLayerSize, i == weights.size() - 1 ? outputLayerSize : hiddenSize[i], -0.5f, 0.5f);
+		} else {
+			weights[i] = Matrix(i == 0 ? inputLayerSize : hiddenSize[i - 1], i == weights.size() - 1 ? outputLayerSize : hiddenSize[i], -0.5f, 0.5f);
+		}
 		cout << "Weights[" << i << "] connections: " << (weights[i].ColumnCount * weights[i].RowCount) << endl;
 		connections += weights[i].ColumnCount * weights[i].RowCount;
 
@@ -191,7 +196,6 @@ void InitializeNetwork() {
 
 	double fileSize = ((sizeof(float)) * (connections)) + ((sizeof(int) * hiddenSize.size() + 1));
 
-	// 1048576
 	cout << "Predicted size of file: " << (fileSize / 1000000.00) << "mb" << endl;
 
 	InitializeResultMatrices(batchSize);
@@ -207,7 +211,11 @@ void InitializeResultMatrices(int size) {
 	dTotal = vector<Matrix>(aTotal.size());
 
 	for (int i = 0; i < aTotal.size(); i++) {
-		aTotal[i] = Matrix(weights[i].ColumnCount, size);
+		if (resNet[i]) {
+			aTotal[i] = Matrix(weights[i].ColumnCount + inputLayerSize, size);
+		} else {
+			aTotal[i] = Matrix(weights[i].ColumnCount, size);
+		}
 		activation[i] = Matrix(aTotal[i].RowCount, size);
 		dTotal[i] = Matrix(aTotal[i].RowCount, size);
 	}
@@ -242,6 +250,8 @@ Matrix RandomizeInput(Matrix totalInput, int size) {
 void TrainNetwork() {
 
 	cout << "TRAINING STARTED" << endl;
+
+	int used = 0;
 
 	std::chrono::steady_clock::time_point totalStart;
 	std::chrono::steady_clock::time_point totalEnd;
@@ -288,13 +298,22 @@ void TrainNetwork() {
 
 	cout << "Total Training Time: " << time.count() << " seconds :: " << (time.count() / 60.00) << " minutes :: " << (time.count() / 3600.00) << " hours" << endl;
 	cout << "Average Iteration Time: " << avgTime << " ms" << endl;
+
 }
 
 void ForwardPropogation() {
 
 	for (int i = 0; i < aTotal.size(); i++) {
-		aTotal[i] = (weights[i].DotProduct(i == 0 ? batch : activation[i - 1]) + biases[i]).Transpose();
-		activation[i] = i < aTotal.size() - 1 ? ReLU(aTotal[i]) : SoftMax(aTotal[i]);
+		if (resNet[i]) {
+
+			aTotal[i].Insert(0, batch);
+			activation[i].Insert(0, batch);
+
+			aTotal[i].Insert(batch.RowCount, (weights[i].DotProduct(i == 0 ? batch : activation[i - 1]) + biases[i]).Transpose());
+		} else {
+			aTotal[i] = (weights[i].DotProduct(i == 0 ? batch : activation[i - 1]) + biases[i]).Transpose();
+		}
+		activation[i] = i < aTotal.size() - 1 ? ELU(aTotal[i]) : SoftMax(aTotal[i]);
 	}
 }
 
@@ -303,10 +322,15 @@ void BackwardPropogation() {
 	dTotal[dTotal.size() - 1] = activation[activation.size() - 1] - YBatch;
 
 	for (int i = dTotal.size() - 2; i > -1; i--) {
-		dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * ReLUDerivative(aTotal[i]));
+
+		if (resNet[i]) {
+			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].Segment(batch.RowCount))).Transpose() * ELUDerivative(aTotal[i].Segment(batch.RowCount)));
+		} else {
+			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * ELUDerivative(aTotal[i]));
+		}
 	}
 
-	std::for_each(std::execution::par, dWeights.begin(), dWeights.end(), [&](auto&& item) {
+	std::for_each(std::execution::par_unseq, dWeights.begin(), dWeights.end(), [&](auto&& item) {
 		size_t i = &item - dWeights.data();
 		dWeights[i] = (dTotal[i].Transpose().DotProduct(i == 0 ? batch.Transpose() : activation[i - 1].Transpose()) * (1.0f / (float)batchSize)).Transpose();
 		dBiases[i] = dTotal[i].Multiply(1.0f / (float)batchSize).RowSums();
@@ -406,32 +430,6 @@ float Accuracy(vector<int> predictions, vector<int> labels) {
 		}
 	}
 	return (float)correct / (float)predictions.size();
-}
-
-Matrix ReLU(Matrix total) {
-	Matrix a = total;
-
-	for (int r = 0; r < total.RowCount; r++) {
-		for (int c = 0; c < total.ColumnCount; c++) {
-			a[r][c] = total[r][c] < 0.0f ? 0.0f : total[r][c];
-		}
-	}
-	return a;
-}
-
-Matrix ReLUDerivative(Matrix total) {
-	Matrix a = total;
-
-	for (int r = 0; r < total.RowCount; r++) {
-		for (int c = 0; c < total.ColumnCount; c++) {
-			a[r][c] = total[r][c] > 0.0f ? 1.0f : 0.0f;
-		}
-	}
-	return a;
-}
-
-Matrix SoftMax(Matrix total) {
-	return (total - total.LogSumExp()).Exp();
 }
 
 void SaveNetwork(string filename) {
