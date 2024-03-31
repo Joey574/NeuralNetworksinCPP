@@ -12,15 +12,13 @@
 using namespace std;
 
 // Hyperparameters
-int inputLayerSize = 784;
-int outputLayerSize = 10;
-vector<int> hiddenSize = { 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30 };
-vector<bool> resNet = { 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0 };
+vector<int> dimensions = { 784, 128, 128, 128, 10 };
+std::unordered_set<int> resNet = { 1 };
 
 float learningRate = 0.05f;
 float thresholdAccuracy = 0.2f;
 int batchSize = 500;
-int iterations = 25000;
+int iterations = 250;
 
 // Save / Load
 bool SaveOnComplete = false;
@@ -118,7 +116,7 @@ void LoadInput() {
 
 	input = Matrix((width * height), imageNum);
 	inputLabels = vector<int>(imageNum);
-	YTotal = Matrix(outputLayerSize, imageNum);
+	YTotal = Matrix(dimensions[dimensions.size() - 1], imageNum);
 
 	for (int i = 0; i < imageNum; i++) {
 
@@ -128,7 +126,7 @@ void LoadInput() {
 
 		input.SetColumn(i, intData);
 
-		vector<int> y = vector<int>(outputLayerSize, 0);
+		vector<int> y = vector<int>(dimensions[dimensions.size() - 1], 0);
 
 		char byte;
 		trainingLabelsFR.read(&byte, 1);
@@ -169,17 +167,17 @@ void InitializeNetwork() {
 
 	int connections = 0;
 
-	weights = vector<Matrix>(hiddenSize.size() + 1);
+	weights = vector<Matrix>(dimensions.size() - 1);
 	dWeights = vector<Matrix>(weights.size());
 
 	biases = vector<vector<float>>(weights.size());
 	dBiases = vector<vector<float>>(biases.size());
 
 	for (int i = 0; i < weights.size(); i++) {
-		if (i != 0 && resNet[i - 1]) {
-			weights[i] = Matrix(i == 0 ? inputLayerSize + inputLayerSize : hiddenSize[i - 1] + inputLayerSize, i == weights.size() - 1 ? outputLayerSize : hiddenSize[i], -0.5f, 0.5f);
+		if (resNet.find(i - 1) != resNet.end()) {
+			weights[i] = Matrix(dimensions[i] + dimensions[0], dimensions[i + 1], -0.5f, 0.5f);
 		} else {
-			weights[i] = Matrix(i == 0 ? inputLayerSize : hiddenSize[i - 1], i == weights.size() - 1 ? outputLayerSize : hiddenSize[i], -0.5f, 0.5f);
+			weights[i] = Matrix(dimensions[i], dimensions[i + 1], -0.5f, 0.5f);
 		}
 		cout << "Weights[" << i << "] connections: " << (weights[i].ColumnCount * weights[i].RowCount) << endl;
 		connections += weights[i].ColumnCount * weights[i].RowCount;
@@ -194,7 +192,7 @@ void InitializeNetwork() {
 
 	cout << "Total connections: " << connections << endl;
 
-	double fileSize = ((sizeof(float)) * (connections)) + ((sizeof(int) * hiddenSize.size() + 1));
+	double fileSize = ((sizeof(float)) * (connections)) + ((sizeof(int) * weights.size() + 1));
 
 	cout << "Predicted size of file: " << (fileSize / 1000000.00) << "mb" << endl;
 
@@ -211,8 +209,8 @@ void InitializeResultMatrices(int size) {
 	dTotal = vector<Matrix>(aTotal.size());
 
 	for (int i = 0; i < aTotal.size(); i++) {
-		if (resNet[i]) {
-			aTotal[i] = Matrix(weights[i].ColumnCount + inputLayerSize, size);
+		if (resNet.find(i) != resNet.end()) {
+			aTotal[i] = Matrix(weights[i].ColumnCount + dimensions[0], size);
 		} else {
 			aTotal[i] = Matrix(weights[i].ColumnCount, size);
 		}
@@ -226,7 +224,7 @@ Matrix RandomizeInput(Matrix totalInput, int size) {
 
 	std::unordered_set<int> used = std::unordered_set<int>(size);
 
-	YBatch = Matrix(outputLayerSize, size);
+	YBatch = Matrix(dimensions[dimensions.size() - 1], size);
 	batchLabels.clear();
 
 	while (batchLabels.size() < size) {
@@ -243,7 +241,6 @@ Matrix RandomizeInput(Matrix totalInput, int size) {
 			batchLabels.push_back(inputLabels[c]);
 		}
 	}
-
 	return a;
 }
 
@@ -304,7 +301,7 @@ void TrainNetwork() {
 void ForwardPropogation() {
 
 	for (int i = 0; i < aTotal.size(); i++) {
-		if (resNet[i]) {
+		if (resNet.find(i) != resNet.end()) {
 
 			aTotal[i].Insert(0, batch);
 			activation[i].Insert(0, batch);
@@ -323,7 +320,7 @@ void BackwardPropogation() {
 
 	for (int i = dTotal.size() - 2; i > -1; i--) {
 
-		if (resNet[i]) {
+		if (resNet.find(i) != resNet.end()) {
 			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].Segment(batch.RowCount))).Transpose() * ELUDerivative(aTotal[i].Segment(batch.RowCount)));
 		} else {
 			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * ELUDerivative(aTotal[i]));
@@ -438,12 +435,12 @@ void SaveNetwork(string filename) {
 	int s = weights.size() - 1;
 	fw.write(reinterpret_cast<const char*>(&s), sizeof(int));
 
-	vector<int> dimensions = vector<int>(weights.size() - 1);
-	for (int i = 0; i < dimensions.size(); i++) {
-		dimensions[i] = weights[i].ColumnCount;
+	vector<int> dims = vector<int>(dimensions.size());
+	for (int i = 0; i < dims.size(); i++) {
+		dims[i] = dimensions[i];
 	}
 
-	fw.write(reinterpret_cast<const char*>(dimensions.data()), dimensions.size() * sizeof(int));
+	fw.write(reinterpret_cast<const char*>(dims.data()), dims.size() * sizeof(int));
 
 	for (int i = 0; i < weights.size(); i++) {
 		for (int r = 0; r < weights[i].RowCount; r++) {
@@ -472,14 +469,8 @@ void LoadNetwork(string filename) {
 	int s;
 	fr.read(reinterpret_cast<char*>(&s), sizeof(int));
 
-	vector<int> dimensions = vector<int>(s);
+	dimensions = vector<int>(s);
 	fr.read(reinterpret_cast<char*>(dimensions.data()), s * sizeof(int));
-
-	hiddenSize = vector<int>(dimensions.size());
-
-	for (int i = 0; i < dimensions.size(); i++) {
-		hiddenSize[i] = dimensions[i];
-	}
 
 	InitializeNetwork();
 
