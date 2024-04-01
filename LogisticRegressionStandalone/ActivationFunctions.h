@@ -17,4 +17,19 @@ Matrix TanhDerivative(Matrix total);
 Matrix Sigmoid(Matrix total);
 Matrix SigmoidDerivative(Matrix total);
 
+Matrix Smht(Matrix total);
+Matrix SmhtDerivative(Matrix total);
+
+Matrix GELU(Matrix total);
+Matrix GELUDerivative(Matrix total);
+
+Matrix Softplus(Matrix total);
+Matrix SoftplusDerivative(Matrix total);
+
+Matrix SiLU(Matrix total);
+Matrix SiLUDerivative(Matrix total);
+
+Matrix Gaussian(Matrix total);
+Matrix GaussianDerivative(Matrix total);
+
 Matrix SoftMax(Matrix total);

@@ -15,7 +15,7 @@
 using namespace std;
 
 // Hyperparameters
-vector<int> dimensions = { 784, 128, 10 };
+vector<int> dimensions = { 784, 128, 128, 128, 10 };
 std::unordered_set<int> resNet = {  };
 
 float learningRate = 0.05;
@@ -323,7 +323,7 @@ void ForwardPropogation() {
 		} else {
 			aTotal[i] = (weights[i].DotProduct(i == 0 ? batch : activation[i - 1]) + biases[i]).Transpose();
 		}
-		activation[i] = i < aTotal.size() - 1 ? ELU(aTotal[i]) : SoftMax(aTotal[i]);
+		activation[i] = i < aTotal.size() - 1 ? Softplus(aTotal[i]) : SoftMax(aTotal[i]);
 	}
 }
 
@@ -334,9 +334,9 @@ void BackwardPropogation() {
 	for (int i = dTotal.size() - 2; i > -1; i--) {
 
 		if (resNet.find(i) != resNet.end()) {
-			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].Segment(batch.RowCount))).Transpose() * ELUDerivative(aTotal[i].Segment(batch.RowCount)));
+			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].Segment(batch.RowCount))).Transpose() * SoftplusDerivative(aTotal[i].Segment(batch.RowCount)));
 		} else {
-			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * ELUDerivative(aTotal[i]));
+			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * SoftplusDerivative(aTotal[i]));
 		}
 	}
 

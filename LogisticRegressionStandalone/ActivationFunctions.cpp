@@ -102,6 +102,87 @@ Matrix SigmoidDerivative(Matrix total) {
 }
 
 
+//Matrix Smht(Matrix total) {
+//
+//}
+//
+//Matrix SmhtDerivative(Matrix total) {
+//
+//}
+//
+//
+//Matrix GELU(Matrix total) {
+//	Matrix a = total;
+//	for (int r = 0; r < total.RowCount; r++) {
+//		for (int c = 0; c < total.ColumnCount; c++) {
+//			a[r][c] = (0.5 * total[r][c]) * (1 + std::erf(total[r][c] / std::sqrt(2)));
+//		}
+//	}
+//	return a;
+//}
+//
+//Matrix GELUDerivative(Matrix total) {
+//
+//}
+
+
+Matrix Softplus(Matrix total) {
+	Matrix a = total;
+	for (int r = 0; r < total.RowCount; r++) {
+		for (int c = 0; c < total.ColumnCount; c++) {
+			a[r][c] = std::log(1 + std::exp(total[r][c]));
+		}
+	}
+	return a;
+}
+
+Matrix SoftplusDerivative(Matrix total) {
+	Matrix a = total;
+	for (int r = 0; r < total.RowCount; r++) {
+		for (int c = 0; c < total.ColumnCount; c++) {
+			a[r][c] = 1 / (1 + std::exp(-total[r][c]));
+		}
+	}
+	return a;
+}
+
+
+Matrix SiLU(Matrix total) {
+	Matrix a = total;
+	for (int r = 0; r < total.RowCount; r++) {
+		for (int c = 0; c < total.ColumnCount; c++) {
+			a[r][c] = total[r][c] / (1 + std::exp(-total[r][c]));
+		}
+	}
+	return a;
+}
+
+Matrix SiLUDerivative(Matrix total) {
+	Matrix a = total;
+	for (int r = 0; r < total.RowCount; r++) {
+		for (int c = 0; c < total.ColumnCount; c++) {
+			a[r][c] = (1 + std::exp(-total[r][c]) + (total[r][c] * std::exp(-total[r][c]))) / std::pow(1 + std::exp(-total[r][c]), 2);
+		}
+	}
+	return a;
+}
+
+
+Matrix Gaussian(Matrix total) {
+	return total.Pow(2).Multiply(-1).Exp();
+}
+
+Matrix GaussianDerivative(Matrix total) {
+	Matrix a = total;
+	for (int r = 0; r < total.RowCount; r++) {
+		for (int c = 0; c < total.ColumnCount; c++) {
+			a[r][c] = (-2) * total[r][c] * (std::exp(-std::pow(total[r][c], 2)));
+		}
+	}
+	return a;
+}
+
+
 Matrix SoftMax(Matrix total) {
 	return (total - total.LogSumExp()).Exp();
 }
