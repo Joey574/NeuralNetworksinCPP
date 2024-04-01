@@ -166,6 +166,28 @@ std::vector<float> Matrix::Row(int index) {
 	return matrix[index];
 }
 
+Matrix Matrix::Negative() {
+	std::vector<std::vector<float>> neg = matrix;
+
+	__m256 sign = _mm256_set1_ps(-0.0f);
+
+	const int alignedN = neg.size() - (neg.size() % 8);
+
+	for (int r = 0; r < RowCount; r++) {
+		for (int i = 0; i < alignedN; i += 8) {
+			__m256 _loaded = _mm256_load_ps(&neg[r][i]);
+			_loaded = _mm256_xor_ps(_loaded, sign);
+
+			_mm256_store_ps(&neg[r][i], _loaded);
+		}
+
+		for (int i = alignedN; i < neg[r].size(); i++) {
+			neg[r][i] = -neg[r][i];
+		}
+	}
+	return neg;
+}
+
 // Math Operations
 
 Matrix Matrix::DotProduct(Matrix element) {
@@ -283,19 +305,18 @@ std::vector<float> Matrix::LogSumExp() {
 }
 
 
-Matrix Matrix::SingleFloatOperation(void (Matrix::* operation)(__m256 opOne, __m256 opTwo, __m256* result),
+Matrix Matrix::SingleFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo),
 	float (Matrix::* remainderOperation)(float a, float b), float scalar) {
 	std::vector<std::vector<float>> mat = matrix;
+	const int alignedN = mat[0].size() - (mat[0].size() % 8);
 	__m256 _scalar = _mm256_set1_ps(scalar);
 
 	for (int r = 0; r < mat.size(); r++) {
-		const int alignedN = mat[r].size() - (mat[r].size() % 8);
 
 		for (int i = 0; i < alignedN; i += 8) {
 			__m256 loaded_a = _mm256_load_ps(&mat[r][i]);
-			__m256 result;
-			(this->*operation)(loaded_a, _scalar, &result);
-			_mm256_store_ps(&mat[r][i], result);
+			loaded_a = (this->*operation)(loaded_a, _scalar);
+			_mm256_store_ps(&mat[r][i], loaded_a);
 		}
 
 		for (int i = alignedN; i < mat[r].size(); i++) {
@@ -305,7 +326,7 @@ Matrix Matrix::SingleFloatOperation(void (Matrix::* operation)(__m256 opOne, __m
 	return mat;
 }
 
-Matrix Matrix::VectorFloatOperation(void (Matrix::* operation)(__m256 opOne, __m256 opTwo, __m256* result),
+Matrix Matrix::VectorFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo),
 	float (Matrix::* remainderOperation)(float a, float b), std::vector<float> scalar) {
 	Matrix mat;
 
@@ -315,17 +336,16 @@ Matrix Matrix::VectorFloatOperation(void (Matrix::* operation)(__m256 opOne, __m
 	else if (scalar.size() == RowCount) {
 		mat = this->Transpose();
 	}
+	const int alignedN = mat.matrix[0].size() - (mat.matrix[0].size() % 8);
 
 	for (int r = 0; r < mat.matrix.size(); r++) {
-		const int alignedN = mat.matrix[r].size() - (mat.matrix[r].size() % 8);
 
 		for (int i = 0; i < alignedN; i += 8) {
 			__m256 loaded_a = _mm256_load_ps(&mat.matrix[r][i]);
 			__m256 loaded_b = _mm256_load_ps(&scalar[i]);
-			__m256 result;
 
-			(this->*operation)(loaded_a, loaded_b, &result);
-			_mm256_store_ps(&mat.matrix[r][i], result);
+			loaded_a = (this->*operation)(loaded_a, loaded_b);
+			_mm256_store_ps(&mat.matrix[r][i], loaded_a);
 		}
 
 		for (int i = alignedN; i < mat.matrix[r].size(); i++) {
@@ -336,24 +356,22 @@ Matrix Matrix::VectorFloatOperation(void (Matrix::* operation)(__m256 opOne, __m
 	return mat;
 }
 
-Matrix Matrix::MatrixFloatOperation(void (Matrix::* operation)(__m256 opOne, __m256 opTwo, __m256* result),
+Matrix Matrix::MatrixFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo),
 	float (Matrix::* remainderOperation)(float a, float b), Matrix element) {
 	std::vector<std::vector<float>> mat = element.matrix;
+	const int alignedN = mat[0].size() - (mat[0].size() % 8);
 
-	for (int r = 0; r < matrix.size(); r++) {
-		const int alignedN = matrix[r].size() - (matrix[r].size() % 8);
-
+	for (int r = 0; r < mat.size(); r++) {
 		for (int i = 0; i < alignedN; i += 8) {
 			__m256 loaded_a = _mm256_load_ps(&matrix[r][i]);
 			__m256 loaded_b = _mm256_load_ps(&mat[r][i]);
-			__m256 result;
 
-			(this->*operation)(loaded_a, loaded_b, &result);
-			_mm256_store_ps(&mat[r][i], result);
+			loaded_a = (this->*operation)(loaded_a, loaded_b);
+			_mm256_store_ps(&mat[r][i], loaded_a);
 		}
 
-		for (int i = alignedN; i < matrix[r].size(); i++) {
-			mat[r][i] = (this->*remainderOperation)(mat[r][i], matrix[r][i]);
+		for (int i = alignedN; i < mat[r].size(); i++) {
+			mat[r][i] = (this->*remainderOperation)(matrix[r][i], mat[r][i]);
 		}
 	}
 	return mat;
@@ -384,23 +402,23 @@ std::vector<float> Matrix::VerticalSum(std::vector<std::vector<float>> element) 
 
 // SIMD Operations
 
-void Matrix::SIMDAdd(__m256 opOne, __m256 opTwo, __m256* result) {
-	*result = _mm256_add_ps(opOne, opTwo);
+__m256 Matrix::SIMDAdd(__m256 opOne, __m256 opTwo) {
+	return _mm256_add_ps(opOne, opTwo);
 }
-void Matrix::SIMDSub(__m256 opOne, __m256 opTwo, __m256* result) {
-	*result = _mm256_sub_ps(opOne, opTwo);
+__m256 Matrix::SIMDSub(__m256 opOne, __m256 opTwo) {
+	return _mm256_sub_ps(opOne, opTwo);
 }
-void Matrix::SIMDMul(__m256 opOne, __m256 opTwo, __m256* result) {
-	*result = _mm256_mul_ps(opOne, opTwo);
+__m256 Matrix::SIMDMul(__m256 opOne, __m256 opTwo) {
+	return _mm256_mul_ps(opOne, opTwo);
 }
-void Matrix::SIMDDiv(__m256 opOne, __m256 opTwo, __m256* result) {
-	*result = _mm256_div_ps(opOne, opTwo);
+__m256 Matrix::SIMDDiv(__m256 opOne, __m256 opTwo) {
+	return _mm256_div_ps(opOne, opTwo);
 }
-void Matrix::SIMDPow(__m256 opOne, __m256 opTwo, __m256* result) {
-	*result = _mm256_pow_ps(opOne, opTwo);
+__m256 Matrix::SIMDPow(__m256 opOne, __m256 opTwo) {
+	return _mm256_pow_ps(opOne, opTwo);
 }
-void Matrix::SIMDExp(__m256 opOne, __m256 opTwo, __m256* result) {
-	*result = _mm256_pow_ps(opTwo, opOne);
+__m256 Matrix::SIMDExp(__m256 opOne, __m256 opTwo) {
+	return _mm256_pow_ps(opTwo, opOne);
 }
 
 float Matrix::RemainderAdd(float a, float b) {
