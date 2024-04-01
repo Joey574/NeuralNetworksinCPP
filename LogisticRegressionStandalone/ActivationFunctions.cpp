@@ -87,7 +87,6 @@ Matrix TanhDerivative(Matrix total) {
 
 Matrix Sigmoid(Matrix total) {
 	Matrix a = total;
-
 	for (int r = 0; r < total.RowCount; r++) {
 		for (int c = 0; c < total.ColumnCount; c++) {
 			a[r][c] = 1 / (1 + std::exp(-total[r][c]));
@@ -182,6 +181,15 @@ Matrix GaussianDerivative(Matrix total) {
 	return a;
 }
 
+
+Matrix Swish(Matrix total) {
+	return total * Sigmoid(total);
+}
+
+Matrix SwishDerivative(Matrix total) {
+	Matrix a = Matrix(total.RowCount, total.ColumnCount, 1);
+	return Sigmoid(total) + total * Sigmoid(total) * (a - Sigmoid(total));
+}
 
 Matrix SoftMax(Matrix total) {
 	return (total - total.LogSumExp()).Exp();

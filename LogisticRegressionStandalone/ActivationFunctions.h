@@ -32,4 +32,7 @@ Matrix SiLUDerivative(Matrix total);
 Matrix Gaussian(Matrix total);
 Matrix GaussianDerivative(Matrix total);
 
+Matrix Swish(Matrix total);
+Matrix SwishDerivative(Matrix total);
+
 Matrix SoftMax(Matrix total);
