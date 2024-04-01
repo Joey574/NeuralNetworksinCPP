@@ -1,3 +1,6 @@
+#pragma comment(linker, "/STACK:20000000")
+#pragma comment(linker, "/HEAP:20000000")
+
 #include <iostream>
 #include <chrono>
 #include <fstream>
@@ -12,10 +15,10 @@
 using namespace std;
 
 // Hyperparameters
-vector<int> dimensions = { 784, 128, 128, 128, 10 };
-std::unordered_set<int> resNet = { 1 };
+vector<int> dimensions = { 784, 128, 10 };
+std::unordered_set<int> resNet = {  };
 
-float learningRate = 0.05f;
+float learningRate = 0.05;
 float thresholdAccuracy = 0.2f;
 int batchSize = 500;
 int iterations = 250;
@@ -167,27 +170,32 @@ void InitializeNetwork() {
 
 	int connections = 0;
 
-	weights = vector<Matrix>(dimensions.size() - 1);
-	dWeights = vector<Matrix>(weights.size());
+	weights.clear();
+	dWeights.clear();
+	biases.clear();
+	dBiases.clear();
 
-	biases = vector<vector<float>>(weights.size());
-	dBiases = vector<vector<float>>(biases.size());
+	weights.reserve(dimensions.size() - 1);
+	dWeights.reserve(dimensions.size() - 1);
 
-	for (int i = 0; i < weights.size(); i++) {
+	biases.reserve(dimensions.size() - 1);
+	dBiases.reserve(dimensions.size() - 1);
+
+	for (int i = 0; i < dimensions.size() - 1; i++) {
 		if (resNet.find(i - 1) != resNet.end()) {
-			weights[i] = Matrix(dimensions[i] + dimensions[0], dimensions[i + 1], -0.5f, 0.5f);
+			weights.emplace_back(dimensions[i] + dimensions[0], dimensions[i + 1], -0.5f, 0.5f);
 		} else {
-			weights[i] = Matrix(dimensions[i], dimensions[i + 1], -0.5f, 0.5f);
+			weights.emplace_back(dimensions[i], dimensions[i + 1], -0.5f, 0.5f);
 		}
 		cout << "Weights[" << i << "] connections: " << (weights[i].ColumnCount * weights[i].RowCount) << endl;
 		connections += weights[i].ColumnCount * weights[i].RowCount;
 
-		biases[i] = vector<float>(weights[i].Row(i));
+		biases.emplace_back(weights[i].Row(0));
 		cout << "Biases[" << i << "] connections: " << biases[i].size() << endl;
 		connections += biases[i].size();
 
-		dWeights[i] = Matrix(weights[i].RowCount, weights[i].ColumnCount);
-		dBiases[i] = vector<float>(biases[i].size());
+		dWeights.emplace_back(weights[i].RowCount, weights[i].ColumnCount);
+		dBiases.emplace_back(biases[i].size());
 	}
 
 	cout << "Total connections: " << connections << endl;
@@ -204,18 +212,23 @@ void InitializeNetwork() {
 }
 
 void InitializeResultMatrices(int size) {
-	aTotal = vector<Matrix>(weights.size());
-	activation = vector<Matrix>(aTotal.size());
-	dTotal = vector<Matrix>(aTotal.size());
+	aTotal.clear();
+	activation.clear();
+	dTotal.clear();
 
-	for (int i = 0; i < aTotal.size(); i++) {
+	aTotal.reserve(weights.size());
+	activation.reserve(weights.size());
+	dTotal.reserve(weights.size());
+
+	for (int i = 0; i < weights.size(); i++) {
 		if (resNet.find(i) != resNet.end()) {
-			aTotal[i] = Matrix(weights[i].ColumnCount + dimensions[0], size);
+			aTotal.emplace_back(weights[i].ColumnCount + dimensions[0], size);
 		} else {
-			aTotal[i] = Matrix(weights[i].ColumnCount, size);
+			aTotal.emplace_back(weights[i].ColumnCount, size);
 		}
-		activation[i] = Matrix(aTotal[i].RowCount, size);
-		dTotal[i] = Matrix(aTotal[i].RowCount, size);
+
+		activation.emplace_back(aTotal[i].RowCount, size);
+		dTotal.emplace_back(aTotal[i].RowCount, size);
 	}
 }
 
@@ -371,7 +384,7 @@ void TestNetwork() {
 	int width = ReadBigInt(&testingFR);
 	int height = ReadBigInt(&testingFR);
 
-	input = Matrix((width * height), imageNum);
+	batch = Matrix((width * height), imageNum);
 	inputLabels = vector<int>(imageNum);
 
 	for (int i = 0; i < imageNum; i++) {
@@ -380,7 +393,7 @@ void TestNetwork() {
 		testingFR.read(reinterpret_cast<char*>(byteData.data()), byteData.size());
 		std::vector<int> intData(byteData.begin(), byteData.end());
 
-		input.SetColumn(i, intData);
+		batch.SetColumn(i, intData);
 
 		char byte;
 		testingLabelFR.read(&byte, 1);
@@ -389,15 +402,13 @@ void TestNetwork() {
 	testingFR.close();
 	testingLabelFR.close();
 
-	input = input.Divide(255);
+	batch = batch.Divide(255);
 
-	InitializeResultMatrices(input.ColumnCount);
-
-	batch = input;
+	InitializeResultMatrices(batch.ColumnCount);
 
 	ForwardPropogation();
 
-	float acc = Accuracy(GetPredictions(input.ColumnCount), inputLabels);
+	float acc = Accuracy(GetPredictions(batch.ColumnCount), inputLabels);
 
 	cout << "Final Accuracy: " << acc << endl;
 }
