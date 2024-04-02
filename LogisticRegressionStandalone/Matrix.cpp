@@ -304,8 +304,7 @@ Matrix Matrix::VectorFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, _
 
 	if (scalar.size() == ColumnCount) {
 		mat = matrix;
-	}
-	else if (scalar.size() == RowCount) {
+	} else if (scalar.size() == RowCount) {
 		mat = this->Transpose();
 	}
 	const int alignedN = mat.matrix[0].size() - (mat.matrix[0].size() % 8);
@@ -351,10 +350,10 @@ Matrix Matrix::MatrixFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, _
 
 
 std::vector<float> Matrix::HorizontalSum(std::vector<std::vector<float>> element) {
-	std::vector<float> sums = std::vector<float>(element.size());
+	std::vector<float> sums; sums.reserve(element.size());
 
 	for (int r = 0; r < element.size(); r++) {
-		sums[r] = std::reduce(element[r].begin(), element[r].end());
+		sums.push_back(std::reduce(element[r].begin(), element[r].end()));
 	}
 
 	return sums;
@@ -464,4 +463,3 @@ Matrix Matrix::Combine(Matrix element) {
 
 	return combine;
 }
-

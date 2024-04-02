@@ -15,7 +15,7 @@
 using namespace std;
 
 // Hyperparameters
-vector<int> dimensions = { 784, 128, 128, 128, 10 };
+vector<int> dimensions = { 784, 128, 128, 10 };
 std::unordered_set<int> resNet = {  };
 
 float learningRate = 0.05;
@@ -77,7 +77,8 @@ int main()
 
 	if (LoadOnInit) {
 		LoadNetwork(NetworkPath);
-	} else {
+	}
+	else {
 		InitializeNetwork();
 	}
 
@@ -184,7 +185,8 @@ void InitializeNetwork() {
 	for (int i = 0; i < dimensions.size() - 1; i++) {
 		if (resNet.find(i - 1) != resNet.end()) {
 			weights.emplace_back(dimensions[i] + dimensions[0], dimensions[i + 1], -0.5f, 0.5f);
-		} else {
+		}
+		else {
 			weights.emplace_back(dimensions[i], dimensions[i + 1], -0.5f, 0.5f);
 		}
 		cout << "Weights[" << i << "] connections: " << (weights[i].ColumnCount * weights[i].RowCount) << endl;
@@ -223,7 +225,8 @@ void InitializeResultMatrices(int size) {
 	for (int i = 0; i < weights.size(); i++) {
 		if (resNet.find(i) != resNet.end()) {
 			aTotal.emplace_back(weights[i].ColumnCount + dimensions[0], size);
-		} else {
+		}
+		else {
 			aTotal.emplace_back(weights[i].ColumnCount, size);
 		}
 
@@ -320,7 +323,8 @@ void ForwardPropogation() {
 			activation[i].Insert(0, batch);
 
 			aTotal[i].Insert(batch.RowCount, (weights[i].DotProduct(i == 0 ? batch : activation[i - 1]) + biases[i]).Transpose());
-		} else {
+		}
+		else {
 			aTotal[i] = (weights[i].DotProduct(i == 0 ? batch : activation[i - 1]) + biases[i]).Transpose();
 		}
 		activation[i] = i < aTotal.size() - 1 ? ELU(aTotal[i]) : SoftMax(aTotal[i]);
@@ -335,7 +339,8 @@ void BackwardPropogation() {
 
 		if (resNet.find(i) != resNet.end()) {
 			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].Segment(batch.RowCount))).Transpose() * ELUDerivative(aTotal[i].Segment(batch.RowCount)));
-		} else {
+		}
+		else {
 			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * ELUDerivative(aTotal[i]));
 		}
 	}
@@ -344,8 +349,8 @@ void BackwardPropogation() {
 		size_t i = &item - dWeights.data();
 		dWeights[i] = (dTotal[i].Transpose().DotProduct(i == 0 ? batch.Transpose() : activation[i - 1].Transpose()) * (1.0f / (float)batchSize)).Transpose();
 		dBiases[i] = dTotal[i].Multiply(1.0f / (float)batchSize).RowSums();
-	});
-		
+		});
+
 }
 
 void UpdateNetwork() {
@@ -473,7 +478,8 @@ void LoadNetwork(string filename) {
 
 	if (fr.is_open()) {
 		cout << "Loading Network..." << endl;
-	} else {
+	}
+	else {
 		cout << "Network not found..." << endl;
 	}
 

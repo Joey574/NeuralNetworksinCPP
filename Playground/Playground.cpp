@@ -6,32 +6,30 @@
 
 int iterations = 100;
 
-Matrix Sigmoid(Matrix total) {
-	Matrix a = total;
-	for (int r = 0; r < total.RowCount; r++) {
-		for (int c = 0; c < total.ColumnCount; c++) {
-			a[r][c] = 1 / (1 + std::exp(-total[r][c]));
-		}
-	}
-	return a;
-}
-
-Matrix SigmoidM(Matrix total) {
-	Matrix a = Matrix(total.RowCount, total.ColumnCount, 1.0f);
-	return  a / (total.Negative().Exp() + 1);
-}
-
 int main()
 {
 	SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
 
-	Matrix a = Matrix(8, 80000, -0.5f, 0.5f);
-	Matrix b = a;
+	Matrix a = Matrix(2, 3);
+	Matrix b = Matrix(3, 2);
+
+	a.SetRow(0, std::vector<float>{1, 2, 3});
+	a.SetRow(1, std::vector<float>{4, 5, 6});
+
+	b.SetColumn(0, std::vector<float>{7, 9, 11});
+	b.SetColumn(1, std::vector<float>{8, 10, 12});
+
+	std::cout << a.ToString() << std::endl;
+	std::cout << b.ToString() << std::endl;
+
+	std::cout << a.DotProductM(b).ToString() << std::endl;
+
+	return 0;
 
 	// TEST CASE
 	auto s = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < iterations; i++) {
-		SigmoidM(a);
+
 	}
 	auto e = std::chrono::high_resolution_clock::now();
 	auto t1 = e - s;
@@ -41,7 +39,7 @@ int main()
 	// CONTROL
 	s = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < iterations; i++) {
-		Sigmoid(a);
+
 	}
 	e = std::chrono::high_resolution_clock::now();
 	auto t2 = e - s;

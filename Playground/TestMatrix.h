@@ -27,7 +27,11 @@ public:
 
 	std::vector<float> ColumnSums();
 	std::vector<float> RowSums();
-	std::vector<float> RowSumsSeq();
+
+	Matrix Negative();
+
+	Matrix DotProduct(Matrix element);
+	Matrix DotProductM(Matrix element);
 
 	Matrix Add(float scalar);
 	Matrix Add(std::vector<float> scalar);
@@ -57,10 +61,6 @@ public:
 	std::vector<float> LogSumExp();
 
 	Matrix Transpose();
-
-	Matrix DotProduct(Matrix element);
-	Matrix Negative();
-
 	std::string ToString();
 
 	int ColumnCount;

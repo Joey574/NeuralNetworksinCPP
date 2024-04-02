@@ -1,8 +1,5 @@
 #include "TestMatrix.h"
 
-#include <iostream>
-
-
 // Constructors
 
 Matrix::Matrix() {
@@ -99,6 +96,7 @@ void Matrix::SetRow(int index, std::vector<int> vector) {
 	transposeBuilt = false;
 }
 
+
 std::vector<float> Matrix::ColumnSums() {
 	if (transposeBuilt) {
 		return HorizontalSum(matrixT);
@@ -109,37 +107,7 @@ std::vector<float> Matrix::ColumnSums() {
 }
 
 std::vector<float> Matrix::RowSums() {
-	std::vector<float> sums = std::vector<float>(RowCount);
-
-	const int alignedN = RowCount - (RowCount % 8);
-	std::vector<float> rSum = std::vector<float>(8);
-
-	for (int r = 0; r < RowCount; r++) {
-
-		__m256 _sum = _mm256_setzero_ps();
-
-		for (int i = 0; i < alignedN; i += 8) {
-
-			__m256 _loaded = _mm256_load_ps(&matrix[r][i]);
-
-			_sum = _mm256_add_ps(_sum, _loaded);
-		}
-
-		_mm256_store_ps(&rSum[0], _sum);
-
-		rSum[0] = std::reduce(rSum.begin(), rSum.end());
-
-		for (int i = alignedN; i < ColumnCount; i++) {
-			rSum[0] += matrix[r][i];
-		}
-		sums[r] = rSum[0];
-	}
-	return sums;
-
-}
-
-std::vector<float> Matrix::RowSumsSeq() {
-	std::vector<float> sums = std::vector<float>(RowCount);
+	std::vector<float> sums = std::vector<float>(matrix.size());
 
 	for (int r = 0; r < matrix.size(); r++) {
 		sums[r] = std::reduce(matrix[r].begin(), matrix[r].end());
@@ -166,28 +134,6 @@ std::vector<float> Matrix::Row(int index) {
 	return matrix[index];
 }
 
-Matrix Matrix::Negative() {
-	std::vector<std::vector<float>> neg = matrix;
-
-	__m256 sign = _mm256_set1_ps(-0.0f);
-
-	const int alignedN = neg.size() - (neg.size() % 8);
-
-	for (int r = 0; r < RowCount; r++) {
-		for (int i = 0; i < alignedN; i += 8) {
-			__m256 _loaded = _mm256_load_ps(&neg[r][i]);
-			_loaded = _mm256_xor_ps(_loaded, sign);
-
-			_mm256_store_ps(&neg[r][i], _loaded);
-		}
-
-		for (int i = alignedN; i < neg[r].size(); i++) {
-			neg[r][i] = -neg[r][i];
-		}
-	}
-	return neg;
-}
-
 // Math Operations
 
 Matrix Matrix::DotProduct(Matrix element) {
@@ -199,6 +145,40 @@ Matrix Matrix::DotProduct(Matrix element) {
 	}
 
 	return mat;
+}
+
+Matrix Matrix::DotProductM(Matrix element) {
+
+	Matrix dotprod = Matrix(RowCount, element.ColumnCount);
+	const int alignedN = RowCount - (RowCount % 8);
+
+	for (int r = 0; r < RowCount; r++) {
+		for (int c = 0; c < dotprod.ColumnCount; c++) {
+			std::vector<float> a = this->Row(r);
+			std::vector<float> b = element.Column(c);
+
+			__m256 sum = _mm256_setzero_ps();
+			float s = 0;
+
+			for (int i = 0; i < alignedN; i += 8) {
+				__m256 loaded_a = _mm256_load_ps(&a[i]);
+				__m256 loaded_b = _mm256_load_ps(&b[i]);
+
+				sum = _mm256_fmadd_ps(loaded_a, loaded_b, sum);
+			}
+
+			for (int i = alignedN; i < a.size(); i++) {
+				s += a[i] * b[i];
+			}
+			_mm256_store_ps(&a[0], sum);
+
+			for (int i = 0; i < 8; i++) {
+				s += a[i];
+			}
+			dotprod[r][c] = s;
+		}
+	}
+	return dotprod;
 }
 
 
@@ -379,10 +359,10 @@ Matrix Matrix::MatrixFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, _
 
 
 std::vector<float> Matrix::HorizontalSum(std::vector<std::vector<float>> element) {
-	std::vector<float> sums = std::vector<float>(element.size());
+	std::vector<float> sums; sums.reserve(element.size());
 
 	for (int r = 0; r < element.size(); r++) {
-		sums[r] = std::reduce(element[r].begin(), element[r].end());
+		sums.push_back(std::reduce(element[r].begin(), element[r].end()));
 	}
 
 	return sums;
