@@ -1,5 +1,7 @@
 #include "TestMatrix.h"
 
+#include <iostream>
+
 // Constructors
 
 Matrix::Matrix() {
@@ -149,11 +151,20 @@ Matrix Matrix::DotProduct(Matrix element) {
 
 Matrix Matrix::DotProductM(Matrix element) {
 
-	Matrix dotprod = Matrix(RowCount, element.ColumnCount);
-	const int alignedN = RowCount - (RowCount % 8);
+	Matrix dotprod = Matrix(this->RowCount, element.ColumnCount);
+	const int alignedN = this->RowCount - (this->RowCount % 8);
 
-	for (int r = 0; r < RowCount; r++) {
-		for (int c = 0; c < dotprod.ColumnCount; c++) {
+	if (ColumnCount != element.RowCount) {
+		std::cout << "Error" << std::endl;
+
+		std::cout << RowCount << " :: " << ColumnCount << std::endl;
+		std::cout << element.RowCount << " :: " << element.ColumnCount << std::endl;
+
+
+	}
+
+	for (int r = 0; r < this->RowCount; r++) {
+		for (int c = 0; c < element.ColumnCount; c++) {
 			std::vector<float> a = this->Row(r);
 			std::vector<float> b = element.Column(c);
 
