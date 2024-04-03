@@ -191,6 +191,16 @@ Matrix SwishDerivative(Matrix total) {
 	return Sigmoid(total) + total * Sigmoid(total) * (a - Sigmoid(total));
 }
 
+
+Matrix Cubic(Matrix total) {
+	return total.Multiply(1/3).Pow(3);
+}
+
+Matrix CubicDerivative(Matrix total) {
+	return total.Pow(2).Divide(9);
+}
+
+
 Matrix SoftMax(Matrix total) {
 	return (total - total.LogSumExp()).Exp();
 }
