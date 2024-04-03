@@ -18,10 +18,10 @@ using namespace std;
 vector<int> dimensions = { 784, 128, 128, 128, 10 };
 std::unordered_set<int> resNet = {  };
 
-float learningRate = 0.05;
+float learningRate = 0.001;
 float thresholdAccuracy = 0.2f;
 int batchSize = 500;
-int iterations = 250;
+int iterations = 150000;
 
 // Save / Load
 bool SaveOnComplete = false;
