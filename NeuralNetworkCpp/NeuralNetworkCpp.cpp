@@ -16,7 +16,7 @@ std::unordered_set<int> resNet = {  };
 float learningRate = 0.05;
 float thresholdAccuracy = 0.2f;
 int batchSize = 500;
-int iterations = 250;
+int iterations = 500;
 
 // Save / Load
 bool SaveOnComplete = false;
@@ -59,25 +59,27 @@ int ReadBigInt(ifstream* fr);
 Matrix RandomizeInput(Matrix totalInput, int size);
 vector<int> GetPredictions(int len);
 float Accuracy(vector<int> predictions, vector<int> labels);
-Matrix ELU(Matrix total, float alpha = 1.0f);
-Matrix ELUDerivative(Matrix total, float alpha = 1.0f);
+Matrix ReLU(Matrix total);
+Matrix ReLUDerivative(Matrix total);
 
-Matrix ELU(Matrix total, float alpha) {
+
+Matrix ReLU(Matrix total) {
 	Matrix a = total;
+
 	for (int r = 0; r < total.RowCount; r++) {
 		for (int c = 0; c < total.ColumnCount; c++) {
-			a[r][c] = total[r][c] < 0.0f ? alpha * (std::exp(total[r][c] - 1)) : total[r][c];
+			a[r][c] = total[r][c] < 0.0f ? 0.0f : total[r][c];
 		}
 	}
 	return a;
 }
 
-Matrix ELUDerivative(Matrix total, float alpha) {
+Matrix ReLUDerivative(Matrix total) {
 	Matrix a = total;
 
 	for (int r = 0; r < total.RowCount; r++) {
 		for (int c = 0; c < total.ColumnCount; c++) {
-			a[r][c] = total[r][c] > 0.0f ? 1.0f : alpha * std::exp(total[r][c]);
+			a[r][c] = total[r][c] > 0.0f ? 1.0f : 0.0f;
 		}
 	}
 	return a;
@@ -348,7 +350,7 @@ void ForwardPropogation() {
 
 	for (int i = 0; i < aTotal.size(); i++) {
 		aTotal[i] = (weights[i].Transpose().DotProductM(i == 0 ? batch : activation[i - 1]) + biases[i]).Transpose();
-		activation[i] = i < aTotal.size() - 1 ? ELU(aTotal[i]) : SoftMax(aTotal[i]);
+		activation[i] = i < aTotal.size() - 1 ? ReLU(aTotal[i]) : SoftMax(aTotal[i]);
 	}
 }
 
@@ -363,7 +365,7 @@ void BackwardPropogation() {
 		std::cout << "DTotal[" << i + 1 << "]: " << dTotal[i + 1].RowCount << " :: " << dTotal[i + 1].ColumnCount << std::endl;
 		std::cout << "Weights[" << i + 1 << "]: " << weights[i + 1].RowCount << " :: " << weights[i + 1].ColumnCount << std::endl;
 		std::cout << "ATotal[" << i << "]: " << aTotal[i].RowCount << " :: " << aTotal[i].ColumnCount << std::endl;
-		dTotal[i] = ((dTotal[i + 1].DotProductM(weights[i + 1])) * ELUDerivative(aTotal[i]));
+		dTotal[i] = ((dTotal[i + 1].DotProductM(weights[i + 1])) * ReLUDerivative(aTotal[i]));
 	}
 
 	std::cout << std::endl;

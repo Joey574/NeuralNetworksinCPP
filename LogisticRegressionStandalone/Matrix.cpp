@@ -49,7 +49,7 @@ Matrix::Matrix(int rows, int columns, float lowerRand, float upperRand) {
 
 	for (int r = 0; r < RowCount; r++) {
 		for (int c = 0; c < ColumnCount; c++) {
-			matrix[r][c] = dist(gen);
+			matrix[r][c] = dist(gen) * std::sqrt(1.0f / ColumnCount);
 		}
 	}
 	transposeBuilt = false;

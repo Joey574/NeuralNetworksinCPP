@@ -15,13 +15,13 @@
 using namespace std;
 
 // Hyperparameters
-vector<int> dimensions = { 784, 128, 128, 128, 10 };
-std::unordered_set<int> resNet = {  };
+vector<int> dimensions = { 784, 30, 30, 30, 30, 30, 30, 30, 30, 10 };
+std::unordered_set<int> resNet = { 5, 7 };
 
-float learningRate = 0.001;
+float learningRate = 0.2f;
 float thresholdAccuracy = 0.2f;
 int batchSize = 500;
-int iterations = 150000;
+int iterations = 2500;
 
 // Save / Load
 bool SaveOnComplete = false;
@@ -327,7 +327,7 @@ void ForwardPropogation() {
 		else {
 			aTotal[i] = (weights[i].DotProduct(i == 0 ? batch : activation[i - 1]) + biases[i]).Transpose();
 		}
-		activation[i] = i < aTotal.size() - 1 ? SiLU(aTotal[i]) : SoftMax(aTotal[i]);
+		activation[i] = i < aTotal.size() - 1 ? ELU(aTotal[i]) : SoftMax(aTotal[i]);
 	}
 }
 
@@ -338,10 +338,10 @@ void BackwardPropogation() {
 	for (int i = dTotal.size() - 2; i > -1; i--) {
 
 		if (resNet.find(i) != resNet.end()) {
-			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].Segment(batch.RowCount))).Transpose() * SiLUDerivative(aTotal[i].Segment(batch.RowCount)));
+			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].Segment(batch.RowCount))).Transpose() * ELUDerivative(aTotal[i].Segment(batch.RowCount)));
 		}
 		else {
-			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * SiLUDerivative(aTotal[i]));
+			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * ELUDerivative(aTotal[i]));
 		}
 	}
 
