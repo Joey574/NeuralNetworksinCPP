@@ -15,13 +15,13 @@
 using namespace std;
 
 // Hyperparameters
-vector<int> dimensions = { 784, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 10 };
-std::unordered_set<int> resNet = { 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29 };
+vector<int> dimensions = { 784, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 10 };
+std::unordered_set<int> resNet = {7, 8, 9, 10, 11 };
 
-float learningRate = 0.001;
+float learningRate = 0.005;
 float thresholdAccuracy = 0.2f;
 int batchSize = 500;
-int iterations = 150000;
+int iterations = 15000;
 
 // Save / Load
 bool SaveOnComplete = false;
