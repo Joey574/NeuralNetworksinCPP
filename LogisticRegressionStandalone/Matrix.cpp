@@ -33,7 +33,7 @@ Matrix::Matrix(int rows, int columns, float value) {
 	transposeBuilt = false;
 }
 
-Matrix::Matrix(int rows, int columns, float lowerRand, float upperRand) {
+Matrix::Matrix(int rows, int columns, float lowerRand, float upperRand, init initType) {
 	matrix = std::vector<std::vector<float>>(rows);
 
 	for (int i = 0; i < rows; i++) {
@@ -47,11 +47,32 @@ Matrix::Matrix(int rows, int columns, float lowerRand, float upperRand) {
 	std::mt19937 gen(rd());
 	std::uniform_real_distribution<float> dist(lowerRand, upperRand);
 
-	for (int r = 0; r < RowCount; r++) {
-		for (int c = 0; c < ColumnCount; c++) {
-			matrix[r][c] = dist(gen) * std::sqrt(1.0f / ColumnCount);
+	if (initType == Random) {
+		for (int r = 0; r < RowCount; r++) {
+			for (int c = 0; c < ColumnCount; c++) {
+				matrix[r][c] = dist(gen);
+			}
+		}
+	} else if (initType == Normalize) {
+		for (int r = 0; r < RowCount; r++) {
+			for (int c = 0; c < ColumnCount; c++) {
+				matrix[r][c] = dist(gen) * std::sqrt(1.0f / ColumnCount);
+			}
+		}
+	} else if (initType == He_et_al) {
+		for (int r = 0; r < RowCount; r++) {
+			for (int c = 0; c < ColumnCount; c++) {
+				matrix[r][c] = dist(gen) * std::sqrt(2.0f / RowCount);
+			}
+		}
+	} else if (initType == Xavier) {
+		for (int r = 0; r < RowCount; r++) {
+			for (int c = 0; c < ColumnCount; c++) {
+				matrix[r][c] = dist(gen) * std::sqrt(1.0f / RowCount);
+			}
 		}
 	}
+	
 	transposeBuilt = false;
 }
 
