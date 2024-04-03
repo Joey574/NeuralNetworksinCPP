@@ -27,7 +27,11 @@ public:
 
 	std::vector<float> ColumnSums();
 	std::vector<float> RowSums();
-	std::vector<float> RowSumsSeq();
+
+	Matrix Negative();
+
+	Matrix DotProduct(Matrix element);
+	Matrix DotProductM(Matrix element);
 
 	Matrix Add(float scalar);
 	Matrix Add(std::vector<float> scalar);
@@ -57,9 +61,6 @@ public:
 	std::vector<float> LogSumExp();
 
 	Matrix Transpose();
-
-	Matrix DotProduct(Matrix element);
-
 	std::string ToString();
 
 	int ColumnCount;
@@ -194,22 +195,22 @@ private:
 
 	std::vector<std::vector<float>> matrixT;
 
-	Matrix SingleFloatOperation(void (Matrix::* operation)(__m256 opOne, __m256 opTwo, __m256* result),
+	Matrix SingleFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo),
 		float (Matrix::* remainderOperation)(float a, float b), float scalar);
-	Matrix VectorFloatOperation(void (Matrix::* operation)(__m256 opOne, __m256 opTwo, __m256* result),
+	Matrix VectorFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo),
 		float (Matrix::* remainderOperation)(float a, float b), std::vector<float> scalar);
-	Matrix MatrixFloatOperation(void (Matrix::* operation)(__m256 opOne, __m256 opTwo, __m256* result),
+	Matrix MatrixFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo),
 		float (Matrix::* remainderOperation)(float a, float b), Matrix element);
 
 	std::vector<float> HorizontalSum(std::vector<std::vector<float>> element);
 	std::vector<float> VerticalSum(std::vector<std::vector<float>> element);
 
-	void SIMDAdd(__m256 opOne, __m256 opTwo, __m256* result);
-	void SIMDSub(__m256 opOne, __m256 opTwo, __m256* result);
-	void SIMDMul(__m256 opOne, __m256 opTwo, __m256* result);
-	void SIMDDiv(__m256 opOne, __m256 opTwo, __m256* result);
-	void SIMDPow(__m256 opOne, __m256 opTwo, __m256* result);
-	void SIMDExp(__m256 opOne, __m256 opTwo, __m256* result);
+	__m256 SIMDAdd(__m256 opOne, __m256 opTwo);
+	__m256 SIMDSub(__m256 opOne, __m256 opTwo);
+	__m256 SIMDMul(__m256 opOne, __m256 opTwo);
+	__m256 SIMDDiv(__m256 opOne, __m256 opTwo);
+	__m256 SIMDPow(__m256 opOne, __m256 opTwo);
+	__m256 SIMDExp(__m256 opOne, __m256 opTwo);
 
 	float RemainderAdd(float a, float b);
 	float RemainderSub(float a, float b);
