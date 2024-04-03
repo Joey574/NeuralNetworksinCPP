@@ -13,11 +13,12 @@ public:
 
 	static enum init
 	{
-		Random, Normalize, He_et_al, Xavier, 
+		Random, Normalize, Xavier, NormalizedXavier, He, NormalizedHe
 	};
 
 	Matrix();
 	Matrix(int rows, int columns);
+	Matrix(int rows, int columns, init initType);
 	Matrix(int rows, int columns, float value);
 	Matrix(int rows, int columns, float lowerRand, float upperRand, init initType);
 	Matrix(std::vector<std::vector<float>>);

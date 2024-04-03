@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include <windows.h>
 #include <thread>
+#include <iomanip>
 
 #include "Matrix.h"
 #include "ActivationFunctions.h"
@@ -18,7 +19,7 @@ using namespace std;
 vector<int> dimensions = { 784, 128, 10 };
 std::unordered_set<int> resNet = {  };
 
-float learningRate = 0.25f;
+float learningRate = 0.25;
 float thresholdAccuracy = 0.2f;
 int batchSize = 500;
 int iterations = 250;
@@ -184,10 +185,10 @@ void InitializeNetwork() {
 
 	for (int i = 0; i < dimensions.size() - 1; i++) {
 		if (resNet.find(i - 1) != resNet.end()) {
-			weights.emplace_back(dimensions[i] + dimensions[0], dimensions[i + 1], -0.5f, 0.5f, Matrix::init::Normalize);
+			weights.emplace_back(dimensions[i] + dimensions[0], dimensions[i + 1], -0.5f, 0.5f, Matrix::init::a);
 		}
 		else {
-			weights.emplace_back(dimensions[i], dimensions[i + 1], -0.5f, 0.5f, Matrix::init::Normalize);
+			weights.emplace_back(dimensions[i], dimensions[i + 1], -0.5f, 0.5f, Matrix::init::a);
 		}
 		cout << "Weights[" << i << "] connections: " << (weights[i].ColumnCount * weights[i].RowCount) << endl;
 		connections += weights[i].ColumnCount * weights[i].RowCount;
@@ -265,8 +266,6 @@ void TrainNetwork() {
 
 	cout << "TRAINING STARTED" << endl;
 
-	int used = 0;
-
 	std::chrono::steady_clock::time_point totalStart;
 	std::chrono::steady_clock::time_point totalEnd;
 
@@ -294,7 +293,7 @@ void TrainNetwork() {
 		tEnd = std::chrono::high_resolution_clock::now();
 		time = tEnd - tStart;
 
-		cout << "Iteration: " << i << " Accuracy: " << acc << " (" << time.count() << "ms)" << endl;
+		cout << "Iteration: " << i << " Accuracy: " << std::fixed << std::setprecision(3) << acc << " (" << time.count() << "ms)" << endl;
 	}
 
 	totalEnd = std::chrono::high_resolution_clock::now();
@@ -323,7 +322,7 @@ void ForwardPropogation() {
 		else {
 			aTotal[i] = (weights[i].DotProduct(i == 0 ? batch : activation[i - 1]) + biases[i]).Transpose();
 		}
-		activation[i] = i < aTotal.size() - 1 ? LeakyReLU(aTotal[i]) : SoftMax(aTotal[i]);
+		activation[i] = i < aTotal.size() - 1 ? ReLU(aTotal[i]) : SoftMax(aTotal[i]);
 	}
 }
 
@@ -334,10 +333,10 @@ void BackwardPropogation() {
 	for (int i = dTotal.size() - 2; i > -1; i--) {
 
 		if (resNet.find(i) != resNet.end()) {
-			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].Segment(batch.RowCount))).Transpose() * LeakyReLUDerivative(aTotal[i].Segment(batch.RowCount)));
+			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].Segment(batch.RowCount))).Transpose() * ReLUDerivative(aTotal[i].Segment(batch.RowCount)));
 		}
 		else {
-			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * LeakyReLUDerivative(aTotal[i]));
+			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * ReLUDerivative(aTotal[i]));
 		}
 	}
 

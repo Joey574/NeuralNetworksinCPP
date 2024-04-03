@@ -21,6 +21,58 @@ Matrix::Matrix(int rows, int columns) {
 	transposeBuilt = false;
 }
 
+Matrix::Matrix(int rows, int columns, init initType) {
+	matrix = std::vector<std::vector<float>>(rows);
+
+	float lowerRand;
+	float upperRand;
+
+	for (int i = 0; i < rows; i++) {
+		matrix[i] = std::vector<float>(columns);
+	}
+
+	ColumnCount = columns;
+	RowCount = rows;
+
+	std::random_device rd;
+	std::mt19937 gen(rd());
+
+	if (initType == Xavier || initType == He) {
+
+		if (initType == Xavier) {
+			lowerRand = -(1.0f / std::sqrt(RowCount));
+			upperRand = 1.0f / std::sqrt(RowCount);;
+		} else if (initType == He) {
+
+		}
+
+		std::uniform_real_distribution<float> dist(lowerRand, upperRand);
+		for (int r = 0; r < RowCount; r++) {
+			for (int c = 0; c < ColumnCount; c++) {
+				matrix[r][c] = dist(gen);
+			}
+		}
+	}
+
+	if (initType == NormalizedXavier || initType == NormalizedHe) {
+
+		if (initType == NormalizedXavier) {
+
+		} else if (initType == NormalizedHe) {
+
+		}
+
+		std::normal_distribution<float> dist(lowerRand, upperRand);
+		for (int r = 0; r < RowCount; r++) {
+			for (int c = 0; c < ColumnCount; c++) {
+				matrix[r][c] = dist(gen);
+			}
+		}
+	}
+
+	transposeBuilt = false;
+}
+
 Matrix::Matrix(int rows, int columns, float value) {
 	matrix = std::vector<std::vector<float>>(rows);
 
@@ -57,18 +109,6 @@ Matrix::Matrix(int rows, int columns, float lowerRand, float upperRand, init ini
 		for (int r = 0; r < RowCount; r++) {
 			for (int c = 0; c < ColumnCount; c++) {
 				matrix[r][c] = dist(gen) * std::sqrt(1.0f / ColumnCount);
-			}
-		}
-	} else if (initType == He_et_al) {
-		for (int r = 0; r < RowCount; r++) {
-			for (int c = 0; c < ColumnCount; c++) {
-				matrix[r][c] = dist(gen) * std::sqrt(2.0f / RowCount);
-			}
-		}
-	} else if (initType == Xavier) {
-		for (int r = 0; r < RowCount; r++) {
-			for (int c = 0; c < ColumnCount; c++) {
-				matrix[r][c] = dist(gen) * std::sqrt(1.0f / RowCount);
 			}
 		}
 	}
