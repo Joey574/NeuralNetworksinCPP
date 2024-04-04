@@ -11,10 +11,16 @@ class Matrix
 {
 public:
 
+	static enum init
+	{
+		Random, Normalize, Xavier, NormalizedXavier, He, NormalizedHe
+	};
+
 	Matrix();
 	Matrix(int rows, int columns);
+	Matrix(int rows, int columns, init initType);
 	Matrix(int rows, int columns, float value);
-	Matrix(int rows, int columns, float lowerRand, float upperRand);
+	Matrix(int rows, int columns, float lowerRand, float upperRand, init initType);
 	Matrix(std::vector<std::vector<float>>);
 
 	std::vector<float> Column(int index);

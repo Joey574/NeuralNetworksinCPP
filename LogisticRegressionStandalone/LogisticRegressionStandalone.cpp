@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include <windows.h>
 #include <thread>
+#include <iomanip>
 
 #include "Matrix.h"
 #include "ActivationFunctions.h"
@@ -184,15 +185,16 @@ void InitializeNetwork() {
 
 	for (int i = 0; i < dimensions.size() - 1; i++) {
 		if (resNet.find(i - 1) != resNet.end()) {
-			weights.emplace_back(dimensions[i] + dimensions[0], dimensions[i + 1], -0.5f, 0.5f);
+			weights.emplace_back(dimensions[i] + dimensions[0], dimensions[i + 1], -0.5f, 0.5f, Matrix::init::a);
 		}
 		else {
-			weights.emplace_back(dimensions[i], dimensions[i + 1], -0.5f, 0.5f);
+			weights.emplace_back(dimensions[i], dimensions[i + 1], -0.5f, 0.5f, Matrix::init::a);
 		}
 		cout << "Weights[" << i << "] connections: " << (weights[i].ColumnCount * weights[i].RowCount) << endl;
 		connections += weights[i].ColumnCount * weights[i].RowCount;
 
-		biases.emplace_back(weights[i].Row(0));
+		biases.emplace_back(vector<float>(dimensions[i + 1], 0));
+
 		cout << "Biases[" << i << "] connections: " << biases[i].size() << endl;
 		connections += biases[i].size();
 
@@ -264,8 +266,6 @@ void TrainNetwork() {
 
 	cout << "TRAINING STARTED" << endl;
 
-	int used = 0;
-
 	std::chrono::steady_clock::time_point totalStart;
 	std::chrono::steady_clock::time_point totalEnd;
 
@@ -279,17 +279,9 @@ void TrainNetwork() {
 
 	for (int i = 0; i < iterations; i++) {
 		tStart = std::chrono::high_resolution_clock::now();
+
 		ForwardPropogation();
-		tEnd = std::chrono::high_resolution_clock::now();
-		time = tEnd - tStart;
-		cout << "Forward Propogation complete (" << time.count() << "ms)" << endl;
-
-		tStart = std::chrono::high_resolution_clock::now();
 		BackwardPropogation();
-		tEnd = std::chrono::high_resolution_clock::now();
-		time = tEnd - tStart;
-		cout << "Backward Propogation complete (" << time.count() << "ms)" << endl;
-
 		UpdateNetwork();
 
 		float acc = Accuracy(GetPredictions(batchSize), batchLabels);
@@ -298,7 +290,10 @@ void TrainNetwork() {
 			batch = RandomizeInput(input, batchSize);
 		}
 
-		cout << "Iteration: " << i << " Accuracy: " << acc << endl;
+		tEnd = std::chrono::high_resolution_clock::now();
+		time = tEnd - tStart;
+
+		cout << "Iteration: " << i << " Accuracy: " << std::fixed << std::setprecision(3) << acc << " (" << time.count() << "ms)" << endl;
 	}
 
 	totalEnd = std::chrono::high_resolution_clock::now();
