@@ -21,6 +21,18 @@ Matrix::Matrix(int rows, int columns) {
 	transposeBuilt = false;
 }
 
+Matrix::Matrix(int rows, int columns, float value) {
+	matrix = std::vector<std::vector<float>>(rows);
+
+	for (int i = 0; i < rows; i++) {
+		matrix[i] = std::vector<float>(columns, value);
+	}
+
+	ColumnCount = columns;
+	RowCount = rows;
+	transposeBuilt = false;
+}
+
 Matrix::Matrix(int rows, int columns, init initType) {
 	matrix = std::vector<std::vector<float>>(rows);
 
@@ -37,16 +49,20 @@ Matrix::Matrix(int rows, int columns, init initType) {
 	std::random_device rd;
 	std::mt19937 gen(rd());
 
-	if (initType == Xavier || initType == He) {
-
-		if (initType == Xavier) {
-			lowerRand = -(1.0f / std::sqrt(RowCount));
-			upperRand = 1.0f / std::sqrt(RowCount);;
-		} else if (initType == He) {
-
-		}
+	if (initType == Xavier) {
+		lowerRand = -(1.0f / std::sqrt(RowCount));
+		upperRand = 1.0f / std::sqrt(RowCount);;
 
 		std::uniform_real_distribution<float> dist(lowerRand, upperRand);
+
+		for (int r = 0; r < RowCount; r++) {
+			for (int c = 0; c < ColumnCount; c++) {
+				matrix[r][c] = dist(gen);
+			}
+		}
+	} else if (initType == He) {
+		std::normal_distribution<float> dist(0.0, std::sqrt(2.0f / RowCount));
+
 		for (int r = 0; r < RowCount; r++) {
 			for (int c = 0; c < ColumnCount; c++) {
 				matrix[r][c] = dist(gen);
@@ -54,34 +70,6 @@ Matrix::Matrix(int rows, int columns, init initType) {
 		}
 	}
 
-	if (initType == NormalizedXavier || initType == NormalizedHe) {
-
-		if (initType == NormalizedXavier) {
-
-		} else if (initType == NormalizedHe) {
-
-		}
-
-		std::normal_distribution<float> dist(lowerRand, upperRand);
-		for (int r = 0; r < RowCount; r++) {
-			for (int c = 0; c < ColumnCount; c++) {
-				matrix[r][c] = dist(gen);
-			}
-		}
-	}
-
-	transposeBuilt = false;
-}
-
-Matrix::Matrix(int rows, int columns, float value) {
-	matrix = std::vector<std::vector<float>>(rows);
-
-	for (int i = 0; i < rows; i++) {
-		matrix[i] = std::vector<float>(columns, value);
-	}
-
-	ColumnCount = columns;
-	RowCount = rows;
 	transposeBuilt = false;
 }
 

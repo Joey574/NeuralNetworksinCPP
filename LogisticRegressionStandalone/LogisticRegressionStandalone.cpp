@@ -16,13 +16,13 @@
 using namespace std;
 
 // Hyperparameters
-vector<int> dimensions = { 784, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 10 };
-std::unordered_set<int> resNet = { 5, 7, 9, 11 };
+vector<int> dimensions = { 784, 128, 10 };
+std::unordered_set<int> resNet = {  };
 
-float learningRate = 0.01f;
+float learningRate = 0.25;
 float thresholdAccuracy = 0.2f;
 int batchSize = 500;
-int iterations = 72000;
+int iterations = 250;
 
 // Save / Load
 bool SaveOnComplete = false;
@@ -185,10 +185,12 @@ void InitializeNetwork() {
 
 	for (int i = 0; i < dimensions.size() - 1; i++) {
 		if (resNet.find(i - 1) != resNet.end()) {
-			weights.emplace_back(dimensions[i] + dimensions[0], dimensions[i + 1], -0.5f, 0.5f, Matrix::init::a);
+			//weights.emplace_back(dimensions[i] + dimensions[0], dimensions[i + 1], -0.5f, 0.5f, Matrix::init::Random);
+			weights.emplace_back(dimensions[i] + dimensions[0], dimensions[i + 1], -0.5f, 0.5f, Matrix::init::Xavier);
 		}
 		else {
-			weights.emplace_back(dimensions[i], dimensions[i + 1], -0.5f, 0.5f, Matrix::init::a);
+			//weights.emplace_back(dimensions[i], dimensions[i + 1], -0.5f, 0.5f, Matrix::init::Random);
+			weights.emplace_back(dimensions[i], dimensions[i + 1], Matrix::init::Xavier);
 		}
 		cout << "Weights[" << i << "] connections: " << (weights[i].ColumnCount * weights[i].RowCount) << endl;
 		connections += weights[i].ColumnCount * weights[i].RowCount;

@@ -13,7 +13,7 @@ public:
 
 	static enum init
 	{
-		Random, Normalize, Xavier, NormalizedXavier, He, NormalizedHe
+		Random, Normalize, Xavier, He
 	};
 
 	Matrix();
