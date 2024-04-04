@@ -185,12 +185,12 @@ void InitializeNetwork() {
 
 	for (int i = 0; i < dimensions.size() - 1; i++) {
 		if (resNet.find(i - 1) != resNet.end()) {
-			//weights.emplace_back(dimensions[i] + dimensions[0], dimensions[i + 1], -0.5f, 0.5f, Matrix::init::Random);
-			weights.emplace_back(dimensions[i] + dimensions[0], dimensions[i + 1], -0.5f, 0.5f, Matrix::init::Xavier);
+			weights.emplace_back(dimensions[i] + dimensions[0], dimensions[i + 1], -0.5f, 0.5f, Matrix::init::Normalize);
+			//weights.emplace_back(dimensions[i] + dimensions[0], dimensions[i + 1], -0.5f, 0.5f, Matrix::init::Xavier);
 		}
 		else {
-			//weights.emplace_back(dimensions[i], dimensions[i + 1], -0.5f, 0.5f, Matrix::init::Random);
-			weights.emplace_back(dimensions[i], dimensions[i + 1], Matrix::init::Xavier);
+			weights.emplace_back(dimensions[i], dimensions[i + 1], -0.5f, 0.5f, Matrix::init::Normalize);
+			//weights.emplace_back(dimensions[i], dimensions[i + 1], Matrix::init::Xavier);
 		}
 		cout << "Weights[" << i << "] connections: " << (weights[i].ColumnCount * weights[i].RowCount) << endl;
 		connections += weights[i].ColumnCount * weights[i].RowCount;
