@@ -20,7 +20,6 @@ public:
 	Matrix(int rows, int columns);
 	Matrix(int rows, int columns, init initType);
 	Matrix(int rows, int columns, float value);
-	Matrix(int rows, int columns, float lowerRand, float upperRand, init initType);
 	Matrix(std::vector<std::vector<float>>);
 
 	std::vector<float> Column(int index);

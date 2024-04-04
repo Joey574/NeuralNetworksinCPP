@@ -36,8 +36,8 @@ Matrix::Matrix(int rows, int columns, float value) {
 Matrix::Matrix(int rows, int columns, init initType) {
 	matrix = std::vector<std::vector<float>>(rows);
 
-	float lowerRand;
-	float upperRand;
+	float lowerRand = -0.5f;
+	float upperRand = 0.5f;
 
 	for (int i = 0; i < rows; i++) {
 		matrix[i] = std::vector<float>(columns);
@@ -68,39 +68,24 @@ Matrix::Matrix(int rows, int columns, init initType) {
 				matrix[r][c] = dist(gen);
 			}
 		}
-	}
+	} else if (initType == Normalize) {
+		std::uniform_real_distribution<float> dist(lowerRand, upperRand);
 
-	transposeBuilt = false;
-}
-
-Matrix::Matrix(int rows, int columns, float lowerRand, float upperRand, init initType) {
-	matrix = std::vector<std::vector<float>>(rows);
-
-	for (int i = 0; i < rows; i++) {
-		matrix[i] = std::vector<float>(columns);
-	}
-
-	ColumnCount = columns;
-	RowCount = rows;
-
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_real_distribution<float> dist(lowerRand, upperRand);
-
-	if (initType == Random) {
 		for (int r = 0; r < RowCount; r++) {
 			for (int c = 0; c < ColumnCount; c++) {
 				matrix[r][c] = dist(gen);
 			}
 		}
-	} else if (initType == Normalize) {
+	} else if (initType == Random) {
+		std::uniform_real_distribution<float> dist(lowerRand, upperRand);
+
 		for (int r = 0; r < RowCount; r++) {
 			for (int c = 0; c < ColumnCount; c++) {
 				matrix[r][c] = dist(gen) * std::sqrt(1.0f / ColumnCount);
 			}
 		}
 	}
-	
+
 	transposeBuilt = false;
 }
 
