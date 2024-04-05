@@ -16,13 +16,13 @@
 using namespace std;
 
 // Hyperparameters
-vector<int> dimensions = { 784, 16, 16, 10 };
-std::unordered_set<int> resNet = {  };
+vector<int> dimensions = { 784, 16, 16, 16, 16, 16, 10 };
+std::unordered_set<int> resNet = { 2, 3 };
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 40;
+int epochs = 35;
 int batchSize = 500;
-float learningRate = 0.5;
+float learningRate = 0.15;
 
 // Save / Load
 bool SaveOnComplete = false;
@@ -367,11 +367,11 @@ void ForwardPropogation(Matrix in) {
 
 	for (int i = 0; i < aTotal.size(); i++) {
 		if (resNet.find(i) != resNet.end()) {
+			
+			aTotal[i].Insert(0, in);
+			activation[i].Insert(0, in);
 
-			aTotal[i].Insert(0, batch);
-			activation[i].Insert(0, batch);
-
-			aTotal[i].Insert(batch.RowCount, (weights[i].DotProduct(i == 0 ? batch : activation[i - 1]) + biases[i]).Transpose());
+			aTotal[i].Insert(in.RowCount, (weights[i].DotProduct(i == 0 ? in : activation[i - 1]) + biases[i]).Transpose());
 		} else {
 			aTotal[i] = (weights[i].DotProduct(i == 0 ? in : activation[i - 1]) + biases[i]).Transpose();
 		}
