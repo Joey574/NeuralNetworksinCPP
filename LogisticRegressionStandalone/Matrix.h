@@ -60,15 +60,13 @@ public:
 	Matrix Pow(std::vector<float> scalar);
 	Matrix Pow(Matrix element);
 
-	Matrix Exp();
-	Matrix Exp(float base);
+	Matrix Exp(float base = std::exp(1.0));
 	Matrix Exp(std::vector<float> base);
 	Matrix Exp(Matrix base);
 
 	std::vector<float> LogSumExp();
 
 	Matrix Transpose();
-	Matrix Combine(Matrix element);
 	void Insert(int startRow, Matrix element);
 
 	std::string ToString();

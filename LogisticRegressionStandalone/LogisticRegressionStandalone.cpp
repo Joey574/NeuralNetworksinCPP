@@ -16,13 +16,14 @@
 using namespace std;
 
 // Hyperparameters
-vector<int> dimensions = { 784, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 10 };
-std::unordered_set<int> resNet = { 5, 7, 9, 11 };
+vector<int> dimensions = { 784, 16, 16, 10 };
+std::unordered_set<int> resNet = {  };
 
-float learningRate = 0.01;
+Matrix::init initType = Matrix::init::He;
+int iterations = 500;
+int batchSize = 100;
+float learningRate = 0.4;
 float thresholdAccuracy = 0.2f;
-int batchSize = 500;
-int iterations = 48000;
 
 // Save / Load
 bool SaveOnComplete = false;
@@ -62,7 +63,7 @@ void BackwardPropogation();
 void UpdateNetwork();
 void LoadInput();
 int ReadBigInt(ifstream* fr);
-Matrix RandomizeInput(Matrix totalInput, int size);
+Matrix GetNextInput(Matrix totalInput, int size);
 vector<int> GetPredictions(int len);
 float Accuracy(vector<int> predictions, vector<int> labels);
 void SaveNetwork(string filename);
@@ -103,7 +104,7 @@ void LoadInput() {
 	ifstream trainingLabelsFR = ifstream(trainingLabels, std::ios::binary);
 
 	if (trainingFR.is_open() && trainingLabelsFR.is_open()) {
-		cout << "Loading training data..." << endl;
+		std::cout << "Loading training data..." << endl;
 	}
 	else {
 		std::cout << "File(s) not found" << endl;
@@ -148,10 +149,29 @@ void LoadInput() {
 
 	input = input.Divide(255);
 
+	for (int k = 0; k < input.ColumnCount; k++) {
+
+		int r = k + rand() % (input.ColumnCount - k);
+
+		//swap(elements[k], elements[r]);
+
+		std::vector<float> tempI = input.Column(k);
+		std::vector<float> tempY = YTotal.Column(k);
+		int tempL = inputLabels[k];
+
+		input.SetColumn(k, input.Column(r));
+		YTotal.SetColumn(k, YTotal.Column(r));
+		inputLabels[k] = inputLabels[r];
+
+		input.SetColumn(r, tempI);
+		YTotal.SetColumn(r, tempY);
+		inputLabels[r] = tempL;
+	}
+
 	auto eTime = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> time = eTime - sTime;
 
-	cout << "Time to load input " << (time.count() / 1000.00) << " seconds" << endl;
+	std::cout << "Time to load input " << (time.count() / 1000.00) << " seconds" << endl;
 }
 
 int ReadBigInt(ifstream* fr) {
@@ -185,9 +205,9 @@ void InitializeNetwork() {
 
 	for (int i = 0; i < dimensions.size() - 1; i++) {
 		if (resNet.find(i - 1) != resNet.end()) {
-			weights.emplace_back(dimensions[i] + dimensions[0], dimensions[i + 1], Matrix::init::He);
+			weights.emplace_back(dimensions[i] + dimensions[0], dimensions[i + 1], initType);
 		} else {
-			weights.emplace_back(dimensions[i], dimensions[i + 1], Matrix::init::He);
+			weights.emplace_back(dimensions[i], dimensions[i + 1], initType);
 		}
 		cout << "Weights[" << i << "] connections: " << (weights[i].ColumnCount * weights[i].RowCount) << endl;
 		connections += weights[i].ColumnCount * weights[i].RowCount;
@@ -236,28 +256,17 @@ void InitializeResultMatrices(int size) {
 	}
 }
 
-Matrix RandomizeInput(Matrix totalInput, int size) {
+Matrix GetNextInput(Matrix totalInput, int size) {
 	Matrix a = Matrix(totalInput.RowCount, size);
 
-	std::unordered_set<int> used = std::unordered_set<int>(size);
-
-	YBatch = Matrix(dimensions[dimensions.size() - 1], size);
+	YBatch = YTotal.Segment(0, size);
+	a = totalInput.Segment(0, size);
 	batchLabels.clear();
 
-	while (batchLabels.size() < size) {
-
-		int c = (rand() % totalInput.ColumnCount) + 1;
-
-		if (used.find(c) == used.end()) {
-
-			used.insert(c);
-
-			a.SetColumn(batchLabels.size(), totalInput.Column(c));
-			YBatch.SetColumn(batchLabels.size(), YTotal.Column(c));
-
-			batchLabels.push_back(inputLabels[c]);
-		}
+	for (int i = 0; i < size; i++) {
+		batchLabels.push_back(inputLabels[i]);
 	}
+
 	return a;
 }
 
@@ -274,7 +283,7 @@ void TrainNetwork() {
 
 	totalStart = std::chrono::high_resolution_clock::now();
 
-	batch = RandomizeInput(input, batchSize);
+	batch = GetNextInput(input, batchSize);
 
 	for (int i = 0; i < iterations; i++) {
 		tStart = std::chrono::high_resolution_clock::now();
@@ -286,7 +295,7 @@ void TrainNetwork() {
 		float acc = Accuracy(GetPredictions(batchSize), batchLabels);
 
 		if (acc > thresholdAccuracy) {
-			batch = RandomizeInput(input, batchSize);
+			batch = GetNextInput(input, batchSize);
 		}
 
 		tEnd = std::chrono::high_resolution_clock::now();
@@ -305,7 +314,6 @@ void TrainNetwork() {
 
 	cout << "Total Training Time: " << time.count() << " seconds :: " << (time.count() / 60.00) << " minutes :: " << (time.count() / 3600.00) << " hours" << endl;
 	cout << "Average Iteration Time: " << avgTime << " ms" << endl;
-
 }
 
 void ForwardPropogation() {
@@ -341,7 +349,7 @@ void BackwardPropogation() {
 
 	std::for_each(std::execution::par_unseq, dWeights.begin(), dWeights.end(), [&](auto&& item) {
 		size_t i = &item - dWeights.data();
-		dWeights[i] = (dTotal[i].Transpose().DotProduct(i == 0 ? batch.Transpose() : activation[i - 1].Transpose()) * (1.0f / (float)batchSize)).Transpose();
+		item = (dTotal[i].Transpose().DotProduct(i == 0 ? batch.Transpose() : activation[i - 1].Transpose()) * (1.0f / (float)batchSize)).Transpose();
 		dBiases[i] = dTotal[i].Multiply(1.0f / (float)batchSize).RowSums();
 		});
 

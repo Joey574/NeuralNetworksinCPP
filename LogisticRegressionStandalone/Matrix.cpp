@@ -273,10 +273,6 @@ Matrix Matrix::Pow(Matrix element) {
 }
 
 
-Matrix Matrix::Exp() {
-	return SingleFloatOperation(&Matrix::SIMDExp, &Matrix::RemainderExp, std::exp(1.0));
-}
-
 Matrix Matrix::Exp(float base) {
 	return SingleFloatOperation(&Matrix::SIMDExp, &Matrix::RemainderExp, base);
 }
@@ -481,19 +477,4 @@ Matrix Matrix::Transpose() {
 
 		return matrixT;
 	}
-}
-
-Matrix Matrix::Combine(Matrix element) {
-
-	Matrix combine = Matrix(RowCount + element.RowCount, ColumnCount);
-
-	for (int i = 0; i < element.RowCount; i++) {
-		combine.SetRow(i, element.Row(i));
-	}
-
-	for (int i = 0; i < RowCount; i++) {
-		combine.SetRow(i + element.RowCount, this->Row(i));
-	}
-
-	return combine;
 }
