@@ -20,10 +20,9 @@ vector<int> dimensions = { 784, 16, 16, 10 };
 std::unordered_set<int> resNet = {  };
 
 Matrix::init initType = Matrix::init::He;
-int iterations = 500;
-int batchSize = 100;
-float learningRate = 0.4;
-float thresholdAccuracy = 0.2f;
+int epochs = 40;
+int batchSize = 500;
+float learningRate = 0.5;
 
 // Save / Load
 bool SaveOnComplete = false;
@@ -32,9 +31,11 @@ string NetworkPath = "Network.txt";
 
 // Inputs
 Matrix input;
+Matrix testData;
 Matrix batch;
 
 vector<int> inputLabels;
+vector<int> testLabels;
 vector<int> batchLabels;
 
 // Neural Network Matrices
@@ -58,12 +59,12 @@ void InitializeNetwork();
 void InitializeResultMatrices(int size);
 void TrainNetwork();
 void TestNetwork();
-void ForwardPropogation();
+void ForwardPropogation(Matrix in);
 void BackwardPropogation();
 void UpdateNetwork();
 void LoadInput();
 int ReadBigInt(ifstream* fr);
-Matrix GetNextInput(Matrix totalInput, int size);
+Matrix GetNextInput(Matrix totalInput, int size, int i);
 vector<int> GetPredictions(int len);
 float Accuracy(vector<int> predictions, vector<int> labels);
 void SaveNetwork(string filename);
@@ -97,6 +98,7 @@ void LoadInput() {
 
 	auto sTime = std::chrono::high_resolution_clock::now();
 
+	// Train Data
 	string trainingImages = "Training Data\\train-images.idx3-ubyte";
 	string trainingLabels = "Training Data\\train-labels.idx1-ubyte";
 
@@ -153,8 +155,6 @@ void LoadInput() {
 
 		int r = k + rand() % (input.ColumnCount - k);
 
-		//swap(elements[k], elements[r]);
-
 		std::vector<float> tempI = input.Column(k);
 		std::vector<float> tempY = YTotal.Column(k);
 		int tempL = inputLabels[k];
@@ -167,6 +167,50 @@ void LoadInput() {
 		YTotal.SetColumn(r, tempY);
 		inputLabels[r] = tempL;
 	}
+
+	// Test Data
+	string testingImages = "Testing Data\\t10k-images.idx3-ubyte";
+	string testingLabels = "Testing Data\\t10k-labels.idx1-ubyte";
+
+	ifstream testingFR = ifstream(testingImages, std::ios::binary);
+	ifstream testingLabelFR = ifstream(testingLabels, std::ios::binary);
+
+	if (testingFR.is_open() && testingLabelFR.is_open()) {
+		cout << "Loading testing data..." << endl;
+	}
+	else {
+		std::cout << "File(s) not found" << endl;
+	}
+
+	// Discard
+	magicNum = ReadBigInt(&testingLabelFR);
+	imageNum = ReadBigInt(&testingLabelFR);
+	magicNum = ReadBigInt(&testingFR);
+
+	// Read the important things
+	imageNum = ReadBigInt(&testingFR);
+	width = ReadBigInt(&testingFR);
+	height = ReadBigInt(&testingFR);
+
+	testData = Matrix((width * height), imageNum);
+	testLabels = vector<int>(imageNum);
+
+	for (int i = 0; i < imageNum; i++) {
+
+		std::vector<uint8_t> byteData((width * height));
+		testingFR.read(reinterpret_cast<char*>(byteData.data()), byteData.size());
+		std::vector<int> intData(byteData.begin(), byteData.end());
+
+		testData.SetColumn(i, intData);
+
+		char byte;
+		testingLabelFR.read(&byte, 1);
+		testLabels[i] = static_cast<int>(static_cast<unsigned char>(byte));
+	}
+	testingFR.close();
+	testingLabelFR.close();
+
+	testData = testData.Divide(255);
 
 	auto eTime = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> time = eTime - sTime;
@@ -221,10 +265,9 @@ void InitializeNetwork() {
 		dBiases.emplace_back(biases[i].size());
 	}
 
-	cout << "Total connections: " << connections << endl;
-
 	double fileSize = ((sizeof(float)) * (connections)) + ((sizeof(int) * weights.size() + 1));
 
+	cout << "Total connections: " << connections << endl;
 	cout << "Predicted size of file: " << (fileSize / 1000000.00) << "mb" << endl;
 
 	InitializeResultMatrices(batchSize);
@@ -256,15 +299,16 @@ void InitializeResultMatrices(int size) {
 	}
 }
 
-Matrix GetNextInput(Matrix totalInput, int size) {
+Matrix GetNextInput(Matrix totalInput, int size, int i) {
 	Matrix a = Matrix(totalInput.RowCount, size);
 
-	YBatch = YTotal.Segment(0, size);
-	a = totalInput.Segment(0, size);
+
+	YBatch = YTotal.SegmentC(i * size, i * size + size);
+	a = totalInput.SegmentC(i * size, i * size + size);
 	batchLabels.clear();
 
-	for (int i = 0; i < size; i++) {
-		batchLabels.push_back(inputLabels[i]);
+	for (int x = i * size; x < i * size + size; x++) {
+		batchLabels.push_back(inputLabels[x]);
 	}
 
 	return a;
@@ -272,7 +316,7 @@ Matrix GetNextInput(Matrix totalInput, int size) {
 
 void TrainNetwork() {
 
-	cout << "TRAINING STARTED" << endl;
+	std::cout << "TRAINING STARTED" << endl;
 
 	std::chrono::steady_clock::time_point totalStart;
 	std::chrono::steady_clock::time_point totalEnd;
@@ -282,41 +326,44 @@ void TrainNetwork() {
 	std::chrono::duration<double, std::milli> time;
 
 	totalStart = std::chrono::high_resolution_clock::now();
+	int iterations = input.ColumnCount / batchSize;
 
-	batch = GetNextInput(input, batchSize);
+	for (int e = 0; e < epochs; e++) {
 
-	for (int i = 0; i < iterations; i++) {
 		tStart = std::chrono::high_resolution_clock::now();
 
-		ForwardPropogation();
-		BackwardPropogation();
-		UpdateNetwork();
+		for (int i = 0; i < iterations; i++) {
+			
+			batch = GetNextInput(input, batchSize, i);
 
-		float acc = Accuracy(GetPredictions(batchSize), batchLabels);
-
-		if (acc > thresholdAccuracy) {
-			batch = GetNextInput(input, batchSize);
+			ForwardPropogation(batch);
+			BackwardPropogation();
+			UpdateNetwork();
 		}
+
+		InitializeResultMatrices(testData.ColumnCount);
+		ForwardPropogation(testData);
+		float acc = Accuracy(GetPredictions(testData.ColumnCount), testLabels);
+		InitializeResultMatrices(batchSize);
 
 		tEnd = std::chrono::high_resolution_clock::now();
 		time = tEnd - tStart;
 
-		cout << "Iteration: " << i << " Accuracy: " << std::fixed << std::setprecision(3) << acc << " (" << time.count() << "ms)" << endl;
+		std::cout << "Epoch: " << e << " Accuracy: " << std::fixed << std::setprecision(4) << acc << " (" << time.count() << "ms)" << endl;
 	}
 
 	totalEnd = std::chrono::high_resolution_clock::now();
-
 	time = (totalEnd - totalStart);
-
-	float avgTime = time.count() / iterations;
-
 	time /= 1000.00;
 
-	cout << "Total Training Time: " << time.count() << " seconds :: " << (time.count() / 60.00) << " minutes :: " << (time.count() / 3600.00) << " hours" << endl;
-	cout << "Average Iteration Time: " << avgTime << " ms" << endl;
+	float epochTime = time.count() / epochs;
+
+	std::cout << "Total Training Time: " << time.count() << " seconds :: " << (time.count() / 60.00) << " minutes :: " << (time.count() / 3600.00) << " hours" << endl;
+	std::cout << "Average Epoch Time: " << epochTime << " seconds :: " << (epochTime / 60.00) << " minutes" << endl;
+	std::cout << "Average Iteration Time: " << (time.count() / (epochs * iterations)) * 1000.00  << " ms" << endl;
 }
 
-void ForwardPropogation() {
+void ForwardPropogation(Matrix in) {
 
 	for (int i = 0; i < aTotal.size(); i++) {
 		if (resNet.find(i) != resNet.end()) {
@@ -325,9 +372,8 @@ void ForwardPropogation() {
 			activation[i].Insert(0, batch);
 
 			aTotal[i].Insert(batch.RowCount, (weights[i].DotProduct(i == 0 ? batch : activation[i - 1]) + biases[i]).Transpose());
-		}
-		else {
-			aTotal[i] = (weights[i].DotProduct(i == 0 ? batch : activation[i - 1]) + biases[i]).Transpose();
+		} else {
+			aTotal[i] = (weights[i].DotProduct(i == 0 ? in : activation[i - 1]) + biases[i]).Transpose();
 		}
 		activation[i] = i < aTotal.size() - 1 ? LeakyReLU(aTotal[i]) : SoftMax(aTotal[i]);
 	}
@@ -340,7 +386,7 @@ void BackwardPropogation() {
 	for (int i = dTotal.size() - 2; i > -1; i--) {
 
 		if (resNet.find(i) != resNet.end()) {
-			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].Segment(batch.RowCount))).Transpose() * LeakyReLUDerivative(aTotal[i].Segment(batch.RowCount)));
+			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].SegmentR(batch.RowCount))).Transpose() * LeakyReLUDerivative(aTotal[i].SegmentR(batch.RowCount)));
 		}
 		else {
 			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * LeakyReLUDerivative(aTotal[i]));
@@ -368,55 +414,10 @@ void UpdateNetwork() {
 }
 
 void TestNetwork() {
-	string testingImages = "Testing Data\\t10k-images.idx3-ubyte";
-	string testingLabels = "Testing Data\\t10k-labels.idx1-ubyte";
+	InitializeResultMatrices(testData.ColumnCount);
+	ForwardPropogation(testData);
 
-	ifstream testingFR = ifstream(testingImages, std::ios::binary);
-	ifstream testingLabelFR = ifstream(testingLabels, std::ios::binary);
-
-	if (testingFR.is_open() && testingLabelFR.is_open()) {
-		cout << "Loading testing data..." << endl;
-	}
-	else {
-		std::cout << "File(s) not found" << endl;
-	}
-
-	// Discard
-	int magicNum = ReadBigInt(&testingLabelFR);
-	int imageNum = ReadBigInt(&testingLabelFR);
-	magicNum = ReadBigInt(&testingFR);
-
-	// Read the important things
-	imageNum = ReadBigInt(&testingFR);
-	int width = ReadBigInt(&testingFR);
-	int height = ReadBigInt(&testingFR);
-
-	batch = Matrix((width * height), imageNum);
-	inputLabels = vector<int>(imageNum);
-
-	for (int i = 0; i < imageNum; i++) {
-
-		std::vector<uint8_t> byteData((width * height));
-		testingFR.read(reinterpret_cast<char*>(byteData.data()), byteData.size());
-		std::vector<int> intData(byteData.begin(), byteData.end());
-
-		batch.SetColumn(i, intData);
-
-		char byte;
-		testingLabelFR.read(&byte, 1);
-		inputLabels[i] = static_cast<int>(static_cast<unsigned char>(byte));
-	}
-	testingFR.close();
-	testingLabelFR.close();
-
-	batch = batch.Divide(255);
-
-	InitializeResultMatrices(batch.ColumnCount);
-
-	ForwardPropogation();
-
-	float acc = Accuracy(GetPredictions(batch.ColumnCount), inputLabels);
-
+	float acc = Accuracy(GetPredictions(testData.ColumnCount), testLabels);
 	cout << "Final Accuracy: " << acc << endl;
 }
 

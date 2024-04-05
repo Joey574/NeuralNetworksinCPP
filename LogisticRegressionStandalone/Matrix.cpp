@@ -136,7 +136,8 @@ void Matrix::Insert(int startRow, Matrix element) {
 	}
 }
 
-Matrix Matrix::Segment(int startRow, int endRow) {
+
+Matrix Matrix::SegmentR(int startRow, int endRow) {
 	Matrix a = Matrix(endRow - startRow, ColumnCount);
 
 	for (int i = 0; i < a.RowCount; i++) {
@@ -146,11 +147,31 @@ Matrix Matrix::Segment(int startRow, int endRow) {
 	return a;
 }
 
-Matrix Matrix::Segment(int startRow) {
+Matrix Matrix::SegmentR(int startRow) {
 	Matrix a = Matrix(RowCount - startRow, ColumnCount);
 
 	for (int i = 0; i < a.RowCount; i++) {
 		a.SetRow(i, this->Row(i + startRow));
+	}
+
+	return a;
+}
+
+Matrix Matrix::SegmentC(int startColumn, int endColumn) {
+	Matrix a = Matrix(RowCount, endColumn - startColumn);
+
+	for (int i = 0; i < a.ColumnCount; i++) {
+		a.SetColumn(i, this->Column(i + startColumn));
+	}
+
+	return a;
+}
+
+Matrix Matrix::SegmentC(int startColumn) {
+	Matrix a = Matrix(RowCount, ColumnCount - startColumn);
+
+	for (int i = 0; i < a.ColumnCount; i++) {
+		a.SetColumn(i, this->Column(i + startColumn));
 	}
 
 	return a;

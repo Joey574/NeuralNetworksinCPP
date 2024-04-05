@@ -30,8 +30,11 @@ public:
 	void SetRow(int index, std::vector<float> row);
 	void SetRow(int index, std::vector<int> row);
 
-	Matrix Segment(int startRow, int endRow);
-	Matrix Segment(int startRow);
+	Matrix SegmentR(int startRow, int endRow);
+	Matrix SegmentR(int startRow);
+
+	Matrix SegmentC(int startColumn, int endColumn);
+	Matrix SegmentC(int startColumn);
 
 	std::vector<float> ColumnSums();
 	std::vector<float> RowSums();
