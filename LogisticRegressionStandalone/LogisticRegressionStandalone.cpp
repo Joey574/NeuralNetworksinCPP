@@ -60,7 +60,6 @@ Matrix YTotal;
 Matrix YBatch;
 
 // Prototypes
-
 void InitializeNetwork();
 void InitializeResultMatrices(int size);
 void TrainNetwork();
@@ -286,7 +285,21 @@ void InitializeNetwork() {
 	cout << "Total connections: " << connections << endl;
 	cout << "Predicted size of file: " << (fileSize / 1000000.00) << "mb" << endl;
 
-	InitializeResultMatrices(batchSize);
+	aTotal.reserve(weights.size());
+	activation.reserve(weights.size());
+	dTotal.reserve(weights.size());
+
+	for (int i = 0; i < weights.size(); i++) {
+		if (resNet.find(i) != resNet.end()) {
+			aTotal.emplace_back(weights[i].ColumnCount + dimensions[0], batchSize);
+		}
+		else {
+			aTotal.emplace_back(weights[i].ColumnCount, batchSize);
+		}
+		activation.emplace_back(aTotal[i].RowCount, batchSize);
+		dTotal.emplace_back(aTotal[i].RowCount, batchSize);
+	}
+
 
 	auto initEnd = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> initTime = initEnd - initStart;
@@ -296,11 +309,9 @@ void InitializeNetwork() {
 void InitializeResultMatrices(int size) {
 	aTotal.clear();
 	activation.clear();
-	dTotal.clear();
 
 	aTotal.reserve(weights.size());
 	activation.reserve(weights.size());
-	dTotal.reserve(weights.size());
 
 	for (int i = 0; i < weights.size(); i++) {
 		if (resNet.find(i) != resNet.end()) {
@@ -311,13 +322,11 @@ void InitializeResultMatrices(int size) {
 		}
 
 		activation.emplace_back(aTotal[i].RowCount, size);
-		dTotal.emplace_back(aTotal[i].RowCount, size);
 	}
 }
 
 Matrix GetNextInput(Matrix totalInput, int size, int i) {
 	Matrix a = Matrix(totalInput.RowCount, size);
-
 
 	YBatch = YTotal.SegmentC(i * size, i * size + size);
 	a = totalInput.SegmentC(i * size, i * size + size);
@@ -342,7 +351,10 @@ void TrainNetwork() {
 	std::chrono::duration<double, std::milli> time;
 
 	totalStart = std::chrono::high_resolution_clock::now();
+
 	int iterations = input.ColumnCount / batchSize;
+	float highestAcc = 0.0f;
+	int highestIndex = 0;
 
 	for (int e = 0; e < epochs; e++) {
 
@@ -359,12 +371,18 @@ void TrainNetwork() {
 		InitializeResultMatrices(testData.ColumnCount);
 		ForwardPropogation(testData);
 		float acc = Accuracy(GetPredictions(testData.ColumnCount), testLabels);
+
+		if (acc >= highestAcc) {
+			highestAcc = acc;
+			highestIndex = e;
+		}
+
 		InitializeResultMatrices(batchSize);
 
 		tEnd = std::chrono::high_resolution_clock::now();
 		time = tEnd - tStart;
 
-		std::cout << "Epoch: " << e << " Accuracy: " << std::fixed << std::setprecision(4) << acc << " (" << time.count() << "ms)" << endl;
+		std::cout << "Epoch: " << e << " Accuracy: " << std::fixed << std::setprecision(4) << acc << " (" << time.count() << "ms)" << std::endl;
 	}
 
 	totalEnd = std::chrono::high_resolution_clock::now();
@@ -373,9 +391,10 @@ void TrainNetwork() {
 
 	float epochTime = time.count() / epochs;
 
-	std::cout << "Total Training Time: " << time.count() << " seconds :: " << (time.count() / 60.00) << " minutes :: " << (time.count() / 3600.00) << " hours" << endl;
-	std::cout << "Average Epoch Time: " << epochTime << " seconds :: " << (epochTime / 60.00) << " minutes" << endl;
-	std::cout << "Average Iteration Time: " << (time.count() / (epochs * iterations)) * 1000.00  << " ms" << endl;
+	std::cout << "Total Training Time: " << time.count() << " seconds :: " << (time.count() / 60.00) << " minutes :: " << (time.count() / 3600.00) << " hours" << std::endl;
+	std::cout << "Average Epoch Time: " << epochTime << " seconds :: " << (epochTime / 60.00) << " minutes" << std::endl;
+	std::cout << "Average Iteration Time: " << (time.count() / (epochs * iterations)) * 1000.00  << " ms" << std::endl;
+	std::cout << "Highest Accuracy: " << highestAcc << " at epoch " << highestIndex << std::endl;
 }
 
 void ForwardPropogation(Matrix in) {

@@ -38,8 +38,8 @@ Matrix::Matrix(int rows, int columns, float value) {
 Matrix::Matrix(int rows, int columns, init initType) {
 	matrix = std::vector<std::vector<float>>(rows);
 
-	float lowerRand = -0.5f;
-	float upperRand = 0.5f;
+	float lowerRand = -2.0f;
+	float upperRand = 2.0f;
 
 	for (int i = 0; i < rows; i++) {
 		matrix[i] = std::vector<float>(columns);
