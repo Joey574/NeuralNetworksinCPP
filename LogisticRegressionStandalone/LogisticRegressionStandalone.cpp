@@ -18,17 +18,17 @@
 using namespace std;
 
 // Hyperparameters
-vector<int> dimensions = { 784, 16, 16, 10 };
-std::unordered_set<int> resNet = {  };
+vector<int> dimensions = { 784, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 10 };
+std::unordered_set<int> resNet = { 2, 4, 6, 8 };
 int fourierSeries = 4;
 
 float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 35;
+int epochs = 70;
 int batchSize = 250;
-float learningRate = 0.03;
+float learningRate = 0.01;
 
 // Save / Load
 bool SaveOnComplete = false;
@@ -216,21 +216,28 @@ void LoadInput() {
 	input = input.Normalized(lowerNormalized, upperNormalized);
 	testData = testData.Normalized(lowerNormalized, upperNormalized);
 
+	std::chrono::duration<double, std::milli> time = std::chrono::high_resolution_clock::now() - sTime;
+	std::cout << "Time to load input: " << (time.count() / 1000.00) << " seconds" << std::endl;
+
+	// Compute Fourier Series
 	if (fourierSeries > 0) {
+		sTime = std::chrono::high_resolution_clock::now();
+
+		std::cout << "Computing " << fourierSeries << " orders of Fourier Series..." << std::endl;
+
 		Matrix oldI = input;
 		Matrix oldT = testData;
 		for (int f = 0; f < fourierSeries; f++) {
 			input = input.Combine(oldI.FourierSeries(f + 1));
 			testData = testData.Combine(oldT.FourierSeries(f + 1));
 		}
+		dimensions[0] = input.RowCount;
+
+		time = std::chrono::high_resolution_clock::now() - sTime;
+		std::cout << "Time to compute " << fourierSeries << " orders: " << time.count() / 100.00 << " seconds" << std::endl;
 	}
 
-	dimensions[0] = input.RowCount;
-
-	auto eTime = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double, std::milli> time = eTime - sTime;
-
-	std::cout << "Time to load input " << (time.count() / 1000.00) << " seconds" << endl;
+	
 }
 
 int ReadBigInt(ifstream* fr) {
@@ -344,10 +351,7 @@ void TrainNetwork() {
 	std::cout << "TRAINING STARTED" << endl;
 
 	std::chrono::steady_clock::time_point totalStart;
-	std::chrono::steady_clock::time_point totalEnd;
-
 	std::chrono::steady_clock::time_point tStart;
-	std::chrono::steady_clock::time_point tEnd;
 	std::chrono::duration<double, std::milli> time;
 
 	totalStart = std::chrono::high_resolution_clock::now();
@@ -359,8 +363,8 @@ void TrainNetwork() {
 	for (int e = 0; e < epochs; e++) {
 
 		tStart = std::chrono::high_resolution_clock::now();
-
 		for (int i = 0; i < iterations; i++) {
+
 			batch = GetNextInput(input, batchSize, i);
 
 			ForwardPropogation(batch);
@@ -379,21 +383,16 @@ void TrainNetwork() {
 
 		InitializeResultMatrices(batchSize);
 
-		tEnd = std::chrono::high_resolution_clock::now();
-		time = tEnd - tStart;
-
-		std::cout << "Epoch: " << e << " Accuracy: " << std::fixed << std::setprecision(4) << acc << " (" << time.count() << "ms)" << std::endl;
+		time = std::chrono::high_resolution_clock::now() - tStart;
+		std::cout << "Epoch: " << e << " Accuracy: " << std::fixed << std::setprecision(4) << acc << 
+			" Epoch Time: " << time.count() << " ms :: " << time.count() / 1000.00 << " seconds :: " << time.count() / 3660.00 << " minutes" << std::endl;
 	}
 
-	totalEnd = std::chrono::high_resolution_clock::now();
-	time = (totalEnd - totalStart);
-	time /= 1000.00;
-
+	time = (std::chrono::high_resolution_clock::now() - totalStart) / 1000.00;
 	float epochTime = time.count() / epochs;
 
 	std::cout << "Total Training Time: " << time.count() << " seconds :: " << (time.count() / 60.00) << " minutes :: " << (time.count() / 3600.00) << " hours" << std::endl;
 	std::cout << "Average Epoch Time: " << epochTime << " seconds :: " << (epochTime / 60.00) << " minutes" << std::endl;
-	std::cout << "Average Iteration Time: " << (time.count() / (epochs * iterations)) * 1000.00  << " ms" << std::endl;
 	std::cout << "Highest Accuracy: " << highestAcc << " at epoch " << highestIndex << std::endl;
 }
 
