@@ -20,15 +20,15 @@ using namespace std;
 // Hyperparameters
 vector<int> dimensions = { 784, 16, 16, 10 };
 std::unordered_set<int> resNet = {  };
-int fourierSeries = 4;
+int fourierSeries = 0;
 
-float lowerNormalized = -M_PI;
-float upperNormalized = M_PI;
+float lowerNormalized = 0;
+float upperNormalized = 1.0;
 
 Matrix::init initType = Matrix::init::He;
 int epochs = 35;
 int batchSize = 250;
-float learningRate = 0.03;
+float learningRate = 0.5;
 
 // Save / Load
 bool SaveOnComplete = false;
