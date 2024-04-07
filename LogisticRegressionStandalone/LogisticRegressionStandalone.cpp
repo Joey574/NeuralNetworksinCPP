@@ -18,17 +18,17 @@
 using namespace std;
 
 // Hyperparameters
-vector<int> dimensions = { 784, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 10 };
-std::unordered_set<int> resNet = { 2, 4, 6, 8 };
-int fourierSeries = 4;
+vector<int> dimensions = { 784, 16, 16, 10 };
+std::unordered_set<int> resNet = {  };
+int fourierSeries = 0;
 
-float lowerNormalized = -M_PI;
-float upperNormalized = M_PI;
+float lowerNormalized = 0;
+float upperNormalized = 1.0;
 
 Matrix::init initType = Matrix::init::He;
 int epochs = 70;
 int batchSize = 250;
-float learningRate = 0.01;
+float learningRate = 0.5;
 
 // Save / Load
 bool SaveOnComplete = false;
