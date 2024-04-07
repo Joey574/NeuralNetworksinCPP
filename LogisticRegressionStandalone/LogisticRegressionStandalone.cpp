@@ -18,7 +18,7 @@
 using namespace std;
 
 // Hyperparameters
-vector<int> dimensions = { 784, 16, 16, 10 };
+vector<int> dimensions = { 784, 784, 128, 10 };
 std::unordered_set<int> resNet = {  };
 int fourierSeries = 0;
 
@@ -26,9 +26,9 @@ float lowerNormalized = 0;
 float upperNormalized = 1.0;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 70;
+int epochs = 30;
 int batchSize = 250;
-float learningRate = 0.5;
+float learningRate = 0.1;
 
 // Save / Load
 bool SaveOnComplete = false;
@@ -63,7 +63,6 @@ Matrix YBatch;
 void InitializeNetwork();
 void InitializeResultMatrices(int size);
 void TrainNetwork();
-void TestNetwork();
 void ForwardPropogation(Matrix in);
 void BackwardPropogation();
 void UpdateNetwork();
@@ -91,8 +90,6 @@ int main()
 	}
 
 	TrainNetwork();
-
-	TestNetwork();
 
 	if (SaveOnComplete) { SaveNetwork(NetworkPath); }
 
@@ -384,8 +381,17 @@ void TrainNetwork() {
 		InitializeResultMatrices(batchSize);
 
 		time = std::chrono::high_resolution_clock::now() - tStart;
-		std::cout << "Epoch: " << e << " Accuracy: " << std::fixed << std::setprecision(4) << acc << 
-			" Epoch Time: " << time.count() << " ms :: " << time.count() / 1000.00 << " seconds :: " << time.count() / 3660.00 << " minutes" << std::endl;
+		std::cout << "Epoch: " << e << " Accuracy: " << std::fixed << std::setprecision(4) << acc << " Epoch Time: ";
+
+		std::cout << std::setprecision(3);
+		if (time.count() / 60000.00 > 1.00) {
+			std::cout << time.count() / 60000.00 << " minutes";
+		} else if (time.count() / 1000.00 > 1.00) {
+			std::cout << time.count() / 1000.00 << " seconds";
+		} else {
+			std::cout << time.count() << " ms";
+		}
+		std::cout << std::endl;
 	}
 
 	time = (std::chrono::high_resolution_clock::now() - totalStart) / 1000.00;
@@ -444,14 +450,6 @@ void UpdateNetwork() {
 			biases[i][x] -= (dBiases[i][x] * learningRate);
 		}
 	}
-}
-
-void TestNetwork() {
-	InitializeResultMatrices(testData.ColumnCount);
-	ForwardPropogation(testData);
-
-	float acc = Accuracy(GetPredictions(testData.ColumnCount), testLabels);
-	cout << "Final Accuracy: " << acc << endl;
 }
 
 vector<int> GetPredictions(int len) {
