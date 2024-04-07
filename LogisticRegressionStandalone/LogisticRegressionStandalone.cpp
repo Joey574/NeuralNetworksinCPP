@@ -1,6 +1,7 @@
 #pragma comment(linker, "/STACK:20000000")
 #pragma comment(linker, "/HEAP:20000000")
 
+#define _USE_MATH_DEFINES
 #include <iostream>
 #include <chrono>
 #include <fstream>
@@ -9,6 +10,7 @@
 #include <windows.h>
 #include <thread>
 #include <iomanip>
+#include <cmath>
 
 #include "Matrix.h"
 #include "ActivationFunctions.h"
@@ -16,13 +18,17 @@
 using namespace std;
 
 // Hyperparameters
-vector<int> dimensions = { 784, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 10 };
-std::unordered_set<int> resNet = { 2, 4, 6, 8 };
+vector<int> dimensions = { 784, 16, 16, 10 };
+std::unordered_set<int> resNet = {  };
+int fourierSeries = 4;
+
+float lowerNormalized = -M_PI;
+float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 50;
-int batchSize = 100;
-float learningRate = 0.05;
+int epochs = 35;
+int batchSize = 250;
+float learningRate = 0.03;
 
 // Save / Load
 bool SaveOnComplete = false;
@@ -148,8 +154,6 @@ void LoadInput() {
 	trainingFR.close();
 	trainingLabelsFR.close();
 
-	input = input.Divide(255);
-
 	for (int k = 0; k < input.ColumnCount; k++) {
 
 		int r = k + rand() % (input.ColumnCount - k);
@@ -209,7 +213,19 @@ void LoadInput() {
 	testingFR.close();
 	testingLabelFR.close();
 
-	testData = testData.Divide(255);
+	input = input.Normalized(lowerNormalized, upperNormalized);
+	testData = testData.Normalized(lowerNormalized, upperNormalized);
+
+	if (fourierSeries > 0) {
+		Matrix oldI = input;
+		Matrix oldT = testData;
+		for (int f = 0; f < fourierSeries; f++) {
+			input = input.Combine(oldI.FourierSeries(f + 1));
+			testData = testData.Combine(oldT.FourierSeries(f + 1));
+		}
+	}
+
+	dimensions[0] = input.RowCount;
 
 	auto eTime = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> time = eTime - sTime;
@@ -345,7 +361,6 @@ void TrainNetwork() {
 		tStart = std::chrono::high_resolution_clock::now();
 
 		for (int i = 0; i < iterations; i++) {
-			
 			batch = GetNextInput(input, batchSize, i);
 
 			ForwardPropogation(batch);

@@ -1,5 +1,7 @@
 #include "Matrix.h"
 
+#include<iostream>
+
 // Constructors
 
 Matrix::Matrix() {
@@ -49,7 +51,7 @@ Matrix::Matrix(int rows, int columns, init initType) {
 	std::random_device rd;
 	std::mt19937 gen(rd());
 
-	if (initType == Xavier) {
+	if (initType == Matrix::init::Xavier) {
 		lowerRand = -(1.0f / std::sqrt(RowCount));
 		upperRand = 1.0f / std::sqrt(RowCount);;
 
@@ -60,7 +62,7 @@ Matrix::Matrix(int rows, int columns, init initType) {
 				matrix[r][c] = dist(gen);
 			}
 		}
-	} else if (initType == He) {
+	} else if (initType == Matrix::init::He) {
 		std::normal_distribution<float> dist(0.0, std::sqrt(2.0f / RowCount));
 
 		for (int r = 0; r < RowCount; r++) {
@@ -68,7 +70,7 @@ Matrix::Matrix(int rows, int columns, init initType) {
 				matrix[r][c] = dist(gen);
 			}
 		}
-	} else if (initType == Normalize) {
+	} else if (initType == Matrix::init::Normalize) {
 		std::uniform_real_distribution<float> dist(lowerRand, upperRand);
 
 		for (int r = 0; r < RowCount; r++) {
@@ -76,7 +78,7 @@ Matrix::Matrix(int rows, int columns, init initType) {
 				matrix[r][c] = dist(gen);
 			}
 		}
-	} else if (initType == Random) {
+	} else if (initType == Matrix::init::Random) {
 		std::uniform_real_distribution<float> dist(lowerRand, upperRand);
 
 		for (int r = 0; r < RowCount; r++) {
@@ -216,6 +218,11 @@ std::vector<float> Matrix::Row(int index) {
 }
 
 // Math Operations
+
+Matrix Matrix::FourierSeries(int order) {
+	return this->Multiply(order).SingleFloatOperation(&Matrix::SIMDSin, &Matrix::RemainderSin, 0).Combine
+	(this->Multiply(order).SingleFloatOperation(&Matrix::SIMDCos, &Matrix::RemainderCos, 0));
+}
 
 Matrix Matrix::DotProduct(Matrix element) {
 
@@ -442,6 +449,12 @@ __m256 Matrix::SIMDPow(__m256 opOne, __m256 opTwo) {
 __m256 Matrix::SIMDExp(__m256 opOne, __m256 opTwo) {
 	return _mm256_pow_ps(opTwo, opOne);
 }
+__m256 Matrix::SIMDSin(__m256 opOne, __m256 opTwo) {
+	return _mm256_sin_ps(opOne);
+}
+__m256 Matrix::SIMDCos(__m256 opOne, __m256 opTwo) {
+	return _mm256_cos_ps(opOne);
+}
 
 float Matrix::RemainderAdd(float a, float b) {
 	return a + b;
@@ -461,6 +474,12 @@ float Matrix::RemainderPow(float a, float b) {
 float Matrix::RemainderExp(float a, float b) {
 	return std::pow(b, a);
 }
+float Matrix::RemainderSin(float a, float b) {
+	return std::sin(a);
+}
+float Matrix::RemainderCos(float a, float b) {
+	return std::cos(a);
+}
 
 // MISC
 
@@ -476,6 +495,20 @@ std::string Matrix::ToString() {
 	}
 
 	return out;
+}
+
+Matrix Matrix::Combine(Matrix element) {
+	Matrix a = Matrix(RowCount + element.RowCount, ColumnCount);
+
+	for (int i = 0; i < RowCount; i++) {
+		a.SetRow(i, this->Row(i));
+	}
+
+	for (int i = 0; i < element.RowCount; i++) {
+		a.SetRow(i + RowCount, element.Row(i));
+	}
+
+	return a;
 }
 
 Matrix Matrix::Transpose() {
@@ -498,4 +531,25 @@ Matrix Matrix::Transpose() {
 
 		return matrixT;
 	}
+}
+
+Matrix Matrix::Normalized(float lowerRange, float upperRange) {
+	
+	Matrix normal = matrix;
+
+	for (int c = 0; c < ColumnCount; c++) {
+		std::vector<float> vec = this->Column(c);
+
+		float min = *std::min_element(vec.begin(), vec.end());
+		float max = *std::max_element(vec.begin(), vec.end());
+
+		std::vector<float> n;
+
+		for (float x : vec) {
+			float temp = lowerRange + ((x - min) / (max - min)) * (upperRange - lowerRange);
+			n.push_back(temp);
+		}
+		normal.SetColumn(c, n);
+	}
+	return normal;
 }

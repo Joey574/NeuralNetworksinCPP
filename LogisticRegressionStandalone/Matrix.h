@@ -30,6 +30,8 @@ public:
 	void SetRow(int index, std::vector<float> row);
 	void SetRow(int index, std::vector<int> row);
 
+	Matrix FourierSeries(int orders);
+
 	Matrix SegmentR(int startRow, int endRow);
 	Matrix SegmentR(int startRow);
 
@@ -70,7 +72,11 @@ public:
 	std::vector<float> LogSumExp();
 
 	Matrix Transpose();
+	Matrix Combine(Matrix element);
+	Matrix Normalized(float lowerRange, float upperRange);
+
 	void Insert(int startRow, Matrix element);
+
 
 	std::string ToString();
 
@@ -222,6 +228,8 @@ private:
 	__m256 SIMDDiv(__m256 opOne, __m256 opTwo);
 	__m256 SIMDPow(__m256 opOne, __m256 opTwo);
 	__m256 SIMDExp(__m256 opOne, __m256 opTwo);
+	__m256 SIMDSin(__m256 opOne, __m256 opTwo);
+	__m256 SIMDCos(__m256 opOne, __m256 opTwo);
 
 	float RemainderAdd(float a, float b);
 	float RemainderSub(float a, float b);
@@ -229,4 +237,6 @@ private:
 	float RemainderDiv(float a, float b);
 	float RemainderPow(float a, float b);
 	float RemainderExp(float a, float b);
+	float RemainderSin(float a, float b);
+	float RemainderCos(float a, float b);
 };
