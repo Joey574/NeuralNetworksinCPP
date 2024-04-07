@@ -20,10 +20,10 @@ using namespace std;
 // Hyperparameters
 vector<int> dimensions = { 784, 784, 128, 10 };
 std::unordered_set<int> resNet = {  };
-int fourierSeries = 0;
+int fourierSeries = 1;
 
-float lowerNormalized = 0;
-float upperNormalized = 1.0;
+float lowerNormalized = -M_PI;
+float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
 int epochs = 30;
@@ -220,7 +220,7 @@ void LoadInput() {
 	if (fourierSeries > 0) {
 		sTime = std::chrono::high_resolution_clock::now();
 
-		std::cout << "Computing " << fourierSeries << " orders of Fourier Series..." << std::endl;
+		std::cout << "Computing " << fourierSeries << " order(s) of Fourier Series..." << std::endl;
 
 		Matrix oldI = input;
 		Matrix oldT = testData;
@@ -231,10 +231,8 @@ void LoadInput() {
 		dimensions[0] = input.RowCount;
 
 		time = std::chrono::high_resolution_clock::now() - sTime;
-		std::cout << "Time to compute " << fourierSeries << " orders: " << time.count() / 100.00 << " seconds" << std::endl;
+		std::cout << "Time to compute " << fourierSeries << " order(s): " << time.count() / 1000.00 << " seconds" << std::endl;
 	}
-
-	
 }
 
 int ReadBigInt(ifstream* fr) {
@@ -303,7 +301,6 @@ void InitializeNetwork() {
 		activation.emplace_back(aTotal[i].RowCount, batchSize);
 		dTotal.emplace_back(aTotal[i].RowCount, batchSize);
 	}
-
 
 	auto initEnd = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> initTime = initEnd - initStart;
