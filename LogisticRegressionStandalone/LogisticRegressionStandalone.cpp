@@ -18,17 +18,17 @@
 using namespace std;
 
 // Hyperparameters
-vector<int> dimensions = { 784, 784, 128, 10 };
+vector<int> dimensions = { 784, 16, 16, 10 };
 std::unordered_set<int> resNet = {  };
-int fourierSeries = 1;
+int fourierSeries = 0;
 
-float lowerNormalized = -M_PI;
-float upperNormalized = M_PI;
+float lowerNormalized = 0.0;
+float upperNormalized = 1.0;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 30;
+int epochs = 5;
 int batchSize = 250;
-float learningRate = 0.1;
+float learningRate = 0.6;
 
 // Save / Load
 bool SaveOnComplete = false;
@@ -73,6 +73,7 @@ vector<int> GetPredictions(int len);
 float Accuracy(vector<int> predictions, vector<int> labels);
 void SaveNetwork(string filename);
 void LoadNetwork(string filename);
+void CleanTime(double time);
 
 int main()
 {
@@ -341,7 +342,6 @@ Matrix GetNextInput(Matrix totalInput, int size, int i) {
 }
 
 void TrainNetwork() {
-
 	std::cout << "TRAINING STARTED" << endl;
 
 	std::chrono::steady_clock::time_point totalStart;
@@ -351,9 +351,11 @@ void TrainNetwork() {
 	totalStart = std::chrono::high_resolution_clock::now();
 
 	int iterations = input.ColumnCount / batchSize;
+
 	float highestAcc = 0.0f;
 	int highestIndex = 0;
 
+	std::cout << std::fixed << std::setprecision(4);
 	for (int e = 0; e < epochs; e++) {
 
 		tStart = std::chrono::high_resolution_clock::now();
@@ -378,24 +380,18 @@ void TrainNetwork() {
 		InitializeResultMatrices(batchSize);
 
 		time = std::chrono::high_resolution_clock::now() - tStart;
-		std::cout << "Epoch: " << e << " Accuracy: " << std::fixed << std::setprecision(4) << acc << " Epoch Time: ";
-
-		std::cout << std::setprecision(3);
-		if (time.count() / 60000.00 > 1.00) {
-			std::cout << time.count() / 60000.00 << " minutes";
-		} else if (time.count() / 1000.00 > 1.00) {
-			std::cout << time.count() / 1000.00 << " seconds";
-		} else {
-			std::cout << time.count() << " ms";
-		}
-		std::cout << std::endl;
+		std::cout << "Epoch: " << e << " Accuracy: " << acc << " Epoch Time: ";
+		CleanTime(time.count());
 	}
 
-	time = (std::chrono::high_resolution_clock::now() - totalStart) / 1000.00;
+	time = (std::chrono::high_resolution_clock::now() - totalStart);
 	float epochTime = time.count() / epochs;
 
-	std::cout << "Total Training Time: " << time.count() << " seconds :: " << (time.count() / 60.00) << " minutes :: " << (time.count() / 3600.00) << " hours" << std::endl;
-	std::cout << "Average Epoch Time: " << epochTime << " seconds :: " << (epochTime / 60.00) << " minutes" << std::endl;
+	std::cout << "Total Training Time: ";
+	CleanTime(time.count());
+	std::cout << "Average Epoch Time: ";
+	CleanTime(epochTime);
+
 	std::cout << "Highest Accuracy: " << highestAcc << " at epoch " << highestIndex << std::endl;
 }
 
@@ -538,4 +534,24 @@ void LoadNetwork(string filename) {
 	fr.close();
 
 	cout << "NETWORK LOADED" << endl;
+}
+
+void CleanTime(double time) {
+	const double hour = 3600000.00;
+	const double minute = 60000.00;
+	const double second = 1000.00;
+
+	if (time / hour > 1.00) {
+		std::cout << time / hour << " hours";
+	}
+	else if (time / minute > 1.00) {
+		std::cout << time / minute << " minutes";
+	}
+	else if (time / second > 1.00) {
+		std::cout << time / second << " seconds";
+	}
+	else {
+		std::cout << time << " ms";
+	}
+	std::cout << std::endl;
 }
