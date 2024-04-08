@@ -31,6 +31,7 @@ public:
 	void SetRow(int index, std::vector<int> row);
 
 	Matrix FourierSeries(int orders);
+	Matrix TaylorSeries(int orders);
 
 	Matrix SegmentR(int startRow, int endRow);
 	Matrix SegmentR(int startRow);
