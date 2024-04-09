@@ -20,16 +20,20 @@
 
 // Hyperparameters
 std::vector<int> dimensions = { 2, 128, 128, 128, 1 };
-std::unordered_set<int> resNet = { 1 };
-int fourierSeries = 32;
+std::unordered_set<int> resNet = {  };
+int fourierSeries = 128;
 
 float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
 int epochs = 250;
-int batchSize = 1024;
+int batchSize = 256;
 float learningRate = 0.05;
+
+// Image drawing stuff
+Matrix unshuffledInput;
+std::vector<int> unshuffledLabels;
 
 // Inputs
 Matrix input;
@@ -76,6 +80,22 @@ int main()
 	TrainNetwork(t);
 }
 
+void ShuffleInput() {
+	for (int k = 0; k < input.ColumnCount; k++) {
+
+		int r = k + rand() % (input.ColumnCount - k);
+
+		std::vector<float> tempI = input.Column(k);
+		int tempL = inputLabels[k];
+
+		input.SetColumn(k, input.Column(r));
+		inputLabels[k] = inputLabels[r];
+
+		input.SetColumn(r, tempI);
+		inputLabels[r] = tempL;
+	}
+}
+
 std::wstring NarrowToWide(const std::string& narrowStr) {
 	int wideStrLength = MultiByteToWideChar(CP_UTF8, 0, narrowStr.c_str(), -1, nullptr, 0);
 	std::wstring wideStr(wideStrLength, L'\0');
@@ -109,21 +129,6 @@ CImage LoadBMP(std::string filename) {
 	// Normalize Input
 	input = input.Normalized(lowerNormalized, upperNormalized);
 
-	// Shuffle input
-	for (int k = 0; k < input.ColumnCount; k++) {
-
-		int r = k + rand() % (input.ColumnCount - k);
-
-		std::vector<float> tempI = input.Column(k);
-		int tempL = inputLabels[k];
-
-		input.SetColumn(k, input.Column(r));
-		inputLabels[k] = inputLabels[r];
-
-		input.SetColumn(r, tempI);
-		inputLabels[r] = tempL;
-	}
-
 	std::chrono::duration<double, std::milli> time = std::chrono::high_resolution_clock::now() - sTime;
 	std::cout << "Time to load image: " << (time.count() / 1000.00) << " seconds" << std::endl;
 
@@ -143,6 +148,10 @@ CImage LoadBMP(std::string filename) {
 		time = std::chrono::high_resolution_clock::now() - sTime;
 		std::cout << "Time to compute " << fourierSeries << " order(s): " << time.count() / 1000.00 << " seconds" << std::endl;
 	}
+
+	// Save input data for image drawing
+	unshuffledInput = input;
+	unshuffledLabels = inputLabels;
 
 	return image;
 }
@@ -281,6 +290,8 @@ void TrainNetwork(CImage image) {
 	for (int e = 0; e < epochs; e++) {
 
 		tStart = std::chrono::high_resolution_clock::now();
+
+		ShuffleInput();
 		for (int i = 0; i < iterations; i++) {
 
 			batch = GetNextInput(input, batchSize, i);
@@ -290,13 +301,13 @@ void TrainNetwork(CImage image) {
 			UpdateNetwork();
 		}
 
-		InitializeResultMatrices(input.ColumnCount);
-		ForwardPropogation(input);
-		float acc = Accuracy(GetPredictions(input.ColumnCount), inputLabels);
+		InitializeResultMatrices(unshuffledInput.ColumnCount);
+		ForwardPropogation(unshuffledInput);
+		float acc = Accuracy(GetPredictions(unshuffledInput.ColumnCount), unshuffledLabels);
 
 		if (acc >= highestAcc) {
 
-			bestPredictions = GetPredictions(input.ColumnCount);
+			bestPredictions = GetPredictions(unshuffledInput.ColumnCount);
 
 			if (acc > highestAcc) {
 				std::string filename = "NetworkImages\\" + std::to_string(e).append("_").append(std::to_string(acc)).append(".bmp");
@@ -306,7 +317,6 @@ void TrainNetwork(CImage image) {
 			highestAcc = acc;
 			highestIndex = e;
 			timeToReachHighest = std::chrono::high_resolution_clock::now() - totalStart;
-
 		}
 
 		InitializeResultMatrices(batchSize);
@@ -387,10 +397,7 @@ std::vector<int> GetPredictions(int len) {
 	std::vector<int> predictions = std::vector<int>(len);
 
 	for (int i = 0; i < len; i++) {
-
-		std::vector<float> a = activation[activation.size() - 1].Column(i);
-
-		if (activation[activation.size() - 1].Column(i)[0] > 0.5) {
+		if (activation[activation.size() - 1].Column(i)[0] > 0.5f) {
 			predictions[i] = 1;
 		}
 		else {
