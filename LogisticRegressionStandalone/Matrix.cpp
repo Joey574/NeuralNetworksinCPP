@@ -542,16 +542,31 @@ Matrix Matrix::Normalized(float lowerRange, float upperRange) {
 	
 	Matrix normal = matrix;
 
+	float fMin = FLT_MAX;
+	float fMax = FLT_MIN;
+
 	for (int c = 0; c < ColumnCount; c++) {
 		std::vector<float> vec = this->Column(c);
 
 		float min = *std::min_element(vec.begin(), vec.end());
 		float max = *std::max_element(vec.begin(), vec.end());
 
+		if (min < fMin) {
+			fMin = min;
+		}
+
+		if (max > fMax) {
+			fMax = max;
+		}
+	}
+
+	for (int c = 0; c < ColumnCount; c++) {
+		std::vector<float> vec = this->Column(c);
+
 		std::vector<float> n;
 
 		for (float x : vec) {
-			float temp = lowerRange + ((x - min) / (max - min)) * (upperRange - lowerRange);
+			float temp = lowerRange + ((x - fMin) / (fMax - fMin)) * (upperRange - lowerRange);
 			n.push_back(temp);
 		}
 		normal.SetColumn(c, n);

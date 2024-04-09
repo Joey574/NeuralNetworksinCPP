@@ -19,17 +19,17 @@
 
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 16, 1 };
-std::unordered_set<int> resNet = {  };
-int fourierSeries = 32;
+std::vector<int> dimensions = { 2, 100, 100, 100, 100, 100, 100, 100, 1 };
+std::unordered_set<int> resNet = { 1,2,3,4,5,6 };
+int fourierSeries = 128;
 
-float lowerNormalized = 0;
-float upperNormalized = 1;
+float lowerNormalized = -M_PI;
+float upperNormalized = M_PI;
 
-Matrix::init initType = Matrix::init::Normalize;
-int epochs = 500;
-int batchSize = 128;
-float learningRate = 0.05;
+Matrix::init initType = Matrix::init::He;
+int epochs = 250;
+int batchSize = 1024;
+float learningRate = 0.0005;
 
 // Inputs
 Matrix input;
@@ -50,12 +50,11 @@ std::vector<Matrix> dWeights;
 std::vector<std::vector<float>> dBiases;
 
 // Prototypes
-bool getBit(unsigned char byte, int position);
-void LoadBMP(std::string filename);
-void MakeBMP(std::string filename, std::vector<int> pixelData);
+CImage LoadBMP(std::string filename);
+void MakeBMP(std::string filename, std::vector<int> pixelData, CImage image);
 void InitializeNetwork();
 void InitializeResultMatrices(int size);
-void TrainNetwork();
+void TrainNetwork(CImage image);
 void ForwardPropogation(Matrix in);
 void BackwardPropogation();
 void UpdateNetwork();
@@ -63,86 +62,52 @@ Matrix GetNextInput(Matrix totalInput, int size, int i);
 std::vector<int> GetPredictions(int len);
 float Accuracy(std::vector<int> predictions, std::vector<int> labels);
 void CleanTime(double time);
+std::wstring NarrowToWide(const std::string& narrowStr);
 
 
 int main()
 {
 	srand(time(0));
 
-	LoadBMP("ML Images\\TestImage.bmp");
+	CImage t = LoadBMP("ML Images\\HelloWorld.bmp");
 
 	InitializeNetwork();
 	
-	TrainNetwork();
+	TrainNetwork(t);
 }
 
-bool getBit(unsigned char byte, int position) {
-	return (byte >> position) & 1;
+std::wstring NarrowToWide(const std::string& narrowStr) {
+	int wideStrLength = MultiByteToWideChar(CP_UTF8, 0, narrowStr.c_str(), -1, nullptr, 0);
+	std::wstring wideStr(wideStrLength, L'\0');
+	MultiByteToWideChar(CP_UTF8, 0, narrowStr.c_str(), -1, &wideStr[0], wideStrLength);
+	return wideStr;
 }
 
-void LoadBMP(std::string filename) {
+CImage LoadBMP(std::string filename) {
 	auto sTime = std::chrono::high_resolution_clock::now();
 
-	std::ifstream file = std::ifstream(filename, std::ios::in | std::ios::binary);
+	std::wstring fp = NarrowToWide(filename);
 
-	if (!file.is_open()) {
-		std::cout << "File not found" << std::endl;
+	CImage image;
+
+	if (image.Load(fp.c_str()) == S_OK) {
+		std::cout << "Image Loaded" << std::endl;
 	}
 	else {
-		std::cout << "Loading image..." << std::endl;
+		std::cout << "Image not found..." << std::endl;
 	}
 
-	int32_t width;
-	int32_t height;
-	int32_t offset;
-	int32_t temp;
+	input = Matrix(2, image.GetHeight() * image.GetWidth());
 
-	char c;
-	// 2 bytes for "BM"
-	file.read(reinterpret_cast<char*>(&c), sizeof(c));
-	file.read(reinterpret_cast<char*>(&c), sizeof(c));
-
-	// File size
-	file.read(reinterpret_cast<char*>(&temp), sizeof(temp));
-
-	// Reserved
-	file.read(reinterpret_cast<char*>(&temp), sizeof(temp));
-
-	// offset
-	file.read(reinterpret_cast<char*>(&offset), sizeof(offset));
-
-	// DIB size
-	file.read(reinterpret_cast<char*>(&temp), sizeof(temp));
-
-	// width
-	file.read(reinterpret_cast<char*>(&width), sizeof(width));
-	// height
-	file.read(reinterpret_cast<char*>(&height), sizeof(height));
-
-	// move to offset
-	file.seekg(offset);
-
-	int y = 0;
-	int x = 0;
-
-	input = Matrix(2, (width * height));
-
-	for (int i = 0; i < (width * height) / 8; i++) {
-		uint8_t a;
-		file.read(reinterpret_cast<char*>(&a), sizeof(a));
-
-		for (int p = 0; p < 8; p++) {
-			inputLabels.push_back(getBit(a, p));
-			input.SetColumn(x + (y * width), std::vector<int>{x, y});
-			x++;
-		}
-		if (i % (width / 8) == (width / 8) - 1) {
-			y++;
-			x = 0;
+	for (int y = 0; y < image.GetHeight(); y++) {
+		for (int x = 0; x < image.GetWidth(); x++) {
+			inputLabels.push_back((image.GetPixel(x, y) / 16777215));
+			input.SetColumn(x + (y * image.GetWidth()), std::vector<int>{x, y});
 		}
 	}
 
-	file.close();
+	// Normalize Input
+	input = input.Normalized(lowerNormalized, upperNormalized);
 
 	// Shuffle input
 	for (int k = 0; k < input.ColumnCount; k++) {
@@ -178,29 +143,29 @@ void LoadBMP(std::string filename) {
 		time = std::chrono::high_resolution_clock::now() - sTime;
 		std::cout << "Time to compute " << fourierSeries << " order(s): " << time.count() / 1000.00 << " seconds" << std::endl;
 	}
+
+	return image;
 }
 
-void MakeBMP(std::string filename, std::vector<int> pixelData) {
-	std::ofstream fw = std::ofstream(filename + ".bmp", std::ios::binary);
-	fw.write(reinterpret_cast<char*>(&header), sizeof(header));
+void MakeBMP(std::string filename, std::vector<int> pixelData, CImage image) {
 
-	unsigned char byte = 0;
+	std::wstring fp = NarrowToWide(filename);
 
-	std::vector<unsigned char> bytes;
+	CImage save;
+	save.Create(image.GetWidth(), image.GetHeight(), image.GetBPP());
 
-	for (int x = 0; x < pixelData.size() / 8; x++) {
-		for (int i = 0; i < 8; i++) {
-			byte <<= 1;
-			byte |= pixelData[i];
+	RGBQUAD colors[2] = { 0 };
+	save.GetColorTable(0, 2, colors);
+	colors[1].rgbRed = colors[1].rgbGreen = colors[1].rgbBlue = 0xff;
+	save.SetColorTable(0, 2, colors);
+
+	for (int y = 0; y < save.GetHeight(); y++) {
+		for (int x = 0; x < save.GetWidth(); x++) {
+			save.SetPixel(x, y, pixelData[(y * save.GetWidth()) + x] == 0 ? RGB(0, 0, 0) : RGB(255,255,255));
 		}
-		bytes.push_back(byte);
 	}
-	std::cout << sizeof(bytes);
 
-	//std::cout << "packed: " << std::bitset<8>(byte) << std::endl;
-
-	fw.write(reinterpret_cast<char*>(bytes.data()), bytes.size());
-	fw.close();
+	save.Save(fp.c_str(), Gdiplus::ImageFormatBMP);
 }
 
 Matrix GetNextInput(Matrix totalInput, int size, int i) {
@@ -296,13 +261,15 @@ void InitializeResultMatrices(int size) {
 	}
 }
 
-void TrainNetwork(BMPFileHeader header) {
+void TrainNetwork(CImage image) {
 	std::cout << "TRAINING STARTED" << std::endl;
 
 	std::chrono::steady_clock::time_point totalStart;
 	std::chrono::steady_clock::time_point tStart;
 	std::chrono::duration<double, std::milli> time;
 	std::chrono::duration<double, std::milli> timeToReachHighest;
+
+	std::vector<int> bestPredictions;
 
 	totalStart = std::chrono::high_resolution_clock::now();
 
@@ -329,16 +296,17 @@ void TrainNetwork(BMPFileHeader header) {
 
 		if (acc >= highestAcc) {
 
-			if (acc > highestAcc) {
-				std::string filename = "NetworkImages\\";
-				filename += std::to_string(e).append("_").append(std::to_string(acc));
+			bestPredictions = GetPredictions(input.ColumnCount);
 
-				MakeBMP(filename, header, GetPredictions(input.ColumnCount));
+			if (acc > highestAcc) {
+				std::string filename = "NetworkImages\\" + std::to_string(e).append("_").append(std::to_string(acc)).append(".bmp");
+				MakeBMP(filename, bestPredictions, image);
 			}
 
 			highestAcc = acc;
 			highestIndex = e;
 			timeToReachHighest = std::chrono::high_resolution_clock::now() - totalStart;
+
 		}
 
 		InitializeResultMatrices(batchSize);
@@ -347,6 +315,8 @@ void TrainNetwork(BMPFileHeader header) {
 		std::cout << "Epoch: " << e << " Accuracy: " << acc << " Epoch Time: ";
 		CleanTime(time.count());
 	}
+
+	MakeBMP("NetworkImages\\final.bmp",bestPredictions, image);
 
 	time = (std::chrono::high_resolution_clock::now() - totalStart);
 	float epochTime = time.count() / epochs;
