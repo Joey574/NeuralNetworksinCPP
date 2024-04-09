@@ -8,4 +8,4 @@
 
 #include "Matrix.h"
 
-void LoadPNG(std::string filename);
+Matrix LoadPNG(std::string filename);

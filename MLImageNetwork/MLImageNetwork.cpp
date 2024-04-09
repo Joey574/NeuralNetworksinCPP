@@ -5,5 +5,5 @@
 
 int main()
 {
-	LoadPNG("C:\\Users\\joeys\\Desktop\\ML Images\\Stickman.bmp");
+	LoadPNG("C:\\Users\\joeys\\Desktop\\ML Images\\TestImage.bmp");
 }
