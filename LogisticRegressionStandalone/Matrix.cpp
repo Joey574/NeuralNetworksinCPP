@@ -224,6 +224,11 @@ Matrix Matrix::FourierSeries(int order) {
 	(this->Multiply(order).SingleFloatOperation(&Matrix::SIMDCos, &Matrix::RemainderCos, 0));
 }
 
+Matrix Matrix::TaylorSeries(int orders) {
+	return this->Pow(orders);
+}
+
+
 Matrix Matrix::DotProduct(Matrix element) {
 
 	std::vector<std::vector<float>> mat = std::vector<std::vector<float>>();

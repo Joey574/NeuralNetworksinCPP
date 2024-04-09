@@ -18,9 +18,10 @@
 using namespace std;
 
 // Hyperparameters
-vector<int> dimensions = { 784, 784, 10 };
-std::unordered_set<int> resNet = { };
-int fourierSeries = 1;
+vector<int> dimensions = { 784, 16, 16, 10 };
+std::unordered_set<int> resNet = {  };
+int fourierSeries = 2;
+int taylorSeries = 2;
 
 float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
@@ -217,14 +218,14 @@ void LoadInput() {
 	std::chrono::duration<double, std::milli> time = std::chrono::high_resolution_clock::now() - sTime;
 	std::cout << "Time to load input: " << (time.count() / 1000.00) << " seconds" << std::endl;
 
+	Matrix oldI = input;
+	Matrix oldT = testData;
+
 	// Compute Fourier Series
 	if (fourierSeries > 0) {
 		sTime = std::chrono::high_resolution_clock::now();
-
 		std::cout << "Computing " << fourierSeries << " order(s) of Fourier Series..." << std::endl;
-
-		Matrix oldI = input;
-		Matrix oldT = testData;
+		
 		for (int f = 0; f < fourierSeries; f++) {
 			input = input.Combine(oldI.FourierSeries(f + 1));
 			testData = testData.Combine(oldT.FourierSeries(f + 1));
@@ -235,6 +236,21 @@ void LoadInput() {
 
 		time = std::chrono::high_resolution_clock::now() - sTime;
 		std::cout << "Time to compute " << fourierSeries << " order(s): " << time.count() / 1000.00 << " seconds" << std::endl;
+	}
+
+	// Compute Taylor Series
+	if (taylorSeries > 0) {
+		sTime = std::chrono::high_resolution_clock::now();
+		std::cout << "Computing " << taylorSeries << " order(s) of Taylor Series..." << std::endl;
+
+		for (int t = 1; t < taylorSeries + 1; t++) {
+			input = input.Combine(oldI.TaylorSeries(t + 1));
+			testData = testData.Combine(oldT.TaylorSeries(t + 1));
+		}
+		dimensions[0] = input.RowCount;
+
+		time = std::chrono::high_resolution_clock::now() - sTime;
+		std::cout << "Time to compute " << taylorSeries << " order(s): " << time.count() / 1000.00 << " seconds" << std::endl;
 	}
 }
 
@@ -349,6 +365,7 @@ void TrainNetwork() {
 	std::chrono::steady_clock::time_point totalStart;
 	std::chrono::steady_clock::time_point tStart;
 	std::chrono::duration<double, std::milli> time;
+	std::chrono::duration<double, std::milli> timeToReachHighest;
 
 	totalStart = std::chrono::high_resolution_clock::now();
 
@@ -377,6 +394,7 @@ void TrainNetwork() {
 		if (acc >= highestAcc) {
 			highestAcc = acc;
 			highestIndex = e;
+			timeToReachHighest = std::chrono::high_resolution_clock::now() - tStart;
 		}
 
 		InitializeResultMatrices(batchSize);
@@ -395,6 +413,8 @@ void TrainNetwork() {
 	CleanTime(epochTime);
 
 	std::cout << "Highest Accuracy: " << highestAcc << " at epoch " << highestIndex << std::endl;
+	std::cout << "Time to reach max: ";
+	CleanTime(timeToReachHighest.count());
 }
 
 void ForwardPropogation(Matrix in) {
