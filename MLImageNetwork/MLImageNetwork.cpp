@@ -11,6 +11,8 @@
 #include <thread>
 #include <iomanip>
 #include <cmath>
+#include <bitset>
+#include <atlimage.h>
 
 #include "ActivationFunctions.h"
 #include "Matrix.h"
@@ -19,15 +21,15 @@
 // Hyperparameters
 std::vector<int> dimensions = { 2, 16, 1 };
 std::unordered_set<int> resNet = {  };
-int fourierSeries = 256;
+int fourierSeries = 32;
 
 float lowerNormalized = 0;
 float upperNormalized = 1;
 
-Matrix::init initType = Matrix::init::Random;
-int epochs = 100;
+Matrix::init initType = Matrix::init::Normalize;
+int epochs = 500;
 int batchSize = 128;
-float learningRate = 0.001;
+float learningRate = 0.05;
 
 // Inputs
 Matrix input;
@@ -50,6 +52,7 @@ std::vector<std::vector<float>> dBiases;
 // Prototypes
 bool getBit(unsigned char byte, int position);
 void LoadBMP(std::string filename);
+void MakeBMP(std::string filename, std::vector<int> pixelData);
 void InitializeNetwork();
 void InitializeResultMatrices(int size);
 void TrainNetwork();
@@ -69,7 +72,7 @@ int main()
 	LoadBMP("ML Images\\TestImage.bmp");
 
 	InitializeNetwork();
-
+	
 	TrainNetwork();
 }
 
@@ -89,21 +92,25 @@ void LoadBMP(std::string filename) {
 		std::cout << "Loading image..." << std::endl;
 	}
 
+	int32_t width;
+	int32_t height;
+	int32_t offset;
+	int32_t temp;
+
 	char c;
 	// 2 bytes for "BM"
 	file.read(reinterpret_cast<char*>(&c), sizeof(c));
 	file.read(reinterpret_cast<char*>(&c), sizeof(c));
 
-	int32_t temp;
-	int32_t offset;
-	int32_t width;
-	int32_t height;
-
 	// File size
 	file.read(reinterpret_cast<char*>(&temp), sizeof(temp));
+
 	// Reserved
 	file.read(reinterpret_cast<char*>(&temp), sizeof(temp));
+
+	// offset
 	file.read(reinterpret_cast<char*>(&offset), sizeof(offset));
+
 	// DIB size
 	file.read(reinterpret_cast<char*>(&temp), sizeof(temp));
 
@@ -119,7 +126,7 @@ void LoadBMP(std::string filename) {
 	int x = 0;
 
 	input = Matrix(2, (width * height));
-	// Read values into a matrix, these are the labels
+
 	for (int i = 0; i < (width * height) / 8; i++) {
 		uint8_t a;
 		file.read(reinterpret_cast<char*>(&a), sizeof(a));
@@ -129,7 +136,7 @@ void LoadBMP(std::string filename) {
 			input.SetColumn(x + (y * width), std::vector<int>{x, y});
 			x++;
 		}
-		if (i % 4 == 3) {
+		if (i % (width / 8) == (width / 8) - 1) {
 			y++;
 			x = 0;
 		}
@@ -152,8 +159,6 @@ void LoadBMP(std::string filename) {
 		inputLabels[r] = tempL;
 	}
 
-	input = input.Normalized(lowerNormalized, upperNormalized);
-
 	std::chrono::duration<double, std::milli> time = std::chrono::high_resolution_clock::now() - sTime;
 	std::cout << "Time to load image: " << (time.count() / 1000.00) << " seconds" << std::endl;
 
@@ -173,6 +178,29 @@ void LoadBMP(std::string filename) {
 		time = std::chrono::high_resolution_clock::now() - sTime;
 		std::cout << "Time to compute " << fourierSeries << " order(s): " << time.count() / 1000.00 << " seconds" << std::endl;
 	}
+}
+
+void MakeBMP(std::string filename, std::vector<int> pixelData) {
+	std::ofstream fw = std::ofstream(filename + ".bmp", std::ios::binary);
+	fw.write(reinterpret_cast<char*>(&header), sizeof(header));
+
+	unsigned char byte = 0;
+
+	std::vector<unsigned char> bytes;
+
+	for (int x = 0; x < pixelData.size() / 8; x++) {
+		for (int i = 0; i < 8; i++) {
+			byte <<= 1;
+			byte |= pixelData[i];
+		}
+		bytes.push_back(byte);
+	}
+	std::cout << sizeof(bytes);
+
+	//std::cout << "packed: " << std::bitset<8>(byte) << std::endl;
+
+	fw.write(reinterpret_cast<char*>(bytes.data()), bytes.size());
+	fw.close();
 }
 
 Matrix GetNextInput(Matrix totalInput, int size, int i) {
@@ -268,7 +296,7 @@ void InitializeResultMatrices(int size) {
 	}
 }
 
-void TrainNetwork() {
+void TrainNetwork(BMPFileHeader header) {
 	std::cout << "TRAINING STARTED" << std::endl;
 
 	std::chrono::steady_clock::time_point totalStart;
@@ -300,6 +328,14 @@ void TrainNetwork() {
 		float acc = Accuracy(GetPredictions(input.ColumnCount), inputLabels);
 
 		if (acc >= highestAcc) {
+
+			if (acc > highestAcc) {
+				std::string filename = "NetworkImages\\";
+				filename += std::to_string(e).append("_").append(std::to_string(acc));
+
+				MakeBMP(filename, header, GetPredictions(input.ColumnCount));
+			}
+
 			highestAcc = acc;
 			highestIndex = e;
 			timeToReachHighest = std::chrono::high_resolution_clock::now() - totalStart;
