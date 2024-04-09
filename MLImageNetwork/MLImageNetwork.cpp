@@ -73,7 +73,7 @@ int main()
 {
 	srand(time(0));
 
-	CImage t = LoadBMP("ML Images\\HelloWorld.bmp");
+	CImage t = LoadBMP("ML Images\\OnlineMandlebrot.bmp");
 
 	InitializeNetwork();
 	
