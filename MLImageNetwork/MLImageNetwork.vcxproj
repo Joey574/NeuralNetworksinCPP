@@ -135,12 +135,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\LogisticRegressionStandalone\ActivationFunctions.cpp" />
     <ClCompile Include="..\LogisticRegressionStandalone\Matrix.cpp" />
-    <ClCompile Include="LoadPNG.cpp" />
     <ClCompile Include="MLImageNetwork.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="LoadPNG.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

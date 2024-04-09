@@ -15,10 +15,8 @@
 #include "Matrix.h"
 #include "ActivationFunctions.h"
 
-using namespace std;
-
 // Hyperparameters
-vector<int> dimensions = { 784, 128, 128, 128, 10 };
+std::vector<int> dimensions = { 784, 128, 10 };
 std::unordered_set<int> resNet = {  };
 int fourierSeries = 0;
 int taylorSeries = 0;
@@ -34,27 +32,27 @@ float learningRate = 0.1;
 // Save / Load
 bool SaveOnComplete = false;
 bool LoadOnInit = false;
-string NetworkPath = "Network.txt";
+std::string NetworkPath = "Network.txt";
 
 // Inputs
 Matrix input;
 Matrix testData;
 Matrix batch;
 
-vector<int> inputLabels;
-vector<int> testLabels;
-vector<int> batchLabels;
+std::vector<int> inputLabels;
+std::vector<int> testLabels;
+std::vector<int> batchLabels;
 
 // Neural Network Matrices
-vector<Matrix> weights;
-vector<vector<float>> biases;
+std::vector<Matrix> weights;
+std::vector<std::vector<float>> biases;
 
-vector<Matrix> activation;
-vector<Matrix> aTotal;
+std::vector<Matrix> activation;
+std::vector<Matrix> aTotal;
 
-vector<Matrix> dTotal;
-vector<Matrix> dWeights;
-vector<vector<float>> dBiases;
+std::vector<Matrix> dTotal;
+std::vector<Matrix> dWeights;
+std::vector<std::vector<float>> dBiases;
 
 // Error stuff
 Matrix YTotal;
@@ -68,12 +66,12 @@ void ForwardPropogation(Matrix in);
 void BackwardPropogation();
 void UpdateNetwork();
 void LoadInput();
-int ReadBigInt(ifstream* fr);
+int ReadBigInt(std::ifstream* fr);
 Matrix GetNextInput(Matrix totalInput, int size, int i);
-vector<int> GetPredictions(int len);
-float Accuracy(vector<int> predictions, vector<int> labels);
-void SaveNetwork(string filename);
-void LoadNetwork(string filename);
+std::vector<int> GetPredictions(int len);
+float Accuracy(std::vector<int> predictions, std::vector<int> labels);
+void SaveNetwork(std::string filename);
+void LoadNetwork(std::string filename);
 void CleanTime(double time);
 
 int main()
@@ -103,17 +101,17 @@ void LoadInput() {
 	auto sTime = std::chrono::high_resolution_clock::now();
 
 	// Train Data
-	string trainingImages = "Training Data\\train-images.idx3-ubyte";
-	string trainingLabels = "Training Data\\train-labels.idx1-ubyte";
+	std::string trainingImages = "Training Data\\train-images.idx3-ubyte";
+	std::string trainingLabels = "Training Data\\train-labels.idx1-ubyte";
 
-	ifstream trainingFR = ifstream(trainingImages, std::ios::binary);
-	ifstream trainingLabelsFR = ifstream(trainingLabels, std::ios::binary);
+	std::ifstream trainingFR = std::ifstream(trainingImages, std::ios::binary);
+	std::ifstream trainingLabelsFR = std::ifstream(trainingLabels, std::ios::binary);
 
 	if (trainingFR.is_open() && trainingLabelsFR.is_open()) {
-		std::cout << "Loading training data..." << endl;
+		std::cout << "Loading training data..." << std::endl;
 	}
 	else {
-		std::cout << "File(s) not found" << endl;
+		std::cout << "File(s) not found" << std::endl;
 	}
 
 	// Discard
@@ -127,7 +125,7 @@ void LoadInput() {
 	int height = ReadBigInt(&trainingFR);
 
 	input = Matrix((width * height), imageNum);
-	inputLabels = vector<int>(imageNum);
+	inputLabels = std::vector<int>(imageNum);
 	YTotal = Matrix(dimensions[dimensions.size() - 1], imageNum);
 
 	for (int i = 0; i < imageNum; i++) {
@@ -138,7 +136,7 @@ void LoadInput() {
 
 		input.SetColumn(i, intData);
 
-		vector<int> y = vector<int>(dimensions[dimensions.size() - 1], 0);
+		std::vector<int> y = std::vector<int>(dimensions[dimensions.size() - 1], 0);
 
 		char byte;
 		trainingLabelsFR.read(&byte, 1);
@@ -152,7 +150,8 @@ void LoadInput() {
 
 	trainingFR.close();
 	trainingLabelsFR.close();
-
+	
+	// Shuffle input
 	for (int k = 0; k < input.ColumnCount; k++) {
 
 		int r = k + rand() % (input.ColumnCount - k);
@@ -171,17 +170,17 @@ void LoadInput() {
 	}
 
 	// Test Data
-	string testingImages = "Testing Data\\t10k-images.idx3-ubyte";
-	string testingLabels = "Testing Data\\t10k-labels.idx1-ubyte";
+	std::string testingImages = "Testing Data\\t10k-images.idx3-ubyte";
+	std::string testingLabels = "Testing Data\\t10k-labels.idx1-ubyte";
 
-	ifstream testingFR = ifstream(testingImages, std::ios::binary);
-	ifstream testingLabelFR = ifstream(testingLabels, std::ios::binary);
+	std::ifstream testingFR = std::ifstream(testingImages, std::ios::binary);
+	std::ifstream testingLabelFR = std::ifstream(testingLabels, std::ios::binary);
 
 	if (testingFR.is_open() && testingLabelFR.is_open()) {
-		cout << "Loading testing data..." << endl;
+		std::cout << "Loading testing data..." << std::endl;
 	}
 	else {
-		std::cout << "File(s) not found" << endl;
+		std::cout << "File(s) not found" << std::endl;
 	}
 
 	// Discard
@@ -195,7 +194,7 @@ void LoadInput() {
 	height = ReadBigInt(&testingFR);
 
 	testData = Matrix((width * height), imageNum);
-	testLabels = vector<int>(imageNum);
+	testLabels = std::vector<int>(imageNum);
 
 	for (int i = 0; i < imageNum; i++) {
 
@@ -254,7 +253,7 @@ void LoadInput() {
 	}
 }
 
-int ReadBigInt(ifstream* fr) {
+int ReadBigInt(std::ifstream* fr) {
 
 	int littleInt;
 	fr->read(reinterpret_cast<char*>(&littleInt), sizeof(int));
@@ -289,12 +288,12 @@ void InitializeNetwork() {
 		} else {
 			weights.emplace_back(dimensions[i], dimensions[i + 1], initType);
 		}
-		cout << "Weights[" << i << "] connections: " << (weights[i].ColumnCount * weights[i].RowCount) << endl;
+		std::cout << "Weights[" << i << "] connections: " << (weights[i].ColumnCount * weights[i].RowCount) << std::endl;
 		connections += weights[i].ColumnCount * weights[i].RowCount;
 
-		biases.emplace_back(vector<float>(dimensions[i + 1], 0));
+		biases.emplace_back(std::vector<float>(dimensions[i + 1], 0));
 
-		cout << "Biases[" << i << "] connections: " << biases[i].size() << endl;
+		std::cout << "Biases[" << i << "] connections: " << biases[i].size() << std::endl;
 		connections += biases[i].size();
 
 		dWeights.emplace_back(weights[i].RowCount, weights[i].ColumnCount);
@@ -303,8 +302,8 @@ void InitializeNetwork() {
 
 	double fileSize = ((sizeof(float)) * (connections)) + ((sizeof(int) * weights.size() + 1));
 
-	cout << "Total connections: " << connections << endl;
-	cout << "Predicted size of file: " << (fileSize / 1000000.00) << "mb" << endl;
+	std::cout << "Total connections: " << connections << std::endl;
+	std::cout << "Predicted size of file: " << (fileSize / 1000000.00) << "mb" << std::endl;
 
 	aTotal.reserve(weights.size());
 	activation.reserve(weights.size());
@@ -323,7 +322,7 @@ void InitializeNetwork() {
 
 	auto initEnd = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> initTime = initEnd - initStart;
-	cout << "INITIALIZATION COMPLETE (" << initTime.count() << "ms)" << endl;
+	std::cout << "INITIALIZATION COMPLETE (" << initTime.count() << "ms)" << std::endl;
 }
 
 void InitializeResultMatrices(int size) {
@@ -360,7 +359,7 @@ Matrix GetNextInput(Matrix totalInput, int size, int i) {
 }
 
 void TrainNetwork() {
-	std::cout << "TRAINING STARTED" << endl;
+	std::cout << "TRAINING STARTED" << std::endl;
 
 	std::chrono::steady_clock::time_point totalStart;
 	std::chrono::steady_clock::time_point tStart;
@@ -467,13 +466,13 @@ void UpdateNetwork() {
 	}
 }
 
-vector<int> GetPredictions(int len) {
+std::vector<int> GetPredictions(int len) {
 
-	vector<int> predictions = vector<int>(len);
+	std::vector<int> predictions = std::vector<int>(len);
 
 	for (int i = 0; i < len; i++) {
 
-		vector<float> a = activation[activation.size() - 1].Column(i);
+		std::vector<float> a = activation[activation.size() - 1].Column(i);
 
 		auto maxElementIterator = std::max_element(a.begin(), a.end());
 		predictions[i] = std::distance(a.begin(), maxElementIterator);
@@ -481,7 +480,7 @@ vector<int> GetPredictions(int len) {
 	return predictions;
 }
 
-float Accuracy(vector<int> predictions, vector<int> labels) {
+float Accuracy(std::vector<int> predictions, std::vector<int> labels) {
 	int correct = 0;
 
 	for (int i = 0; i < predictions.size(); i++)
@@ -494,13 +493,13 @@ float Accuracy(vector<int> predictions, vector<int> labels) {
 	return (float)correct / (float)predictions.size();
 }
 
-void SaveNetwork(string filename) {
-	ofstream fw = ofstream(filename, ios::out | ios::binary);
+void SaveNetwork(std::string filename) {
+	std::ofstream fw = std::ofstream(filename, std::ios::out | std::ios::binary);
 
 	int s = weights.size() - 1;
 	fw.write(reinterpret_cast<const char*>(&s), sizeof(int));
 
-	vector<int> dims = vector<int>(dimensions.size());
+	std::vector<int> dims = std::vector<int>(dimensions.size());
 	for (int i = 0; i < dims.size(); i++) {
 		dims[i] = dimensions[i];
 	}
@@ -517,32 +516,32 @@ void SaveNetwork(string filename) {
 		fw.write(reinterpret_cast<const char*>(biases[i].data()), biases[i].size() * sizeof(float));
 	}
 
-	cout << "NETWORK SAVED" << endl;
+	std::cout << "NETWORK SAVED" << std::endl;
 
 	fw.close();
 }
 
-void LoadNetwork(string filename) {
-	ifstream fr = ifstream(filename, ios::in | ios::binary);
+void LoadNetwork(std::string filename) {
+	std::ifstream fr = std::ifstream(filename, std::ios::in | std::ios::binary);
 
 	if (fr.is_open()) {
-		cout << "Loading Network..." << endl;
+		std::cout << "Loading Network..." << std::endl;
 	}
 	else {
-		cout << "Network not found..." << endl;
+		std::cout << "Network not found..." << std::endl;
 	}
 
 	int s;
 	fr.read(reinterpret_cast<char*>(&s), sizeof(int));
 
-	dimensions = vector<int>(s);
+	dimensions = std::vector<int>(s);
 	fr.read(reinterpret_cast<char*>(dimensions.data()), s * sizeof(int));
 
 	InitializeNetwork();
 
 	for (int i = 0; i < weights.size(); i++) {
 		for (int r = 0; r < weights[i].RowCount; r++) {
-			vector<float> row = vector<float>(weights[i].ColumnCount);
+			std::vector<float> row = std::vector<float>(weights[i].ColumnCount);
 			fr.read(reinterpret_cast<char*>(row.data()), row.size() * sizeof(float));
 
 			weights[i].SetRow(r, row);
@@ -555,7 +554,7 @@ void LoadNetwork(string filename) {
 
 	fr.close();
 
-	cout << "NETWORK LOADED" << endl;
+	std::cout << "NETWORK LOADED" << std::endl;
 }
 
 void CleanTime(double time) {
