@@ -27,9 +27,9 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 25;
+int epochs = 120;
 int batchSize = 250;
-float learningRate = 0.05;
+float learningRate = 0.065;
 
 // Save / Load
 bool SaveOnComplete = false;
@@ -232,6 +232,8 @@ void LoadInput() {
 		}
 		dimensions[0] = input.RowCount;
 
+		std::cout << "Fourier Features: " << input.RowCount - oldI.RowCount << std::endl;
+
 		time = std::chrono::high_resolution_clock::now() - sTime;
 		std::cout << "Time to compute " << fourierSeries << " order(s): " << time.count() / 1000.00 << " seconds" << std::endl;
 	}
@@ -427,7 +429,7 @@ void ForwardPropogation(Matrix in) {
 		} else {
 			aTotal[i] = (weights[i].DotProduct(i == 0 ? in : activation[i - 1]) + biases[i]).Transpose();
 		}
-		activation[i] = i < aTotal.size() - 1 ? LeakyReLU(aTotal[i]) : SoftMax(aTotal[i]);
+		activation[i] = i < aTotal.size() - 1 ? ELU(aTotal[i]) : SoftMax(aTotal[i]);
 	}
 }
 
@@ -438,10 +440,10 @@ void BackwardPropogation() {
 	for (int i = dTotal.size() - 2; i > -1; i--) {
 
 		if (resNet.find(i) != resNet.end()) {
-			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].SegmentR(batch.RowCount))).Transpose() * LeakyReLUDerivative(aTotal[i].SegmentR(batch.RowCount)));
+			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].SegmentR(batch.RowCount))).Transpose() * ELUDerivative(aTotal[i].SegmentR(batch.RowCount)));
 		}
 		else {
-			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * LeakyReLUDerivative(aTotal[i]));
+			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * ELUDerivative(aTotal[i]));
 		}
 	}
 
