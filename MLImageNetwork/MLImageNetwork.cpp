@@ -19,9 +19,9 @@
 
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 100, 100, 100, 100, 100, 100, 100, 1 };
-std::unordered_set<int> resNet = { 1,2,3,4,5,6 };
-int fourierSeries = 128;
+std::vector<int> dimensions = { 2, 128, 128, 128, 1 };
+std::unordered_set<int> resNet = { 1 };
+int fourierSeries = 32;
 
 float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
@@ -29,7 +29,7 @@ float upperNormalized = M_PI;
 Matrix::init initType = Matrix::init::He;
 int epochs = 250;
 int batchSize = 1024;
-float learningRate = 0.0005;
+float learningRate = 0.05;
 
 // Inputs
 Matrix input;

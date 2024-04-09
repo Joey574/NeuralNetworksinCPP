@@ -16,16 +16,16 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 784, 128, 10 };
+std::vector<int> dimensions = { 784, 16, 16, 10 };
 std::unordered_set<int> resNet = {  };
 int fourierSeries = 0;
 int taylorSeries = 0;
 
-float lowerNormalized = -1.0;
+float lowerNormalized = 0;
 float upperNormalized = 1.0;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 50;
+int epochs = 25;
 int batchSize = 500;
 float learningRate = 0.1;
 
@@ -73,6 +73,7 @@ float Accuracy(std::vector<int> predictions, std::vector<int> labels);
 void SaveNetwork(std::string filename);
 void LoadNetwork(std::string filename);
 void CleanTime(double time);
+void ShuffleInput();
 
 int main()
 {
@@ -94,6 +95,26 @@ int main()
 	if (SaveOnComplete) { SaveNetwork(NetworkPath); }
 
 	return 0;
+}
+
+void ShuffleInput() {
+	// Shuffle input
+	for (int k = 0; k < input.ColumnCount; k++) {
+
+		int r = k + rand() % (input.ColumnCount - k);
+
+		std::vector<float> tempI = input.Column(k);
+		std::vector<float> tempY = YTotal.Column(k);
+		int tempL = inputLabels[k];
+
+		input.SetColumn(k, input.Column(r));
+		YTotal.SetColumn(k, YTotal.Column(r));
+		inputLabels[k] = inputLabels[r];
+
+		input.SetColumn(r, tempI);
+		YTotal.SetColumn(r, tempY);
+		inputLabels[r] = tempL;
+	}
 }
 
 void LoadInput() {
@@ -150,24 +171,6 @@ void LoadInput() {
 
 	trainingFR.close();
 	trainingLabelsFR.close();
-	
-	// Shuffle input
-	for (int k = 0; k < input.ColumnCount; k++) {
-
-		int r = k + rand() % (input.ColumnCount - k);
-
-		std::vector<float> tempI = input.Column(k);
-		std::vector<float> tempY = YTotal.Column(k);
-		int tempL = inputLabels[k];
-
-		input.SetColumn(k, input.Column(r));
-		YTotal.SetColumn(k, YTotal.Column(r));
-		inputLabels[k] = inputLabels[r];
-
-		input.SetColumn(r, tempI);
-		YTotal.SetColumn(r, tempY);
-		inputLabels[r] = tempL;
-	}
 
 	// Test Data
 	std::string testingImages = "Testing Data\\t10k-images.idx3-ubyte";
@@ -377,6 +380,8 @@ void TrainNetwork() {
 	for (int e = 0; e < epochs; e++) {
 
 		tStart = std::chrono::high_resolution_clock::now();
+
+		//ShuffleInput();
 		for (int i = 0; i < iterations; i++) {
 
 			batch = GetNextInput(input, batchSize, i);
@@ -393,7 +398,7 @@ void TrainNetwork() {
 		if (acc >= highestAcc) {
 			highestAcc = acc;
 			highestIndex = e;
-			timeToReachHighest = std::chrono::high_resolution_clock::now() - tStart;
+			timeToReachHighest = std::chrono::high_resolution_clock::now() - totalStart;
 		}
 
 		InitializeResultMatrices(batchSize);
