@@ -18,7 +18,7 @@
 using namespace std;
 
 // Hyperparameters
-vector<int> dimensions = { 784, 128, 10 };
+vector<int> dimensions = { 784, 128, 128, 128, 10 };
 std::unordered_set<int> resNet = {  };
 int fourierSeries = 0;
 int taylorSeries = 0;
@@ -27,7 +27,7 @@ float lowerNormalized = -1.0;
 float upperNormalized = 1.0;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 10;
+int epochs = 50;
 int batchSize = 500;
 float learningRate = 0.1;
 
