@@ -23,13 +23,13 @@ std::unordered_set<int> resNet = {  };
 int fourierSeries = 2;
 int taylorSeries = 2;
 
-float lowerNormalized = 0.0;
-float upperNormalized = 1.0;
+float lowerNormalized = -M_PI;
+float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
 int epochs = 25;
 int batchSize = 250;
-float learningRate = 0.1;
+float learningRate = 0.05;
 
 // Save / Load
 bool SaveOnComplete = false;
