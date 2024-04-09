@@ -133,10 +133,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="CudaMatrix.cpp" />
-    <CudaCompile Include="Matrix.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="Matrix.h" />
     <CudaCompile Include="MatrixKernals.cu" />
     <CudaCompile Include="MatrixKernals.cuh" />
   </ItemGroup>
