@@ -64,6 +64,7 @@ public:
 
 	Matrix Pow(float scalar);
 	Matrix Pow(std::vector<float> scalar);
+	Matrix Pow(std::vector<int> scalar);
 	Matrix Pow(Matrix element);
 
 	Matrix Exp(float base = std::exp(1.0));
