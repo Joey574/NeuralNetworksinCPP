@@ -18,18 +18,18 @@
 using namespace std;
 
 // Hyperparameters
-vector<int> dimensions = { 784, 16, 16, 10 };
+vector<int> dimensions = { 784, 128, 10 };
 std::unordered_set<int> resNet = {  };
-int fourierSeries = 2;
-int taylorSeries = 2;
+int fourierSeries = 0;
+int taylorSeries = 0;
 
-float lowerNormalized = -M_PI;
-float upperNormalized = M_PI;
+float lowerNormalized = -1.0;
+float upperNormalized = 1.0;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 120;
-int batchSize = 250;
-float learningRate = 0.065;
+int epochs = 10;
+int batchSize = 500;
+float learningRate = 0.1;
 
 // Save / Load
 bool SaveOnComplete = false;
@@ -429,7 +429,7 @@ void ForwardPropogation(Matrix in) {
 		} else {
 			aTotal[i] = (weights[i].DotProduct(i == 0 ? in : activation[i - 1]) + biases[i]).Transpose();
 		}
-		activation[i] = i < aTotal.size() - 1 ? ELU(aTotal[i]) : SoftMax(aTotal[i]);
+		activation[i] = i < aTotal.size() - 1 ? Swish(aTotal[i]) : SoftMax(aTotal[i]);
 	}
 }
 
@@ -440,10 +440,10 @@ void BackwardPropogation() {
 	for (int i = dTotal.size() - 2; i > -1; i--) {
 
 		if (resNet.find(i) != resNet.end()) {
-			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].SegmentR(batch.RowCount))).Transpose() * ELUDerivative(aTotal[i].SegmentR(batch.RowCount)));
+			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].SegmentR(batch.RowCount))).Transpose() * SwishDerivative(aTotal[i].SegmentR(batch.RowCount)));
 		}
 		else {
-			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * ELUDerivative(aTotal[i]));
+			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * SwishDerivative(aTotal[i]));
 		}
 	}
 
