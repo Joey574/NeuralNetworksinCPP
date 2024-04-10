@@ -1,7 +1,5 @@
 #include "Matrix.h"
 
-#include<iostream>
-
 // Constructors
 
 Matrix::Matrix() {

@@ -19,7 +19,7 @@
 
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 128, 128, 128, 1 };
+std::vector<int> dimensions = { 2, 16, 16, 1 };
 std::unordered_set<int> resNet = {  };
 int fourierSeries = 128;
 
@@ -29,7 +29,7 @@ float upperNormalized = M_PI;
 Matrix::init initType = Matrix::init::He;
 int epochs = 250;
 int batchSize = 256;
-float learningRate = 0.05;
+float learningRate = 0.1;
 
 // Image drawing stuff
 Matrix unshuffledInput;
@@ -303,17 +303,16 @@ void TrainNetwork(CImage image) {
 
 		InitializeResultMatrices(unshuffledInput.ColumnCount);
 		ForwardPropogation(unshuffledInput);
-		float acc = Accuracy(GetPredictions(unshuffledInput.ColumnCount), unshuffledLabels);
+
+		std::vector<int> predic = GetPredictions(unshuffledInput.ColumnCount);
+		float acc = Accuracy(predic, unshuffledLabels);
+
+		std::string filename = "NetworkImages\\" + std::to_string(e).append("_").append(std::to_string(acc)).append(".bmp");
+		MakeBMP(filename, predic, image);
 
 		if (acc >= highestAcc) {
 
 			bestPredictions = GetPredictions(unshuffledInput.ColumnCount);
-
-			if (acc > highestAcc) {
-				std::string filename = "NetworkImages\\" + std::to_string(e).append("_").append(std::to_string(acc)).append(".bmp");
-				MakeBMP(filename, bestPredictions, image);
-			}
-
 			highestAcc = acc;
 			highestIndex = e;
 			timeToReachHighest = std::chrono::high_resolution_clock::now() - totalStart;
@@ -377,7 +376,6 @@ void BackwardPropogation() {
 		item = (dTotal[i].Transpose().DotProduct(i == 0 ? batch.Transpose() : activation[i - 1].Transpose()) * (1.0f / (float)batchSize)).Transpose();
 		dBiases[i] = dTotal[i].Multiply(1.0f / (float)batchSize).RowSums();
 		});
-
 }
 
 void UpdateNetwork() {
