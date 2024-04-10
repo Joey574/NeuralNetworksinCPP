@@ -19,17 +19,17 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 1 };
-std::unordered_set<int> resNet = { 1, 3, 5, 7, 9 };
-int fourierSeries = 128;
+std::vector<int> dimensions = { 2, 30, 30, 30, 1 };
+std::unordered_set<int> resNet = { 1 };
+int fourierSeries = 512;
 
 float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
-Matrix::init initType = Matrix::init::He;
-int epochs = 1500;
+Matrix::init initType = Matrix::init::Normalize;
+int epochs = 120;
 int batchSize = 500;
-float learningRate = 0.025;
+float learningRate = 0.1;
 
 // Inputs
 Matrix input;
@@ -51,8 +51,8 @@ std::vector<std::vector<float>> dBiases;
 
 // Image stuff
 Matrix image;
-int imageWidth = 1920;
-int imageHeight = 1080;
+int imageWidth = 160;
+int imageHeight = 90;
 
 // Prototypes
 std::wstring NarrowToWide(const std::string& narrowStr);
@@ -75,7 +75,7 @@ int main()
 {
     srand(time(0));
 
-    MakeDataSet(15000);
+    MakeDataSet(50000);
 
     InitializeNetwork();
 
@@ -324,6 +324,8 @@ void MakeBMP(std::string filename) {
         }
     }
 
+    InitializeResultMatrices(batchSize);
+
     mandlebrot.Save(fp.c_str(), Gdiplus::ImageFormatBMP);
 }
 
@@ -355,8 +357,8 @@ void TrainNetwork() {
             UpdateNetwork();
         }
 
-       /* std::string filename = "MandlebrotAproximations\\" + std::to_string(e).append(".bmp");
-        MakeBMP(filename);*/
+        std::string filename = "MandlebrotAproximations\\" + std::to_string(e).append(".bmp");
+        MakeBMP(filename);
 
         time = std::chrono::high_resolution_clock::now() - tStart;
         std::cout << "Epoch: " << e << " Epoch Time : ";
@@ -373,8 +375,8 @@ void TrainNetwork() {
 
     tStart = std::chrono::high_resolution_clock::now();
 
-    std::string filename = "MandlebrotAproximations(2)\\MandlebrotAprox.bmp";
-    MakeBMP(filename);
+  /*  std::string filename = "MandlebrotAproximations\\MandlebrotAprox(3).bmp";
+    MakeBMP(filename);*/
 
     time = (std::chrono::high_resolution_clock::now() - tStart);
 
