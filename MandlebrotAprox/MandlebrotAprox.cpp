@@ -21,7 +21,7 @@
 // Hyperparameters
 std::vector<int> dimensions = { 2, 30, 30, 30, 1 };
 std::unordered_set<int> resNet = { 1 };
-int fourierSeries = 512;
+int fourierSeries = 256;
 
 float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
@@ -51,8 +51,8 @@ std::vector<std::vector<float>> dBiases;
 
 // Image stuff
 Matrix image;
-int imageWidth = 160;
-int imageHeight = 90;
+int imageWidth = 900;
+int imageHeight = 600;
 
 // Prototypes
 std::wstring NarrowToWide(const std::string& narrowStr);
@@ -75,7 +75,7 @@ int main()
 {
     srand(time(0));
 
-    MakeDataSet(50000);
+    MakeDataSet(150000);
 
     InitializeNetwork();
 
@@ -357,8 +357,11 @@ void TrainNetwork() {
             UpdateNetwork();
         }
 
-        std::string filename = "MandlebrotAproximations\\" + std::to_string(e).append(".bmp");
-        MakeBMP(filename);
+        if (e % 3 == 2) {
+            std::string filename = "MandlebrotAproximations\\" + std::to_string(e).append(".bmp");
+            MakeBMP(filename);
+        }
+       
 
         time = std::chrono::high_resolution_clock::now() - tStart;
         std::cout << "Epoch: " << e << " Epoch Time : ";
@@ -373,15 +376,13 @@ void TrainNetwork() {
     std::cout << "Average Epoch Time: ";
     CleanTime(epochTime);
 
-    tStart = std::chrono::high_resolution_clock::now();
-
-  /*  std::string filename = "MandlebrotAproximations\\MandlebrotAprox(3).bmp";
-    MakeBMP(filename);*/
-
+    /*tStart = std::chrono::high_resolution_clock::now();
+    std::string filename = "MandlebrotAproximations\\MandlebrotAprox(3).bmp";
+    MakeBMP(filename);
     time = (std::chrono::high_resolution_clock::now() - tStart);
 
     std::cout << "Image Made: " << std::endl;
-    CleanTime(time.count());
+    CleanTime(time.count());*/
 }
 
 void ForwardPropogation(Matrix in) {
