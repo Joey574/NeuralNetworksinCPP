@@ -19,17 +19,17 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 30, 30, 30, 1 };
-std::unordered_set<int> resNet = { 1 };
+std::vector<int> dimensions = { 2, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 1 };
+std::unordered_set<int> resNet = { 1, 3, 5, 7, 9, 11, 13, 15, 16, 17 };
 int fourierSeries = 256;
 
 float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::Normalize;
-int epochs = 120;
+int epochs = 2000;
 int batchSize = 500;
-float learningRate = 0.1;
+float learningRate = 0.01;
 
 // Inputs
 Matrix input;
@@ -51,8 +51,8 @@ std::vector<std::vector<float>> dBiases;
 
 // Image stuff
 Matrix image;
-int imageWidth = 900;
-int imageHeight = 600;
+int imageWidth = 1200;
+int imageHeight = 700;
 
 // Prototypes
 std::wstring NarrowToWide(const std::string& narrowStr);
@@ -75,7 +75,7 @@ int main()
 {
     srand(time(0));
 
-    MakeDataSet(150000);
+    MakeDataSet(20000);
 
     InitializeNetwork();
 
@@ -357,10 +357,10 @@ void TrainNetwork() {
             UpdateNetwork();
         }
 
-        if (e % 3 == 2) {
+        /*if (e % 3 == 2) {
             std::string filename = "MandlebrotAproximations\\" + std::to_string(e).append(".bmp");
             MakeBMP(filename);
-        }
+        }*/
        
 
         time = std::chrono::high_resolution_clock::now() - tStart;
@@ -376,13 +376,13 @@ void TrainNetwork() {
     std::cout << "Average Epoch Time: ";
     CleanTime(epochTime);
 
-    /*tStart = std::chrono::high_resolution_clock::now();
-    std::string filename = "MandlebrotAproximations\\MandlebrotAprox(3).bmp";
+    tStart = std::chrono::high_resolution_clock::now();
+    std::string filename = "MandlebrotAproximations\\MandlebrotAprox.bmp";
     MakeBMP(filename);
     time = (std::chrono::high_resolution_clock::now() - tStart);
 
     std::cout << "Image Made: " << std::endl;
-    CleanTime(time.count());*/
+    CleanTime(time.count());
 }
 
 void ForwardPropogation(Matrix in) {

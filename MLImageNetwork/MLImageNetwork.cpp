@@ -19,7 +19,7 @@
 
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 16, 16, 1 };
+std::vector<int> dimensions = { 2, 30, 30, 1 };
 std::unordered_set<int> resNet = {  };
 int fourierSeries = 128;
 
@@ -29,7 +29,7 @@ float upperNormalized = M_PI;
 Matrix::init initType = Matrix::init::He;
 int epochs = 250;
 int batchSize = 256;
-float learningRate = 0.1;
+float learningRate = 0.0075;
 
 // Image drawing stuff
 Matrix unshuffledInput;
@@ -73,7 +73,7 @@ int main()
 {
 	srand(time(0));
 
-	CImage t = LoadBMP("ML Images\\OnlineMandlebrot.bmp");
+	CImage t = LoadBMP("ML Images\\TrafficCone.bmp");
 
 	InitializeNetwork();
 	
