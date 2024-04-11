@@ -26,8 +26,8 @@ int fourierSeries = 256;
 float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
-Matrix::init initType = Matrix::init::He;
-int epochs = 1500;
+Matrix::init initType = Matrix::init::Normalize;
+int epochs = 2000;
 int batchSize = 500;
 float learningRate = 0.01;
 
@@ -325,6 +325,8 @@ void MakeBMP(std::string filename) {
         }
     }
 
+    InitializeResultMatrices(batchSize);
+
     mandlebrot.Save(fp.c_str(), Gdiplus::ImageFormatBMP);
 }
 
@@ -376,10 +378,8 @@ void TrainNetwork() {
     CleanTime(epochTime);
 
     tStart = std::chrono::high_resolution_clock::now();
-
-    std::string filename = "MandlebrotAproximations(2)\\MandlebrotAprox.bmp";
+    std::string filename = "MandlebrotAproximations\\MandlebrotAprox.bmp";
     MakeBMP(filename);
-
     time = (std::chrono::high_resolution_clock::now() - tStart);
 
     std::cout << "Image Made: " << std::endl;
