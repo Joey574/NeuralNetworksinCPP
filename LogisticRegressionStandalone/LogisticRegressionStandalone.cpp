@@ -381,7 +381,7 @@ void TrainNetwork() {
 
 		tStart = std::chrono::high_resolution_clock::now();
 
-		//ShuffleInput();
+		ShuffleInput();
 		for (int i = 0; i < iterations; i++) {
 
 			batch = GetNextInput(input, batchSize, i);

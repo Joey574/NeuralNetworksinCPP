@@ -20,14 +20,14 @@
 
 // Hyperparameters
 std::vector<int> dimensions = { 2, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 1 };
-std::unordered_set<int> resNet = { 1, 3, 5, 7, 9, 11, 13, 15, 16, 17 };
+std::unordered_set<int> resNet = { 1, 3, 5, 7, 9, 11, 12, 13, 14, 15, 16, 17 };
 int fourierSeries = 256;
 
 float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
-Matrix::init initType = Matrix::init::Normalize;
-int epochs = 500;
+Matrix::init initType = Matrix::init::He;
+int epochs = 1500;
 int batchSize = 500;
 float learningRate = 0.01;
 
@@ -295,7 +295,6 @@ void MakeDataSet(int size) {
         for (int f = 0; f < fourierSeries; f++) {
             input = input.Combine(oldI.FourierSeries(f + 1));
             image = image.Combine(oldF.FourierSeries(f + 1));
-
         }
         dimensions[0] = input.RowCount;
 
@@ -315,6 +314,8 @@ void MakeBMP(std::string filename) {
 
     InitializeResultMatrices(image.ColumnCount);
     ForwardPropogation(image);
+
+    std::cout << "Image FP completed..." << std::endl;
 
     std::vector<float> pixelsData = activation[activation.size() - 1].Row(0);
 
@@ -357,11 +358,11 @@ void TrainNetwork() {
             UpdateNetwork();
         }
 
-        /*if (e % 3 == 2) {
+        if (e % 10 == 9) {
             std::string filename = "MandlebrotAproximations\\" + std::to_string(e).append(".bmp");
             MakeBMP(filename);
-        }*/
-       
+            InitializeResultMatrices(batchSize);
+        }
 
         time = std::chrono::high_resolution_clock::now() - tStart;
         std::cout << "Epoch: " << e << " Epoch Time: ";
