@@ -26,8 +26,8 @@ int fourierSeries = 256;
 float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
-Matrix::init initType = Matrix::init::Normalize;
-int epochs = 2000;
+Matrix::init initType = Matrix::init::He;
+int epochs = 1500;
 int batchSize = 500;
 float learningRate = 0.01;
 
