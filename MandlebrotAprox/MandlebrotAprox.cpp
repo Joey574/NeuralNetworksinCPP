@@ -27,7 +27,7 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::Normalize;
-int epochs = 2000;
+int epochs = 500;
 int batchSize = 500;
 float learningRate = 0.01;
 
@@ -364,7 +364,7 @@ void TrainNetwork() {
        
 
         time = std::chrono::high_resolution_clock::now() - tStart;
-        std::cout << "Epoch: " << e << " Epoch Time : ";
+        std::cout << "Epoch: " << e << " Epoch Time: ";
         CleanTime(time.count());
     }
 
