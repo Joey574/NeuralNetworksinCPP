@@ -24,11 +24,13 @@
     <CudaCompile Include="Matrix.cpp">
       <Filter>Source Files</Filter>
     </CudaCompile>
-    <CudaCompile Include="CudaMatrix.cpp">
-      <Filter>Source Files</Filter>
-    </CudaCompile>
     <CudaCompile Include="Matrix.h">
       <Filter>Header Files</Filter>
     </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CudaMatrix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

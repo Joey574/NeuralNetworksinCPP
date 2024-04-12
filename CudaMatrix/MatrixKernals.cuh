@@ -22,3 +22,9 @@ __global__ void sqrt(float* matrix, float scalar, int num_elements);
 
 __global__ void sin(float* matrix, float scalar, int num_elements);
 __global__ void cos(float* matrix, float scalar, int num_elements);
+
+__global__ void relu(float* matrix, float sclar, int num_elements);
+__global__ void relu_derivative(float* matrix, float sclar, int num_elements);
+
+__global__ void leakyrelu(float* matrix, float sclar, int num_elements);
+__global__ void leakyrelu_derivative(float* matrix, float sclar, int num_elements);

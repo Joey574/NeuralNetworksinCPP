@@ -134,6 +134,8 @@ void Matrix::Insert(int startRow, Matrix element) {
 	for (int i = 0; i < element.RowCount; i++) {
 		this->SetRow(i + startRow, element.Row(i));
 	}
+
+	transposeBuilt = false;
 }
 
 

@@ -22,6 +22,7 @@ public:
 	Matrix(int rows, int columns);
 	Matrix(int rows, int columns, init initType);
 	Matrix(int rows, int columns, float value);
+	Matrix(int rows, std::vector<float> value);
 	Matrix(std::vector<std::vector<float>>);
 
 	std::string ToString();
@@ -29,10 +30,10 @@ public:
 	std::vector<float> FlattenMatrix();
 	Matrix Transpose();
 
-	std::vector<float> SetColumn(int index, std::vector<float> column);
-	std::vector<float> SetColumn(int index, std::vector<int> column);
-	std::vector<float> SetRow(int index, std::vector<float> row);
-	std::vector<float> SetRow(int index, std::vector<int> row);
+	void SetColumn(int index, std::vector<float> column);
+	void SetColumn(int index, std::vector<int> column);
+	void SetRow(int index, std::vector<float> row);
+	void SetRow(int index, std::vector<int> row);
 
 	std::vector<float> Column(int index);
 	std::vector<float> Row(int index);
@@ -49,13 +50,15 @@ public:
 	void Insert(int startRow, Matrix element);
 	Matrix Combine(Matrix element);
 
+	// Advanced math
 	Matrix NormalizeTo(float lowerRange, float upperRange);
 
-	Matrix FourierSeries(int orders);
-	Matrix TaylorSeries(int orders);
+	Matrix FourierSeries(int order);
+	Matrix TaylorSeries(int order);
 
 	Matrix DotProduct(Matrix element);
 
+	std::vector<float> LogSumExp();
 
 	// Basic Math
 	Matrix Add(float scalar);
@@ -82,10 +85,14 @@ public:
 	Matrix Exp(std::vector<float> base);
 	Matrix Exp(Matrix base);
 
-	
+	Matrix Sqrt();
+
+	Matrix Sin();
+	Matrix Cos();
+
 	// Activation functions and derivatives
 	Matrix ReLU();
-	Matrix RELUDeriv();
+	Matrix ReLUDeriv();
 
 	Matrix LeakyReLU(float alpha = 0.1f);
 	Matrix LeakyReLUDeriv(float alpha = 0.1f);
@@ -108,8 +115,6 @@ public:
 	Matrix Swish();
 	Matrix SwishDerivative();
 
-	Matrix SoftMax();
-
 
 	// Other
 	int ColumnCount;
@@ -120,6 +125,8 @@ public:
 	bool transposeBuilt;
 	bool flattenBuilt;
 
+
+	// Operators
 	Matrix operator + (float scalar) {
 		return this->Add(scalar);
 	}

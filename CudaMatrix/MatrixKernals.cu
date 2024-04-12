@@ -110,3 +110,42 @@ __global__ void cos(float* matrix, float scalar, int num_elements) {
         matrix[id] = cosf(matrix[id]);
     }
 }
+
+
+__global__ void relu(float* matrix, float scalar, int num_elements) {
+    int id = blockDim.x * blockIdx.x + threadIdx.x;
+    if (id < num_elements) {
+        matrix[id] = fmaxf(matrix[id], 0.0f);
+    }
+}
+
+__global__ void relu_derivative(float* matrix, float scalar, int num_elements) {
+    int id = blockDim.x * blockIdx.x + threadIdx.x;
+    if (id < num_elements) {
+        if (matrix[id] > 0.0f) {
+            matrix[id] = 1.0f;
+        } else {
+            matrix[id] = 0.0f;
+        }
+    }
+}
+
+
+__global__ void leakyrelu(float* matrix, float scalar, int num_elements) {
+    int id = blockDim.x * blockIdx.x + threadIdx.x;
+    if (id < num_elements) {
+        matrix[id] = fmaxf(matrix[id], scalar * matrix[id]);
+    }
+}
+
+__global__ void leakyrelu_derivative(float* matrix, float scalar, int num_elements) {
+    int id = blockDim.x * blockIdx.x + threadIdx.x;
+    if (id < num_elements) {
+        if (matrix[id] > 0.0f) {
+            matrix[id] = 1.0f;
+        }
+        else {
+            matrix[id] = scalar;
+        }
+    }
+}
