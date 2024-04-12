@@ -1,6 +1,20 @@
 #include <iostream>
 
+#include "Matrix.h"
+
 int main()
 {
-    std::cout << "Hello World!\n";
+
+}
+
+void TrainVNN() {
+
+}
+
+void TrainGPNN() {
+
+}
+
+void TrainDNN() {
+
 }
