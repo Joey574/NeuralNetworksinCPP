@@ -15,24 +15,20 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CudaMatrix.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Matrix.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Matrix.h">
+    <CudaCompile Include="MatrixKernals.cuh">
       <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="MatrixKernals.cuh">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="MatrixKernals.cu">
+    </CudaCompile>
+    <CudaCompile Include="MatrixKernals.cu">
       <Filter>Source Files</Filter>
-    </None>
+    </CudaCompile>
+    <CudaCompile Include="Matrix.cpp">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="CudaMatrix.cpp">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Matrix.h">
+      <Filter>Header Files</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>
