@@ -15,6 +15,10 @@ __global__ void div_vector(float* matrix, float* vec, int num_elements);
 __global__ void pow_scalar(float* matrix, float scalar, int num_elements);
 __global__ void pow_vector(float* matrix, float* vec, int num_elements);
 
-__global__ void sqrt_scalar(float* matrix, float scalar, int num_elements);
-__global__ void sqrt_vector(float* matrix, float* vec, int num_elements);
+__global__ void exp_scalar(float* matrix, float scalar, int num_elements);
+__global__ void exp_vector(float* matrix, float* vec, int num_elements);
 
+__global__ void sqrt(float* matrix, float scalar, int num_elements);
+
+__global__ void sin(float* matrix, float scalar, int num_elements);
+__global__ void cos(float* matrix, float scalar, int num_elements);
