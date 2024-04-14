@@ -19,17 +19,17 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 1 };
+std::vector<int> dimensions = { 2, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 1 };
 std::unordered_set<int> resNet = { 1, 3, 5, 7, 9, 11, 12, 13, 14, 15, 16, 17 };
-int fourierSeries = 256;
+int fourierSeries = 128;
 
 float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 1500;
+int epochs = 800;
 int batchSize = 500;
-float learningRate = 0.01;
+float learningRate = 0.001;
 
 // Inputs
 Matrix input;
@@ -358,11 +358,11 @@ void TrainNetwork() {
             UpdateNetwork();
         }
 
-        if (e % 10 == 9) {
+       /* if (e % 10 == 9) {
             std::string filename = "MandlebrotAproximations\\" + std::to_string(e).append(".bmp");
             MakeBMP(filename);
             InitializeResultMatrices(batchSize);
-        }
+        }*/
 
         time = std::chrono::high_resolution_clock::now() - tStart;
         std::cout << "Epoch: " << e << " Epoch Time: ";

@@ -15,7 +15,7 @@
 #include "Matrix.h"
 
 //Hyperparameters
-std::vector<int> dimensions = { 784, 16, 16, 10 };
+std::vector<int> dimensions = { 784, 784, 10 };
 std::unordered_set<int> resNet = {  };
 int fourierSeries = 0;
 int taylorSeries = 0;

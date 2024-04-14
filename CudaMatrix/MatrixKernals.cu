@@ -1,7 +1,6 @@
 #include "MatrixKernals.cuh"
 
 // Single Scalar operation
-
 __global__ void add_scalar(float* matrix, float scalar, int num_elements) {
     int id = blockDim.x * blockIdx.x + threadIdx.x;
     if (id < num_elements) {
@@ -45,7 +44,6 @@ __global__ void exp_scalar(float* matrix, float scalar, int num_elements) {
 }
 
 // Vector Operations
-
 __global__ void add_vector(float* matrix, float* element, int num_elements) {
     int id = blockDim.x * blockIdx.x + threadIdx.x;
     if (id < num_elements) {
@@ -89,7 +87,6 @@ __global__ void exp_vector(float* matrix, float* element, int num_elements) {
 }
 
 // Uniform Math Operations
-
 __global__ void sqrt(float* matrix, float scalar, int num_elements) {
     int id = blockDim.x * blockIdx.x + threadIdx.x;
     if (id < num_elements) {
