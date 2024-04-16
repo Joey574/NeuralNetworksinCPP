@@ -19,17 +19,17 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 1 };
-std::unordered_set<int> resNet = { 1, 3, 5, 7, 9, 11, 12, 13, 14, 15, 16, 17 };
-int fourierSeries = 128;
+std::vector<int> dimensions = { 2, 50, 50, 50, 50, 50, 50, 50, 50, 50, 1 };
+std::unordered_set<int> resNet = { 1,2,3,4,5,6,7 };
+int fourierSeries = 32;
 
 float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 800;
+int epochs = 1000;
 int batchSize = 500;
-float learningRate = 0.001;
+float learningRate = 0.05;
 
 // Inputs
 Matrix input;
@@ -49,16 +49,23 @@ std::vector<Matrix> dTotal;
 std::vector<Matrix> dWeights;
 std::vector<std::vector<float>> dBiases;
 
-// Image stuff
+// Image stuff / Mandlebrot specific
+int dataSize = 20000;
+int epochPerImage = 50;
+
 Matrix image;
-int imageWidth = 1200;
-int imageHeight = 700;
+int imageWidth = 160;
+int imageHeight = 90;
+
+int finalWidth = 1900;
+int finalHeight = 1200;
 
 // Prototypes
 std::wstring NarrowToWide(const std::string& narrowStr);
 float mandlebrot(float x, float y, int maxIterations = 50);
 void MakeDataSet(int size);
-void MakeBMP(std::string filename);
+void MakeImageFeatures(int width, int height);
+void MakeBMP(std::string filename, int width, int height);
 void ForwardPropogation(Matrix in);
 void BackwardPropogation();
 void ShuffleInput();
@@ -75,7 +82,8 @@ int main()
 {
     srand(time(0));
 
-    MakeDataSet(20000);
+    MakeDataSet(dataSize);
+    MakeImageFeatures(imageWidth, imageHeight);
 
     InitializeNetwork();
 
@@ -259,6 +267,7 @@ void MakeDataSet(int size) {
     std::uniform_real_distribution<float> yRand(yMin, yMax);
 
     input = Matrix(2, size);
+    inputLabels.clear();
 
     for (int i = 0; i < size; i++) {
         float x = xRand(gen);
@@ -268,49 +277,58 @@ void MakeDataSet(int size) {
         float mandle = mandlebrot(x, y);
         inputLabels.push_back(mandle);
     }
-
-   image = Matrix(2, imageWidth * imageHeight);
-
-   float scaleX = (std::abs(xMin - xMax)) / (imageWidth - 1);
-   float scaleY = (std::abs(yMin - yMax)) / (imageHeight - 1);
-
-    for (int y = 0; y < imageHeight; y++) {
-        for (int x = 0; x < imageWidth; x++) {
-            std::vector<float> val = { xMin + (float)x * scaleX, yMin + (float)y * scaleY };
-            image.SetColumn(x + (y * imageWidth), val);
-        }
-    }
-
     // Normalize Input
     input = input.Normalized(lowerNormalized, upperNormalized);
-    image = image.Normalized(lowerNormalized, upperNormalized);
 
     Matrix oldI = input;
-    Matrix oldF = image;
     // Compute Fourier Series
     if (fourierSeries > 0) {
         auto sTime = std::chrono::high_resolution_clock::now();
-        std::cout << "Computing " << fourierSeries << " order(s) of Fourier Series..." << std::endl;
 
         for (int f = 0; f < fourierSeries; f++) {
             input = input.Combine(oldI.FourierSeries(f + 1));
-            image = image.Combine(oldF.FourierSeries(f + 1));
         }
         dimensions[0] = input.RowCount;
-
-        std::cout << "Fourier Features: " << input.RowCount - oldI.RowCount << std::endl;
-
-        std::chrono::duration<double, std::milli> time = std::chrono::high_resolution_clock::now() - sTime;
-        std::cout << "Time to compute " << fourierSeries << " order(s): " << time.count() / 1000.00 << " seconds" << std::endl;
     }
 }
 
-void MakeBMP(std::string filename) {
+void MakeImageFeatures(int width, int height) {
+
+    image = Matrix(2, width * height);
+
+    float xMin = -2.5f;
+    float xMax = 1.0f;
+    float yMin = -1.1f;
+    float yMax = 1.1f;
+
+    float scaleX = (std::abs(xMin - xMax)) / (width - 1);
+    float scaleY = (std::abs(yMin - yMax)) / (height - 1);
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            std::vector<float> val = { xMin + (float)x * scaleX, yMin + (float)y * scaleY };
+            image.SetColumn(x + (y * width), val);
+        }
+    }
+
+    image = image.Normalized(lowerNormalized, upperNormalized);
+
+    Matrix oldF = image;
+    if (fourierSeries > 0) {
+        auto sTime = std::chrono::high_resolution_clock::now();
+
+        for (int f = 0; f < fourierSeries; f++) {
+            image = image.Combine(oldF.FourierSeries(f + 1));
+        }
+    }
+}
+
+void MakeBMP(std::string filename, int width, int height) {
     std::wstring fp = NarrowToWide(filename);
 
     CImage mandlebrot;
 
-    mandlebrot.Create(imageWidth, imageHeight, 24);
+    mandlebrot.Create(width, height, 24);
 
     InitializeResultMatrices(image.ColumnCount);
     ForwardPropogation(image);
@@ -319,9 +337,9 @@ void MakeBMP(std::string filename) {
 
     std::vector<float> pixelsData = activation[activation.size() - 1].Row(0);
 
-    for (int y = 0; y < imageHeight; y++) {
-        for (int x = 0; x < imageWidth; x++) {
-            mandlebrot.SetPixel(x, y, RGB(pixelsData[x + (y * imageWidth)] * 255, 0, 0));
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            mandlebrot.SetPixel(x, y, RGB(pixelsData[x + (y * width)] * 255, 0, 0));
         }
     }
 
@@ -348,7 +366,7 @@ void TrainNetwork() {
 
         tStart = std::chrono::high_resolution_clock::now();
 
-        ShuffleInput();
+        MakeDataSet(dataSize);
         for (int i = 0; i < iterations; i++) {
 
             batch = GetNextInput(input, batchSize, i);
@@ -358,11 +376,11 @@ void TrainNetwork() {
             UpdateNetwork();
         }
 
-       /* if (e % 10 == 9) {
+        if (e % epochPerImage == epochPerImage - 1) {
             std::string filename = "MandlebrotAproximations\\" + std::to_string(e).append(".bmp");
-            MakeBMP(filename);
+            MakeBMP(filename, imageWidth, imageHeight);
             InitializeResultMatrices(batchSize);
-        }*/
+        }
 
         time = std::chrono::high_resolution_clock::now() - tStart;
         std::cout << "Epoch: " << e << " Epoch Time: ";
@@ -378,8 +396,9 @@ void TrainNetwork() {
     CleanTime(epochTime);
 
     tStart = std::chrono::high_resolution_clock::now();
-    std::string filename = "MandlebrotAproximations\\MandlebrotAprox.bmp";
-    MakeBMP(filename);
+    std::string filename = "MandlebrotAproximations\\MandlebrotAproxFinalb.bmp";
+    MakeImageFeatures(finalWidth, finalHeight);
+    MakeBMP(filename, finalWidth, finalHeight);
     time = (std::chrono::high_resolution_clock::now() - tStart);
 
     std::cout << "Image Made: " << std::endl;
