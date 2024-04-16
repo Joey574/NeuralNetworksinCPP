@@ -19,8 +19,8 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 100, 100, 100, 100, 100, 1 };
-std::unordered_set<int> resNet = { 1,2,3 };
+std::vector<int> dimensions = { 2, 50, 50, 50, 50, 50, 50, 50, 50, 50, 1 };
+std::unordered_set<int> resNet = { 1,2,3,4,5,6,7 };
 int fourierSeries = 32;
 
 float lowerNormalized = -M_PI;
@@ -51,14 +51,14 @@ std::vector<std::vector<float>> dBiases;
 
 // Image stuff / Mandlebrot specific
 int dataSize = 20000;
-int epochPerImage = 50;
+int epochPerImage = 25;
 
 Matrix image;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 1900;
-int finalHeight = 1200;
+int finalWidth = 800;
+int finalHeight = 450;
 
 // Prototypes
 std::wstring NarrowToWide(const std::string& narrowStr);
@@ -333,13 +333,15 @@ void MakeBMP(std::string filename, int width, int height) {
     InitializeResultMatrices(image.ColumnCount);
     ForwardPropogation(image);
 
-    std::cout << "Image FP completed..." << std::endl;
-
     std::vector<float> pixelsData = activation[activation.size() - 1].Row(0);
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            mandlebrot.SetPixel(x, y, RGB(pixelsData[x + (y * width)] * 255, 0, 0));
+
+            float r = pixelsData[x + (y * width)] * 255;
+            float other = pixelsData[x + (y * width)] > 0.9f ? 255 : 0;
+
+            mandlebrot.SetPixel(x, y, RGB(r, other, other));
         }
     }
 
