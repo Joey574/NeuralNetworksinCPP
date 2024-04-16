@@ -19,17 +19,17 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 50, 50, 50, 50, 50, 50, 50, 50, 50, 1 };
-std::unordered_set<int> resNet = { 1,2,3,4,5,6,7 };
+std::vector<int> dimensions = { 2, 100, 100, 100, 100, 100, 1 };
+std::unordered_set<int> resNet = { 1,2,3 };
 int fourierSeries = 32;
 
 float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 1000;
+int epochs = 2500;
 int batchSize = 500;
-float learningRate = 0.05;
+float learningRate = 0.085;
 
 // Inputs
 Matrix input;
