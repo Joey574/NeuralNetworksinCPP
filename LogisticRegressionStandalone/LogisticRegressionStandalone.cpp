@@ -21,12 +21,12 @@ std::unordered_set<int> resNet = {  };
 int fourierSeries = 0;
 int taylorSeries = 0;
 
-float lowerNormalized = 0;
-float upperNormalized = 1.0;
+float lowerNormalized = 0.0f;
+float upperNormalized = 1.0f;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 25;
-int batchSize = 500;
+int epochs = 100;
+int batchSize = 20000;
 float learningRate = 0.1;
 
 // Save / Load

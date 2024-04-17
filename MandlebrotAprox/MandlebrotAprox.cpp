@@ -27,9 +27,9 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 500;
+int epochs = 750;
 int batchSize = 500;
-float learningRate = 0.05;
+float learningRate = 0.075;
 
 // Inputs
 Matrix input;
@@ -57,8 +57,8 @@ Matrix image;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 800;
-int finalHeight = 450;
+int finalWidth = 1200;
+int finalHeight = 700;
 
 // Prototypes
 std::wstring NarrowToWide(const std::string& narrowStr);
@@ -398,7 +398,7 @@ void TrainNetwork() {
     CleanTime(epochTime);
 
     tStart = std::chrono::high_resolution_clock::now();
-    std::string filename = "MandlebrotAproximations\\MandlebrotAproxFinalb.bmp";
+    std::string filename = "MandlebrotAproximations\\MandlebrotAproxFinal.bmp";
     MakeImageFeatures(finalWidth, finalHeight);
     MakeBMP(filename, finalWidth, finalHeight);
     time = (std::chrono::high_resolution_clock::now() - tStart);
