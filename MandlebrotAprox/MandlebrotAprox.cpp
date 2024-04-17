@@ -27,9 +27,9 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 750;
+int epochs = 2500;
 int batchSize = 500;
-float learningRate = 0.075;
+float learningRate = 0.085;
 
 // Inputs
 Matrix input;
