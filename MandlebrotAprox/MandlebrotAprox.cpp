@@ -63,8 +63,8 @@ Matrix image;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 800;
-int finalHeight = 450;
+int finalWidth = 1200;
+int finalHeight = 700;
 
 // Prototypes
 std::wstring NarrowToWide(const std::string& narrowStr);
