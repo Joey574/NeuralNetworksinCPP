@@ -26,9 +26,9 @@ std::unordered_set<int> resNet = {  };
 int fourierSeries = 0;
 int taylorSeries = 8;
 
+bool computeSquare = false;
 bool computeExp = false;
 
-// Hyperparameters cont.
 float lowerNormalized = 0.0f;
 float upperNormalized = 1.0f;
 
@@ -303,6 +303,11 @@ void MakeDataSet(int size) {
         }
     }
 
+    // Compute square
+    if (computeSquare) {
+        input = input.Combine(oldI.Pow(2));
+    }
+
     // Compute Exp
     if (computeExp) {
         input = input.Combine(oldI.Exp());
@@ -346,6 +351,11 @@ void MakeImageFeatures(int width, int height) {
         for (int t = 0; t < taylorSeries; t++) {
             image = image.Combine(oldI.TaylorSeries(t + 2));
         }
+    }
+
+    // Compute square
+    if (computeSquare) {
+        image = image.Combine(oldI.Pow(2));
     }
 
     // Compute Exp
