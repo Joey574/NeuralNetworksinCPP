@@ -460,6 +460,21 @@ __m256 Matrix::SIMDSin(__m256 opOne, __m256 opTwo) {
 __m256 Matrix::SIMDCos(__m256 opOne, __m256 opTwo) {
 	return _mm256_cos_ps(opOne);
 }
+__m256 Matrix::SIMDSec(__m256 opOne, __m256 opTwo) {
+	return _mm256_div_ps(_mm256_set1_ps(1.0f), _mm256_cos_ps(opOne));
+}
+__m256 Matrix::SIMDCsc(__m256 opOne, __m256 opTwo) {
+	return _mm256_div_ps(_mm256_set1_ps(1.0f), _mm256_sin_ps(opOne));
+}
+__m256 Matrix::SIMDln (__m256 opOne, __m256 opTwo) {
+	return _mm256_log_ps(opOne);
+}
+__m256 Matrix::SIMDlog10(__m256 opOne, __m256 opTwo) {
+	return _mm256_log10_ps(opOne);
+}
+__m256 Matrix::SIMDlog2(__m256 opOne, __m256 opTwo) {
+	return _mm256_log2_ps(opOne);
+}
 
 float Matrix::RemainderAdd(float a, float b) {
 	return a + b;
@@ -484,6 +499,21 @@ float Matrix::RemainderSin(float a, float b) {
 }
 float Matrix::RemainderCos(float a, float b) {
 	return std::cos(a);
+}
+float Matrix::RemainderSec(float a, float b) {
+	return 1.0f / std::cos(a);
+}
+float Matrix::RemainderCsc(float a, float b) {
+	return 1.0f / std::sin(a);
+}
+float Matrix::Remainderln(float a, float b) {
+	return std::log(a);
+}
+float Matrix::Remainderlog10(float a, float b) {
+	return std::log10(a);
+}
+float Matrix::Remainderlog2(float a, float b) {
+	return std::log2(a);
 }
 
 // MISC

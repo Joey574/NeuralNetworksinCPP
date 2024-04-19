@@ -26,8 +26,6 @@ std::unordered_set<int> resNet = {  };
 int fourierSeries = 0;
 int taylorSeries = 0;
 
-bool computeExp = false;
-
 // Hyperparameters cont.
 float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
@@ -284,28 +282,23 @@ void MakeDataSet(int size) {
         inputLabels.push_back(mandle);
     }
 
-    // Normalize Input
+    // Normalize
+    Matrix oldT = input.Normalized(0.0f, 1.0f);
     input = input.Normalized(lowerNormalized, upperNormalized);
-
     Matrix oldI = input;
 
+    // Compute Taylor Series
+    if (taylorSeries) {
+        for (int t = 0; t < taylorSeries; t++) {
+            input = input.Combine(oldT.TaylorSeries(t + 2));
+        }
+    }
+
     // Compute Fourier Series
-    if (fourierSeries > 0) {
+    if (fourierSeries) {
         for (int f = 0; f < fourierSeries; f++) {
             input = input.Combine(oldI.FourierSeries(f + 1));
         }
-    }
-
-    // Compute Taylor Series
-    if (taylorSeries > 0) {
-        for (int t = 0; t < taylorSeries; t++) {
-            input = input.Combine(oldI.TaylorSeries(t + 2));
-        }
-    }
-
-    // Compute Exp
-    if (computeExp) {
-        input = input.Combine(oldI.Exp());
     }
 
     dimensions[0] = input.RowCount;
@@ -330,27 +323,23 @@ void MakeImageFeatures(int width, int height) {
         }
     }
 
+    // Normalize
+    Matrix oldT = image.Normalized(0.0f, 1.0f);
     image = image.Normalized(lowerNormalized, upperNormalized);
-
     Matrix oldI = image;
 
+    // Compute Taylor Series
+    if (taylorSeries) {
+        for (int t = 0; t < taylorSeries; t++) {
+            image = image.Combine(oldT.TaylorSeries(t + 2));
+        }
+    }
+
     // Compute Fourier Series
-    if (fourierSeries > 0) {
+    if (fourierSeries) {
         for (int f = 0; f < fourierSeries; f++) {
             image = image.Combine(oldI.FourierSeries(f + 1));
         }
-    }
-
-    // Compute Taylor Series
-    if (taylorSeries > 0) {
-        for (int t = 0; t < taylorSeries; t++) {
-            image = image.Combine(oldI.TaylorSeries(t + 2));
-        }
-    }
-
-    // Compute Exp
-    if (computeExp) {
-        image = image.Combine(oldI.Exp());
     }
 
     dimensions[0] = image.RowCount;
