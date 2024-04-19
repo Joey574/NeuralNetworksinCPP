@@ -24,13 +24,13 @@ std::unordered_set<int> resNet = {  };
 
 // Feature Extractions
 int fourierSeries = 0;
-int taylorSeries = 8;
+int taylorSeries = 0;
 
 bool computeExp = false;
 
 // Hyperparameters cont.
-float lowerNormalized = 0.0f;
-float upperNormalized = 1.0f;
+float lowerNormalized = -M_PI;
+float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
 int epochs = 500;
@@ -63,8 +63,8 @@ Matrix image;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 1200;
-int finalHeight = 700;
+int finalWidth = 800;
+int finalHeight = 450;
 
 // Prototypes
 std::wstring NarrowToWide(const std::string& narrowStr);
