@@ -228,6 +228,10 @@ Matrix Matrix::TaylorSeries(int orders) {
 	return this->Pow(orders);
 }
 
+Matrix Matrix::ChebyshevSeries(int order) {
+	return this->SingleFloatOperation(&Matrix::SIMDAcos, &Matrix::RemainderAcos, 0).Multiply(order).SingleFloatOperation(&Matrix::SIMDCos, &Matrix::RemainderCos, 0);
+}
+
 
 Matrix Matrix::DotProduct(Matrix element) {
 
@@ -466,14 +470,8 @@ __m256 Matrix::SIMDSec(__m256 opOne, __m256 opTwo) {
 __m256 Matrix::SIMDCsc(__m256 opOne, __m256 opTwo) {
 	return _mm256_div_ps(_mm256_set1_ps(1.0f), _mm256_sin_ps(opOne));
 }
-__m256 Matrix::SIMDln (__m256 opOne, __m256 opTwo) {
-	return _mm256_log_ps(opOne);
-}
-__m256 Matrix::SIMDlog10(__m256 opOne, __m256 opTwo) {
-	return _mm256_log10_ps(opOne);
-}
-__m256 Matrix::SIMDlog2(__m256 opOne, __m256 opTwo) {
-	return _mm256_log2_ps(opOne);
+__m256 Matrix::SIMDAcos(__m256 opOne, __m256 opTwo) {
+	return _mm256_acos_ps(opOne);
 }
 
 float Matrix::RemainderAdd(float a, float b) {
@@ -506,14 +504,8 @@ float Matrix::RemainderSec(float a, float b) {
 float Matrix::RemainderCsc(float a, float b) {
 	return 1.0f / std::sin(a);
 }
-float Matrix::Remainderln(float a, float b) {
-	return std::log(a);
-}
-float Matrix::Remainderlog10(float a, float b) {
-	return std::log10(a);
-}
-float Matrix::Remainderlog2(float a, float b) {
-	return std::log2(a);
+float Matrix::RemainderAcos(float a, float b) {
+	return std::acos(a);
 }
 
 // MISC

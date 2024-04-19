@@ -32,6 +32,7 @@ public:
 
 	Matrix FourierSeries(int order);
 	Matrix TaylorSeries(int order);
+	Matrix ChebyshevSeries(int order);
 
 	Matrix SegmentR(int startRow, int endRow);
 	Matrix SegmentR(int startRow);
@@ -232,9 +233,7 @@ private:
 	__m256 SIMDCos(__m256 opOne, __m256 opTwo);
 	__m256 SIMDSec(__m256 opOne, __m256 opTwo);
 	__m256 SIMDCsc(__m256 opOne, __m256 opTwo);
-	__m256 SIMDln(__m256 opOne, __m256 opTwo);
-	__m256 SIMDlog10(__m256 opOne, __m256 opTwo);
-	__m256 SIMDlog2(__m256 opOne, __m256 opTwo);
+	__m256 SIMDAcos(__m256 opOne, __m256 opTwo);
 
 	float RemainderAdd(float a, float b);
 	float RemainderSub(float a, float b);
@@ -246,7 +245,5 @@ private:
 	float RemainderCos(float a, float b);
 	float RemainderSec(float a, float b);
 	float RemainderCsc(float a, float b);
-	float Remainderln(float a, float b);
-	float Remainderlog10(float a, float b);
-	float Remainderlog2(float a, float b);
+	float RemainderAcos(float a, float b);
 };
