@@ -218,20 +218,17 @@ std::vector<float> Matrix::Row(int index) {
 }
 
 // Math Operations
+#include <iostream>
 
 Matrix Matrix::FourierSeries(int order) {
-	return this->Multiply(order).SingleFloatOperation(&Matrix::SIMDSin, &Matrix::RemainderSin, 0).Combine
-	(this->Multiply(order).SingleFloatOperation(&Matrix::SIMDCos, &Matrix::RemainderCos, 0));
+	return this->Multiply(order).Sin().Combine(this->Multiply(order).Cos());
 }
-
 Matrix Matrix::TaylorSeries(int orders) {
 	return this->Pow(orders);
 }
-
 Matrix Matrix::ChebyshevSeries(int order) {
-	return this->SingleFloatOperation(&Matrix::SIMDAcos, &Matrix::RemainderAcos, 0).Multiply(order).SingleFloatOperation(&Matrix::SIMDCos, &Matrix::RemainderCos, 0);
+	return this->Acos().Multiply(order).Cos();//.Combine(this->Acos().Multiply(order + 1).Sin().Divide(this->Acos().Sin()));
 }
-
 
 Matrix Matrix::DotProduct(Matrix element) {
 
@@ -244,82 +241,75 @@ Matrix Matrix::DotProduct(Matrix element) {
 	return mat;
 }
 
-
 Matrix Matrix::Add(float scalar) {
 	return SingleFloatOperation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, scalar);
 }
-
 Matrix Matrix::Add(std::vector<float> scalar) {
 	return VectorFloatOperation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, scalar);
 }
-
 Matrix Matrix::Add(Matrix element) {
 	return MatrixFloatOperation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, element);
 }
 
-
 Matrix Matrix::Subtract(float scalar) {
 	return SingleFloatOperation(&Matrix::SIMDSub, &Matrix::RemainderSub, scalar);
 }
-
 Matrix Matrix::Subtract(std::vector<float> scalar) {
 	return VectorFloatOperation(&Matrix::SIMDSub, &Matrix::RemainderSub, scalar);
 }
-
 Matrix Matrix::Subtract(Matrix element) {
 	return MatrixFloatOperation(&Matrix::SIMDSub, &Matrix::RemainderSub, element);
 }
 
-
 Matrix Matrix::Multiply(float scalar) {
 	return SingleFloatOperation(&Matrix::SIMDMul, &Matrix::RemainderMul, scalar);
 }
-
 Matrix Matrix::Multiply(std::vector<float> scalar) {
 	return VectorFloatOperation(&Matrix::SIMDMul, &Matrix::RemainderMul, scalar);
 }
-
 Matrix Matrix::Multiply(Matrix element) {
 	return MatrixFloatOperation(&Matrix::SIMDMul, &Matrix::RemainderMul, element);
 }
 
-
 Matrix Matrix::Divide(float scalar) {
 	return SingleFloatOperation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, scalar);
 }
-
 Matrix Matrix::Divide(std::vector<float> scalar) {
 	return VectorFloatOperation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, scalar);
 }
-
 Matrix Matrix::Divide(Matrix element) {
 	return MatrixFloatOperation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, element);
 }
 
-
 Matrix Matrix::Pow(float scalar) {
 	return SingleFloatOperation(&Matrix::SIMDPow, &Matrix::RemainderPow, scalar);
 }
-
 Matrix Matrix::Pow(std::vector<float> scalar) {
 	return VectorFloatOperation(&Matrix::SIMDPow, &Matrix::RemainderPow, scalar);
 }
-
 Matrix Matrix::Pow(Matrix element) {
 	return MatrixFloatOperation(&Matrix::SIMDPow, &Matrix::RemainderPow, element);
 }
 
-
 Matrix Matrix::Exp(float base) {
 	return SingleFloatOperation(&Matrix::SIMDExp, &Matrix::RemainderExp, base);
 }
-
 Matrix Matrix::Exp(std::vector<float> base) {
 	return VectorFloatOperation(&Matrix::SIMDExp, &Matrix::RemainderExp, base);
 }
-
 Matrix Matrix::Exp(Matrix base) {
 	return MatrixFloatOperation(&Matrix::SIMDExp, &Matrix::RemainderExp, base);
+}
+
+Matrix Matrix::Cos() {
+	return this->SingleFloatOperation(&Matrix::SIMDCos, &Matrix::RemainderCos, 0);
+}
+Matrix Matrix::Sin() {
+	return this->SingleFloatOperation(&Matrix::SIMDSin, &Matrix::RemainderSin, 0);
+}
+
+Matrix Matrix::Acos() {
+	return this->SingleFloatOperation(&Matrix::SIMDAcos, &Matrix::RemainderAcos, 0);
 }
 
 
@@ -517,7 +507,6 @@ std::string Matrix::ToString() {
 		for (int c = 0; c < ColumnCount; c++) {
 			out += std::to_string(matrix[r][c]) + " ";
 		}
-		out += " :: " + std::to_string(this->RowSums()[r]);
 		out += "\n";
 	}
 

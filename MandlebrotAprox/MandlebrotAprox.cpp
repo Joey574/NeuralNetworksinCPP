@@ -19,22 +19,22 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 1 };
-std::unordered_set<int> resNet = { 2,3,4,5,6,7,8,9,10,11 };
+std::vector<int> dimensions = { 2, 128, 128, 1 };
+std::unordered_set<int> resNet = {  };
 
 // Feature Extractions
-int fourierSeries = 32;
-int chebyshevSeries = 8;
+int fourierSeries = 0;
+int chebyshevSeries = 2;
 int taylorSeries = 0;
 
 // Hyperparameters cont.
-float lowerNormalized = -M_PI;
-float upperNormalized = M_PI;
+float lowerNormalized = -1.0f;
+float upperNormalized = 1.0f;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 1000;
+int epochs = 500;
 int batchSize = 500;
-float learningRate = 0.015;
+float learningRate = 0.035;
 
 // Inputs
 Matrix input;
@@ -55,15 +55,15 @@ std::vector<Matrix> dWeights;
 std::vector<std::vector<float>> dBiases;
 
 // Image stuff / Mandlebrot specific
-int dataSize = 20000;
-int epochPerImage = 50;
+int dataSize = 2000;
+int epochPerImage = 10;
 
 Matrix image;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 1200;
-int finalHeight = 700;
+int finalWidth = 800;
+int finalHeight = 450;
 
 // Prototypes
 std::wstring NarrowToWide(const std::string& narrowStr);
@@ -326,6 +326,7 @@ Matrix MakeFeatures(Matrix in) {
     // Compute Chebyshev Series
     if (chebyshevSeries) {
         for (int c = 0; c < chebyshevSeries; c++) {
+            //std::cout << chebyshevNormal.ChebyshevSeries(c + 1).Transpose().ToString() << c << std::endl << std::endl;
             in = in.Combine(chebyshevNormal.ChebyshevSeries(c + 1));
         }
     }
