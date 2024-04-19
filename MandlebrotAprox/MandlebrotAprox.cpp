@@ -19,11 +19,12 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 128, 128, 1 };
-std::unordered_set<int> resNet = {  };
+std::vector<int> dimensions = { 2, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 1 };
+std::unordered_set<int> resNet = { 2,3,4,5,6,7,8,9,10,11 };
 
 // Feature Extractions
-int fourierSeries = 0;
+int fourierSeries = 32;
+int chebyshevSeries = 8;
 int taylorSeries = 0;
 
 // Hyperparameters cont.
@@ -31,9 +32,9 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 500;
+int epochs = 1000;
 int batchSize = 500;
-float learningRate = 0.035;
+float learningRate = 0.015;
 
 // Inputs
 Matrix input;
@@ -55,14 +56,14 @@ std::vector<std::vector<float>> dBiases;
 
 // Image stuff / Mandlebrot specific
 int dataSize = 20000;
-int epochPerImage = 10;
+int epochPerImage = 50;
 
 Matrix image;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 800;
-int finalHeight = 450;
+int finalWidth = 1200;
+int finalHeight = 700;
 
 // Prototypes
 std::wstring NarrowToWide(const std::string& narrowStr);
@@ -80,6 +81,7 @@ float Accuracy(std::vector<int> predictions, std::vector<int> labels);
 void CleanTime(double time);
 void TrainNetwork();
 void UpdateNetwork();
+Matrix MakeFeatures(Matrix in);
 
 
 int main()
@@ -282,26 +284,7 @@ void MakeDataSet(int size) {
         inputLabels.push_back(mandle);
     }
 
-    // Normalize
-    Matrix oldT = input.Normalized(0.0f, 1.0f);
-    input = input.Normalized(lowerNormalized, upperNormalized);
-    Matrix oldI = input;
-
-    // Compute Taylor Series
-    if (taylorSeries) {
-        for (int t = 0; t < taylorSeries; t++) {
-            input = input.Combine(oldT.TaylorSeries(t + 2));
-        }
-    }
-
-    // Compute Fourier Series
-    if (fourierSeries) {
-        for (int f = 0; f < fourierSeries; f++) {
-            input = input.Combine(oldI.FourierSeries(f + 1));
-        }
-    }
-
-    dimensions[0] = input.RowCount;
+    input = MakeFeatures(input);
 }
 
 void MakeImageFeatures(int width, int height) {
@@ -323,26 +306,39 @@ void MakeImageFeatures(int width, int height) {
         }
     }
 
+    image = MakeFeatures(image);
+}
+
+Matrix MakeFeatures(Matrix in) {
     // Normalize
-    Matrix oldT = image.Normalized(0.0f, 1.0f);
-    image = image.Normalized(lowerNormalized, upperNormalized);
-    Matrix oldI = image;
+    Matrix taylorNormal = in.Normalized(0.0f, 1.0f);
+    Matrix fourierNormal = in.Normalized(-M_PI, M_PI);
+    Matrix chebyshevNormal = in.Normalized(-1.0f, 1.0f);
+    in = in.Normalized(lowerNormalized, upperNormalized);
 
     // Compute Taylor Series
     if (taylorSeries) {
         for (int t = 0; t < taylorSeries; t++) {
-            image = image.Combine(oldT.TaylorSeries(t + 2));
+            in = in.Combine(taylorNormal.TaylorSeries(t + 1));
+        }
+    }
+
+    // Compute Chebyshev Series
+    if (chebyshevSeries) {
+        for (int c = 0; c < chebyshevSeries; c++) {
+            in = in.Combine(chebyshevNormal.ChebyshevSeries(c + 1));
         }
     }
 
     // Compute Fourier Series
     if (fourierSeries) {
         for (int f = 0; f < fourierSeries; f++) {
-            image = image.Combine(oldI.FourierSeries(f + 1));
+            in = in.Combine(fourierNormal.FourierSeries(f + 1));
         }
     }
 
-    dimensions[0] = image.RowCount;
+    dimensions[0] = in.RowCount;
+    return in;
 }
 
 void MakeBMP(std::string filename, int width, int height) {
