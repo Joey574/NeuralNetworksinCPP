@@ -33,6 +33,8 @@ public:
 	Matrix FourierSeries(int order);
 	Matrix TaylorSeries(int order);
 	Matrix ChebyshevSeries(int order);
+	Matrix LegendreSeries(int order);
+	Matrix LaguerreSeries(int order);
 
 	Matrix SegmentR(int startRow, int endRow);
 	Matrix SegmentR(int startRow);

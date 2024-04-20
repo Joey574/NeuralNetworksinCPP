@@ -20,21 +20,23 @@
 
 // Hyperparameters
 std::vector<int> dimensions = { 2, 128, 128, 1 };
-std::unordered_set<int> resNet = {  };
+std::unordered_set<int> resNet = { 1 };
 
 // Feature Extractions
-int fourierSeries = 0;
-int chebyshevSeries = 2;
+int fourierSeries = 32;
+int chebyshevSeries = 0;
 int taylorSeries = 0;
+int legendreSeries = 0;
+int laguerreSeries = 0;
 
 // Hyperparameters cont.
-float lowerNormalized = -1.0f;
-float upperNormalized = 1.0f;
+float lowerNormalized = -M_PI;
+float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 500;
+int epochs = 750;
 int batchSize = 500;
-float learningRate = 0.035;
+float learningRate = 0.05f;
 
 // Inputs
 Matrix input;
@@ -55,7 +57,7 @@ std::vector<Matrix> dWeights;
 std::vector<std::vector<float>> dBiases;
 
 // Image stuff / Mandlebrot specific
-int dataSize = 2000;
+int dataSize = 20000;
 int epochPerImage = 10;
 
 Matrix image;
@@ -326,8 +328,21 @@ Matrix MakeFeatures(Matrix in) {
     // Compute Chebyshev Series
     if (chebyshevSeries) {
         for (int c = 0; c < chebyshevSeries; c++) {
-            //std::cout << chebyshevNormal.ChebyshevSeries(c + 1).Transpose().ToString() << c << std::endl << std::endl;
             in = in.Combine(chebyshevNormal.ChebyshevSeries(c + 1));
+        }
+    }
+
+    // Compute Legendre Series
+    if (legendreSeries) {
+        for (int l = 0; l < legendreSeries; l++) {
+            in = in.Combine(chebyshevNormal.LegendreSeries(l + 1));
+        }
+    }
+
+    // Compute Laguerre Series
+    if (laguerreSeries) {
+        for (int l = 0; l < laguerreSeries; l++) {
+            in = in.Combine(chebyshevNormal.LaguerreSeries(l + 1));
         }
     }
 

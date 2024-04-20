@@ -217,9 +217,7 @@ std::vector<float> Matrix::Row(int index) {
 	return matrix[index];
 }
 
-// Math Operations
-#include <iostream>
-
+// "Advanced" math
 Matrix Matrix::FourierSeries(int order) {
 	return this->Multiply(order).Sin().Combine(this->Multiply(order).Cos());
 }
@@ -227,7 +225,13 @@ Matrix Matrix::TaylorSeries(int orders) {
 	return this->Pow(orders);
 }
 Matrix Matrix::ChebyshevSeries(int order) {
-	return this->Acos().Multiply(order).Cos();//.Combine(this->Acos().Multiply(order + 1).Sin().Divide(this->Acos().Sin()));
+	return this->Acos().Multiply(order).Cos().Combine(this->Multiply(order + 1).Sin().Divide(this->Sin()));
+}
+Matrix Matrix::LegendreSeries(int order) {
+	return (this->Pow(2) - 1).Pow(order);
+}
+Matrix Matrix::LaguerreSeries(int order) {
+	return this->Pow(order).Multiply(this->Negative().Exp());
 }
 
 Matrix Matrix::DotProduct(Matrix element) {
@@ -241,6 +245,7 @@ Matrix Matrix::DotProduct(Matrix element) {
 	return mat;
 }
 
+// Basic Math
 Matrix Matrix::Add(float scalar) {
 	return SingleFloatOperation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, scalar);
 }
@@ -312,6 +317,9 @@ Matrix Matrix::Acos() {
 	return this->SingleFloatOperation(&Matrix::SIMDAcos, &Matrix::RemainderAcos, 0);
 }
 
+Matrix Matrix::Negative() {
+	return SingleFloatOperation(&Matrix::SIMDMul, &Matrix::RemainderMul, -1);
+}
 
 std::vector<float> Matrix::LogSumExp() {
 
