@@ -28,8 +28,8 @@ int chebyshevSeries = 0;
 int taylorSeries = 0;
 
 // Hyperparameters cont.
-float lowerNormalized = -M_PI;
-float upperNormalized = M_PI;
+float lowerNormalized = -1.0f;
+float upperNormalized = 1.0f;
 
 Matrix::init initType = Matrix::init::He;
 int epochs = 250;
@@ -63,8 +63,8 @@ Matrix image;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 1200;
-int finalHeight = 700;
+int finalWidth = 800;
+int finalHeight = 450;
 
 // Prototypes
 std::wstring NarrowToWide(const std::string& narrowStr);
