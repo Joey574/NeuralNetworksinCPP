@@ -19,11 +19,11 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 128, 128, 1 };
-std::unordered_set<int> resNet = { 1 };
+std::vector<int> dimensions = { 2, 32, 32, 1 };
+std::unordered_set<int> resNet = {  };
 
 // Feature Extractions
-int fourierSeries = 32;
+int fourierSeries = 16;
 int chebyshevSeries = 0;
 int taylorSeries = 0;
 int legendreSeries = 0;
@@ -34,7 +34,7 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 750;
+int epochs = 250;
 int batchSize = 500;
 float learningRate = 0.05f;
 
@@ -58,6 +58,7 @@ std::vector<std::vector<float>> dBiases;
 
 // Image stuff / Mandlebrot specific
 int dataSize = 20000;
+int epochPerDataset = 1;
 int epochPerImage = 10;
 
 Matrix image;
@@ -403,7 +404,8 @@ void TrainNetwork() {
 
         tStart = std::chrono::high_resolution_clock::now();
 
-        MakeDataSet(dataSize);
+        if (e % epochPerDataset == 0) { MakeDataSet(dataSize); }
+
         for (int i = 0; i < iterations; i++) {
 
             batch = GetNextInput(input, batchSize, i);
@@ -427,10 +429,8 @@ void TrainNetwork() {
     time = (std::chrono::high_resolution_clock::now() - totalStart);
     float epochTime = time.count() / epochs;
 
-    std::cout << "Total Training Time: ";
-    CleanTime(time.count());
-    std::cout << "Average Epoch Time: ";
-    CleanTime(epochTime);
+    std::cout << "Total Training Time: "; CleanTime(time.count());
+    std::cout << "Average Epoch Time: "; CleanTime(epochTime);
 
     tStart = std::chrono::high_resolution_clock::now();
     std::string filename = "MandlebrotAproximations\\MandlebrotAproxFinal.bmp";
