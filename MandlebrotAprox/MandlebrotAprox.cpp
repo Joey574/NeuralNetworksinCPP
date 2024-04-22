@@ -19,11 +19,11 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 32, 32, 1 };
+std::vector<int> dimensions = { 2, 128, 128, 1 };
 std::unordered_set<int> resNet = {  };
 
 // Feature Extractions
-int fourierSeries = 16;
+int fourierSeries = 256;
 int chebyshevSeries = 0;
 int taylorSeries = 0;
 int legendreSeries = 0;
@@ -34,7 +34,7 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 250;
+int epochs = 750;
 int batchSize = 500;
 float learningRate = 0.05f;
 
@@ -58,15 +58,15 @@ std::vector<std::vector<float>> dBiases;
 
 // Image stuff / Mandlebrot specific
 int dataSize = 20000;
-int epochPerDataset = 1;
-int epochPerImage = 10;
+int epochPerDataset = 50;
+int epochPerImage = 5;
 
 Matrix image;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 800;
-int finalHeight = 450;
+int finalWidth = 160;
+int finalHeight = 90;
 
 // Prototypes
 std::wstring NarrowToWide(const std::string& narrowStr);
@@ -84,7 +84,6 @@ float Accuracy(std::vector<int> predictions, std::vector<int> labels);
 void CleanTime(double time);
 void TrainNetwork();
 void UpdateNetwork();
-Matrix MakeFeatures(Matrix in);
 
 
 int main()
@@ -224,7 +223,7 @@ float Accuracy(std::vector<float> predictions, std::vector<int> labels) {
 void CleanTime(double time) {
     const double hour = 3600000.00;
     const double minute = 60000.00;
-    const double second = 1280.00;
+    const double second = 1000.00;
 
     if (time / hour > 1.00) {
         std::cout << time / hour << " hours";
@@ -287,7 +286,9 @@ void MakeDataSet(int size) {
         inputLabels.push_back(mandle);
     }
 
-    input = MakeFeatures(input);
+    input = input.ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries, 
+        laguerreSeries, lowerNormalized, upperNormalized);
+    dimensions[0] = input.RowCount;
 }
 
 void MakeImageFeatures(int width, int height) {
@@ -309,53 +310,9 @@ void MakeImageFeatures(int width, int height) {
         }
     }
 
-    image = MakeFeatures(image);
-}
-
-Matrix MakeFeatures(Matrix in) {
-    // Normalize
-    Matrix taylorNormal = in.Normalized(0.0f, 1.0f);
-    Matrix fourierNormal = in.Normalized(-M_PI, M_PI);
-    Matrix chebyshevNormal = in.Normalized(-1.0f, 1.0f);
-    in = in.Normalized(lowerNormalized, upperNormalized);
-
-    // Compute Taylor Series
-    if (taylorSeries) {
-        for (int t = 0; t < taylorSeries; t++) {
-            in = in.Combine(taylorNormal.TaylorSeries(t + 1));
-        }
-    }
-
-    // Compute Chebyshev Series
-    if (chebyshevSeries) {
-        for (int c = 0; c < chebyshevSeries; c++) {
-            in = in.Combine(chebyshevNormal.ChebyshevSeries(c + 1));
-        }
-    }
-
-    // Compute Legendre Series
-    if (legendreSeries) {
-        for (int l = 0; l < legendreSeries; l++) {
-            in = in.Combine(chebyshevNormal.LegendreSeries(l + 1));
-        }
-    }
-
-    // Compute Laguerre Series
-    if (laguerreSeries) {
-        for (int l = 0; l < laguerreSeries; l++) {
-            in = in.Combine(chebyshevNormal.LaguerreSeries(l + 1));
-        }
-    }
-
-    // Compute Fourier Series
-    if (fourierSeries) {
-        for (int f = 0; f < fourierSeries; f++) {
-            in = in.Combine(fourierNormal.FourierSeries(f + 1));
-        }
-    }
-
-    dimensions[0] = in.RowCount;
-    return in;
+    image = image.ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries, 
+        laguerreSeries, lowerNormalized, upperNormalized);
+    dimensions[0] = image.RowCount; 
 }
 
 void MakeBMP(std::string filename, int width, int height) {
