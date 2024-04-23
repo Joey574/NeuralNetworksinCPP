@@ -19,11 +19,11 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 128, 128, 1 };
-std::unordered_set<int> resNet = {  };
+std::vector<int> dimensions = { 2, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 1 };
+std::unordered_set<int> resNet = { 2,3,4,5,6,7,8,9 };
 
-// Feature Extractions
-int fourierSeries = 256;
+// Feature Engineering
+int fourierSeries = 128;
 int chebyshevSeries = 0;
 int taylorSeries = 0;
 int legendreSeries = 0;
@@ -34,7 +34,7 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 750;
+int epochs = 200;
 int batchSize = 500;
 float learningRate = 0.05f;
 
@@ -56,10 +56,15 @@ std::vector<Matrix> dTotal;
 std::vector<Matrix> dWeights;
 std::vector<std::vector<float>> dBiases;
 
+// Save / Load
+bool SaveOnComplete = true;
+bool LoadOnInit = true;
+std::string NetworkPath = "Network.txt";
+
 // Image stuff / Mandlebrot specific
 int dataSize = 20000;
-int epochPerDataset = 50;
-int epochPerImage = 5;
+int epochPerDataset = 5;
+int epochPerImage = -1;
 
 Matrix image;
 int imageWidth = 160;
@@ -84,6 +89,8 @@ float Accuracy(std::vector<int> predictions, std::vector<int> labels);
 void CleanTime(double time);
 void TrainNetwork();
 void UpdateNetwork();
+void SaveNetwork(std::string filename);
+void LoadNetwork(std::string filename);
 
 
 int main()
@@ -93,9 +100,16 @@ int main()
     MakeDataSet(dataSize);
     MakeImageFeatures(imageWidth, imageHeight);
 
-    InitializeNetwork();
+    if (LoadOnInit) {
+        LoadNetwork(NetworkPath);
+    }
+    else {
+        InitializeNetwork();
+    }
 
     TrainNetwork();
+
+    if (SaveOnComplete) { SaveNetwork(NetworkPath); }
 }
 
 void ShuffleInput() {
@@ -447,4 +461,109 @@ void UpdateNetwork() {
             biases[i][x] -= (dBiases[i][x] * learningRate);
         }
     }
+}
+
+
+void SaveNetwork(std::string filename) {
+    std::ofstream fw = std::ofstream(filename, std::ios::out | std::ios::binary);
+
+    // Number of layers
+    int s = dimensions.size();
+    fw.write(reinterpret_cast<const char*>(&s), sizeof(int));
+
+    // Number of resNet
+    int r = resNet.size();
+    fw.write(reinterpret_cast<const char*>(&r), sizeof(int));
+
+    // Write dimensions of network
+    fw.write(reinterpret_cast<const char*>(dimensions.data()), dimensions.size() * sizeof(int));
+
+    // Write resNet layers
+    std::vector<int> res;
+    for (auto it = resNet.begin(); it != resNet.end(); ) {
+        res.push_back(std::move(resNet.extract(it++).value()));
+    }
+    fw.write(reinterpret_cast<const char*>(res.data()), res.size() * sizeof(int));
+
+    // Write feature engineering stuff
+    std::vector<int> features = { fourierSeries, taylorSeries, chebyshevSeries, legendreSeries, laguerreSeries };
+    fw.write(reinterpret_cast<const char*>(features.data()), features.size() * sizeof(int));
+
+    // Write weights
+    for (int i = 0; i < weights.size(); i++) {
+        for (int r = 0; r < weights[i].RowCount; r++) {
+            fw.write(reinterpret_cast<const char*>(weights[i].Row(r).data()), weights[i].Row(r).size() * sizeof(float));
+        }
+    }
+
+    // Write biases
+    for (int i = 0; i < biases.size(); i++) {
+        fw.write(reinterpret_cast<const char*>(biases[i].data()), biases[i].size() * sizeof(float));
+    }
+
+    fw.close();
+
+    std::cout << "NETWORK SAVED" << std::endl;
+}
+
+void LoadNetwork(std::string filename) {
+    std::ifstream fr = std::ifstream(filename, std::ios::in | std::ios::binary);
+
+    if (fr.is_open()) {
+        std::cout << "Loading Network..." << std::endl;
+    }
+    else {
+        std::cout << "Network not found..." << std::endl;
+    }
+
+    // Network size
+    int s;
+    fr.read(reinterpret_cast<char*>(&s), sizeof(int));
+
+    // ResNet size
+    int r;
+    fr.read(reinterpret_cast<char*>(&r), sizeof(int));
+
+    // Read dimensions
+    dimensions = std::vector<int>(s);
+    fr.read(reinterpret_cast<char*>(dimensions.data()), s * sizeof(int));
+
+    // Read resNet
+    resNet.clear();
+    std::vector<int> res = std::vector<int>(r);
+    fr.read(reinterpret_cast<char*>(res.data()), r * sizeof(int));
+
+    for (int i = 0; i < res.size(); i++) {
+        resNet.insert(res[i]);
+    }
+
+    // Read feature engineering stuff
+    std::vector<int> features = std::vector<int>(5);
+    fr.read(reinterpret_cast<char*>(features.data()), features.size() * sizeof(int));
+    fourierSeries = features[0];
+    taylorSeries = features[1];
+    chebyshevSeries = features[2];
+    legendreSeries = features[3];
+    laguerreSeries = features[4];
+
+    InitializeNetwork();
+
+    // Read weights
+    for (int i = 0; i < weights.size(); i++) {
+        for (int r = 0; r < weights[i].RowCount; r++) {
+            std::vector<float> row = std::vector<float>(weights[i].ColumnCount);
+            fr.read(reinterpret_cast<char*>(row.data()), row.size() * sizeof(float));
+
+            weights[i].SetRow(r, row);
+        }
+    }
+
+    // Read biases
+    for (int i = 0; i < biases.size(); i++) {
+        fr.read(reinterpret_cast<char*>(biases[i].data()), biases[i].size() * sizeof(float));
+    }
+
+    fr.close();
+
+    std::cout << "NETWORK LOADED" << std::endl;
 }

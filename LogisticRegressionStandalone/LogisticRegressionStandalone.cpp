@@ -17,7 +17,7 @@
 
 // Hyperparameters
 std::vector<int> dimensions = { 784, 16, 16, 10 };
-std::unordered_set<int> resNet = {  };
+std::unordered_set<int> resNet = { 1 };
 int fourierSeries = 0;
 int taylorSeries = 0;
 
@@ -25,13 +25,13 @@ float lowerNormalized = 0.0f;
 float upperNormalized = 1.0f;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 100;
-int batchSize = 20000;
+int epochs = 2;
+int batchSize = 500;
 float learningRate = 0.05;
 
 // Save / Load
-bool SaveOnComplete = false;
-bool LoadOnInit = false;
+bool SaveOnComplete = true;
+bool LoadOnInit = true;
 std::string NetworkPath = "Network.txt";
 
 // Inputs
@@ -501,29 +501,39 @@ float Accuracy(std::vector<int> predictions, std::vector<int> labels) {
 void SaveNetwork(std::string filename) {
 	std::ofstream fw = std::ofstream(filename, std::ios::out | std::ios::binary);
 
-	int s = weights.size() - 1;
+	// Number of layers
+	int s = dimensions.size();
 	fw.write(reinterpret_cast<const char*>(&s), sizeof(int));
 
-	std::vector<int> dims = std::vector<int>(dimensions.size());
-	for (int i = 0; i < dims.size(); i++) {
-		dims[i] = dimensions[i];
+	// Number of resNet
+	int r = resNet.size();
+	fw.write(reinterpret_cast<const char*>(&r), sizeof(int));
+
+	// Write dimensions of network
+	fw.write(reinterpret_cast<const char*>(dimensions.data()), dimensions.size() * sizeof(int));
+
+	// Write resNet layers
+	std::vector<int> res;
+	for (auto it = resNet.begin(); it != resNet.end(); ) {
+		res.push_back(std::move(resNet.extract(it++).value()));
 	}
+	fw.write(reinterpret_cast<const char*>(res.data()), res.size() * sizeof(int));
 
-	fw.write(reinterpret_cast<const char*>(dims.data()), dims.size() * sizeof(int));
-
+	// Write weights
 	for (int i = 0; i < weights.size(); i++) {
 		for (int r = 0; r < weights[i].RowCount; r++) {
 			fw.write(reinterpret_cast<const char*>(weights[i].Row(r).data()), weights[i].Row(r).size() * sizeof(float));
 		}
 	}
 
+	// Write biases
 	for (int i = 0; i < biases.size(); i++) {
 		fw.write(reinterpret_cast<const char*>(biases[i].data()), biases[i].size() * sizeof(float));
 	}
 
-	std::cout << "NETWORK SAVED" << std::endl;
-
 	fw.close();
+
+	std::cout << "NETWORK SAVED" << std::endl;
 }
 
 void LoadNetwork(std::string filename) {
@@ -536,14 +546,30 @@ void LoadNetwork(std::string filename) {
 		std::cout << "Network not found..." << std::endl;
 	}
 
+	// Network size
 	int s;
 	fr.read(reinterpret_cast<char*>(&s), sizeof(int));
 
+	// ResNet size
+	int r;
+	fr.read(reinterpret_cast<char*>(&r), sizeof(int));
+
+	// Read dimensions
 	dimensions = std::vector<int>(s);
 	fr.read(reinterpret_cast<char*>(dimensions.data()), s * sizeof(int));
 
+	// Read resNet
+	resNet.clear();
+	std::vector<int> res = std::vector<int>(r);
+	fr.read(reinterpret_cast<char*>(res.data()), r * sizeof(int));
+
+	for (int i = 0; i < res.size(); i++) {
+		resNet.insert(res[i]);
+	}
+
 	InitializeNetwork();
 
+	// Read weights
 	for (int i = 0; i < weights.size(); i++) {
 		for (int r = 0; r < weights[i].RowCount; r++) {
 			std::vector<float> row = std::vector<float>(weights[i].ColumnCount);
@@ -553,6 +579,7 @@ void LoadNetwork(std::string filename) {
 		}
 	}
 
+	// Read biases
 	for (int i = 0; i < biases.size(); i++) {
 		fr.read(reinterpret_cast<char*>(biases[i].data()), biases[i].size() * sizeof(float));
 	}
