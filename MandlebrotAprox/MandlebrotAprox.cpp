@@ -67,11 +67,13 @@ int epochPerDataset = 2;
 int epochPerImage = -1;
 
 Matrix image;
-int imageWidth = 160;
-int imageHeight = 90;
+int imageWidth = 800;
+int imageHeight = 450;
 
 int finalWidth = 160;
 int finalHeight = 90;
+
+float confidenceThreshold = 0.95f;
 
 // Prototypes
 std::wstring NarrowToWide(const std::string& narrowStr);
@@ -239,13 +241,13 @@ void CleanTime(double time) {
     const double minute = 60000.00;
     const double second = 1000.00;
 
-    if (time / hour > 1.00) {
+    if ((time / hour) > 1.00) {
         std::cout << time / hour << " hours";
     }
-    else if (time / minute > 1.00) {
+    else if ((time / minute) > 1.00) {
         std::cout << time / minute << " minutes";
     }
-    else if (time / second > 1.00) {
+    else if ((time / second) > 1.00) {
         std::cout << time / second << " seconds";
     }
     else {
@@ -345,7 +347,7 @@ void MakeBMP(std::string filename, int width, int height) {
         for (int x = 0; x < width; x++) {
 
             float r = pixelsData[x + (y * width)] * 255;
-            float other = pixelsData[x + (y * width)] > 0.95f ? 255 : 0;
+            float other = pixelsData[x + (y * width)] > confidenceThreshold ? 255 : 0;
 
             mandlebrot.SetPixel(x, y, RGB(r, other, other));
         }
