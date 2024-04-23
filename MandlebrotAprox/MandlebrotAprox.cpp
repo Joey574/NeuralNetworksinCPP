@@ -19,11 +19,11 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 1 };
-std::unordered_set<int> resNet = { 2,3,4,5,6,7,8,9 };
+std::vector<int> dimensions = { 2, 32, 32, 1 };
+std::unordered_set<int> resNet = {  };
 
 // Feature Engineering
-int fourierSeries = 128;
+int fourierSeries = 16;
 int chebyshevSeries = 0;
 int taylorSeries = 0;
 int legendreSeries = 0;
@@ -34,9 +34,9 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 1800;
+int epochs = 100;
 int batchSize = 500;
-float learningRate = 0.025f;
+float learningRate = 0.05f;
 
 // Inputs
 Matrix input;
@@ -57,27 +57,28 @@ std::vector<Matrix> dWeights;
 std::vector<std::vector<float>> dBiases;
 
 // Save / Load
-bool SaveOnComplete = true;
-bool LoadOnInit = true;
+bool SaveOnComplete = false;
+bool LoadOnInit = false;
 std::string NetworkPath = "Network.txt";
 
 // Image stuff / Mandlebrot specific
 int dataSize = 20000;
+int mandlebrotIterations = 50;
 int epochPerDataset = 2;
 int epochPerImage = -1;
 
 Matrix image;
-int imageWidth = 800;
-int imageHeight = 450;
+int imageWidth = 160;
+int imageHeight = 90;
 
 int finalWidth = 160;
 int finalHeight = 90;
 
-float confidenceThreshold = 0.95f;
+float confidenceThreshold = 0.99f;
 
 // Prototypes
 std::wstring NarrowToWide(const std::string& narrowStr);
-float mandlebrot(float x, float y, int maxIterations = 50);
+float mandlebrot(float x, float y, int maxIterations);
 void MakeDataSet(int size);
 void MakeImageFeatures(int width, int height);
 void MakeBMP(std::string filename, int width, int height);
@@ -298,7 +299,7 @@ void MakeDataSet(int size) {
         float y = yRand(gen);
 
         input.SetColumn(i, std::vector<float> {x, y});
-        float mandle = mandlebrot(x, y);
+        float mandle = mandlebrot(x, y, mandlebrotIterations);
         inputLabels.push_back(mandle);
     }
 
