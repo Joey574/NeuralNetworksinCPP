@@ -16,18 +16,24 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 784, 16, 16, 10 };
+std::vector<int> dimensions = { 784, 64, 64, 10 };
 std::unordered_set<int> resNet = {  };
-int fourierSeries = 0;
-int taylorSeries = 0;
 
-float lowerNormalized = 0.0f;
+// Feature Extractions
+int fourierSeries = 0;
+int chebyshevSeries = 8;
+int taylorSeries = 0;
+int legendreSeries = 0;
+int laguerreSeries = 0;
+
+// Hyperparameters cont.
+float lowerNormalized = -1.0f;
 float upperNormalized = 1.0f;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 100;
-int batchSize = 20000;
-float learningRate = 0.05;
+int epochs = 150;
+int batchSize = 500;
+float learningRate = 0.1;
 
 // Save / Load
 bool SaveOnComplete = false;
@@ -74,6 +80,7 @@ void SaveNetwork(std::string filename);
 void LoadNetwork(std::string filename);
 void CleanTime(double time);
 void ShuffleInput();
+Matrix MakeFeatures(Matrix in);
 
 int main()
 {
@@ -220,40 +227,8 @@ void LoadInput() {
 	std::chrono::duration<double, std::milli> time = std::chrono::high_resolution_clock::now() - sTime;
 	std::cout << "Time to load input: " << (time.count() / 1000.00) << " seconds" << std::endl;
 
-	Matrix oldI = input;
-	Matrix oldT = testData;
-
-	// Compute Fourier Series
-	if (fourierSeries > 0) {
-		sTime = std::chrono::high_resolution_clock::now();
-		std::cout << "Computing " << fourierSeries << " order(s) of Fourier Series..." << std::endl;
-		
-		for (int f = 0; f < fourierSeries; f++) {
-			input = input.Combine(oldI.FourierSeries(f + 1));
-			testData = testData.Combine(oldT.FourierSeries(f + 1));
-		}
-		dimensions[0] = input.RowCount;
-
-		std::cout << "Fourier Features: " << input.RowCount - oldI.RowCount << std::endl;
-
-		time = std::chrono::high_resolution_clock::now() - sTime;
-		std::cout << "Time to compute " << fourierSeries << " order(s): " << time.count() / 1000.00 << " seconds" << std::endl;
-	}
-
-	// Compute Taylor Series
-	if (taylorSeries > 0) {
-		sTime = std::chrono::high_resolution_clock::now();
-		std::cout << "Computing " << taylorSeries << " order(s) of Taylor Series..." << std::endl;
-
-		for (int t = 1; t < taylorSeries + 1; t++) {
-			input = input.Combine(oldI.TaylorSeries(t + 1));
-			testData = testData.Combine(oldT.TaylorSeries(t + 1));
-		}
-		dimensions[0] = input.RowCount;
-
-		time = std::chrono::high_resolution_clock::now() - sTime;
-		std::cout << "Time to compute " << taylorSeries << " order(s): " << time.count() / 1000.00 << " seconds" << std::endl;
-	}
+	testData = MakeFeatures(testData);
+	input = MakeFeatures(input);
 }
 
 int ReadBigInt(std::ifstream* fr) {
@@ -266,6 +241,52 @@ int ReadBigInt(std::ifstream* fr) {
 	std::swap(bytes[1], bytes[2]);
 
 	return littleInt;
+}
+
+Matrix MakeFeatures(Matrix in) {
+	// Normalize
+	Matrix taylorNormal = in.Normalized(0.0f, 1.0f);
+	Matrix fourierNormal = in.Normalized(-M_PI, M_PI);
+	Matrix chebyshevNormal = in.Normalized(-1.0f, 1.0f);
+	in = in.Normalized(lowerNormalized, upperNormalized);
+
+	// Compute Taylor Series
+	if (taylorSeries) {
+		for (int t = 0; t < taylorSeries; t++) {
+			in = in.Combine(taylorNormal.TaylorSeries(t + 1));
+		}
+	}
+
+	// Compute Chebyshev Series
+	if (chebyshevSeries) {
+		for (int c = 0; c < chebyshevSeries; c++) {
+			in = in.Combine(chebyshevNormal.ChebyshevSeries(c + 1));
+		}
+	}
+
+	// Compute Legendre Series
+	if (legendreSeries) {
+		for (int l = 0; l < legendreSeries; l++) {
+			in = in.Combine(chebyshevNormal.LegendreSeries(l + 1));
+		}
+	}
+
+	// Compute Laguerre Series
+	if (laguerreSeries) {
+		for (int l = 0; l < laguerreSeries; l++) {
+			in = in.Combine(chebyshevNormal.LaguerreSeries(l + 1));
+		}
+	}
+
+	// Compute Fourier Series
+	if (fourierSeries) {
+		for (int f = 0; f < fourierSeries; f++) {
+			in = in.Combine(fourierNormal.FourierSeries(f + 1));
+		}
+	}
+
+	dimensions[0] = in.RowCount;
+	return in;
 }
 
 void InitializeNetwork() {
@@ -360,6 +381,7 @@ Matrix GetNextInput(Matrix totalInput, int size, int i) {
 
 	return a;
 }
+
 
 void TrainNetwork() {
 	std::cout << "TRAINING STARTED" << std::endl;
@@ -470,6 +492,7 @@ void UpdateNetwork() {
 		}
 	}
 }
+
 
 std::vector<int> GetPredictions(int len) {
 

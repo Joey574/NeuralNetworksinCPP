@@ -225,7 +225,7 @@ Matrix Matrix::TaylorSeries(int orders) {
 	return this->Pow(orders);
 }
 Matrix Matrix::ChebyshevSeries(int order) {
-	return this->Acos().Multiply(order).Cos().Combine(this->Multiply(order + 1).Sin().Divide(this->Sin()));
+	return this->Acos().Multiply(order).Cos();
 }
 Matrix Matrix::LegendreSeries(int order) {
 	return (this->Pow(2) - 1).Pow(order);

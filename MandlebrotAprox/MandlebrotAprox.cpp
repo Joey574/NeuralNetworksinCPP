@@ -19,11 +19,11 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 32, 32, 1 };
-std::unordered_set<int> resNet = {  };
+std::vector<int> dimensions = { 2, 128, 128, 128, 128, 1 };
+std::unordered_set<int> resNet = { 1,2,3 };
 
 // Feature Extractions
-int fourierSeries = 16;
+int fourierSeries = 48;
 int chebyshevSeries = 0;
 int taylorSeries = 0;
 int legendreSeries = 0;
@@ -34,7 +34,7 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 250;
+int epochs = 1000;
 int batchSize = 500;
 float learningRate = 0.05f;
 
@@ -58,15 +58,17 @@ std::vector<std::vector<float>> dBiases;
 
 // Image stuff / Mandlebrot specific
 int dataSize = 20000;
-int epochPerDataset = 1;
+int epochPerDataset = 10;
 int epochPerImage = 10;
 
 Matrix image;
-int imageWidth = 160;
-int imageHeight = 90;
+int imageWidth = 800;
+int imageHeight = 450;
 
 int finalWidth = 800;
 int finalHeight = 450;
+
+float confidenceThreshold = 0.95f;
 
 // Prototypes
 std::wstring NarrowToWide(const std::string& narrowStr);
@@ -224,15 +226,15 @@ float Accuracy(std::vector<float> predictions, std::vector<int> labels) {
 void CleanTime(double time) {
     const double hour = 3600000.00;
     const double minute = 60000.00;
-    const double second = 1280.00;
+    const double second = 1000.00;
 
-    if (time / hour > 1.00) {
+    if ((time / hour) > 1.00) {
         std::cout << time / hour << " hours";
     }
-    else if (time / minute > 1.00) {
+    else if ((time / minute) > 1.00) {
         std::cout << time / minute << " minutes";
     }
-    else if (time / second > 1.00) {
+    else if ((time / second) > 1.00) {
         std::cout << time / second << " seconds";
     }
     else {
@@ -374,7 +376,7 @@ void MakeBMP(std::string filename, int width, int height) {
         for (int x = 0; x < width; x++) {
 
             float r = pixelsData[x + (y * width)] * 255;
-            float other = pixelsData[x + (y * width)] > 0.95f ? 255 : 0;
+            float other = pixelsData[x + (y * width)] > confidenceThreshold ? 255 : 0;
 
             mandlebrot.SetPixel(x, y, RGB(r, other, other));
         }
