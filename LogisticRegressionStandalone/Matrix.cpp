@@ -218,6 +218,52 @@ std::vector<float> Matrix::Row(int index) {
 }
 
 // "Advanced" math
+Matrix Matrix::ExtractFeatures(int fourier, int taylor, int chebyshev, int legendre, int laguerre, float lowerNormal, float upperNormal) {
+	// Normalize
+	Matrix mat = this->matrix;
+	Matrix taylorNormal = mat.Normalized(0.0f, 1.0f);
+	Matrix fourierNormal = mat.Normalized(-M_PI, M_PI);
+	Matrix chebyshevNormal = mat.Normalized(-1.0f, 1.0f);
+	mat = mat.Normalized(lowerNormal, upperNormal);
+
+	// Compute Fourier Series
+	if (fourier) {
+		for (int f = 0; f < fourier; f++) {
+			mat = mat.Combine(fourierNormal.FourierSeries(f + 1));
+		}
+	}
+
+	// Compute Taylor Series
+	if (taylor) {
+		for (int t = 0; t < taylor; t++) {
+			mat = mat.Combine(taylorNormal.TaylorSeries(t + 1));
+		}
+	}
+
+	// Compute Chebyshev Series
+	if (chebyshev) {
+		for (int c = 0; c < chebyshev; c++) {
+			mat = mat.Combine(chebyshevNormal.ChebyshevSeries(c + 1));
+		}
+	}
+
+	// Compute Legendre Series
+	if (legendre) {
+		for (int l = 0; l < legendre; l++) {
+			mat = mat.Combine(chebyshevNormal.LegendreSeries(l + 1));
+		}
+	}
+
+	// Compute Laguerre Series
+	if (laguerre) {
+		for (int l = 0; l < laguerre; l++) {
+			mat = mat.Combine(chebyshevNormal.LaguerreSeries(l + 1));
+		}
+	}
+
+	return mat;
+}
+
 Matrix Matrix::FourierSeries(int order) {
 	return this->Multiply(order).Sin().Combine(this->Multiply(order).Cos());
 }
@@ -315,6 +361,9 @@ Matrix Matrix::Sin() {
 
 Matrix Matrix::Acos() {
 	return this->SingleFloatOperation(&Matrix::SIMDAcos, &Matrix::RemainderAcos, 0);
+}
+Matrix Matrix::Asin() {
+	return this->SingleFloatOperation(&Matrix::SIMDAsin, &Matrix::RemainderAcos, 0);
 }
 
 Matrix Matrix::Negative() {
@@ -471,6 +520,9 @@ __m256 Matrix::SIMDCsc(__m256 opOne, __m256 opTwo) {
 __m256 Matrix::SIMDAcos(__m256 opOne, __m256 opTwo) {
 	return _mm256_acos_ps(opOne);
 }
+__m256 Matrix::SIMDAsin(__m256 opOne, __m256 opTwo) {
+	return _mm256_asin_ps(opOne);
+}
 
 float Matrix::RemainderAdd(float a, float b) {
 	return a + b;
@@ -504,6 +556,9 @@ float Matrix::RemainderCsc(float a, float b) {
 }
 float Matrix::RemainderAcos(float a, float b) {
 	return std::acos(a);
+}
+float Matrix::RemainderAsin(float a, float b) {
+	return std::asin(a);
 }
 
 // MISC

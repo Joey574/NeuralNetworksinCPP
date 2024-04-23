@@ -1,4 +1,6 @@
 #pragma once
+
+#define _USE_MATH_DEFINES
 #include <vector>
 #include <algorithm>
 #include <execution>
@@ -6,6 +8,7 @@
 #include <random>
 #include <immintrin.h> 
 #include <string>
+#include <cmath>
 
 class Matrix
 {
@@ -29,6 +32,8 @@ public:
 	void SetColumn(int index, std::vector<int> column);
 	void SetRow(int index, std::vector<float> row);
 	void SetRow(int index, std::vector<int> row);
+
+	Matrix ExtractFeatures(int fourier, int taylor, int chebyshev, int legendre, int laguerre, float lowerNormal, float upperNormal);
 
 	Matrix FourierSeries(int order);
 	Matrix TaylorSeries(int order);
@@ -72,6 +77,7 @@ public:
 	Matrix Cos();
 	Matrix Sin();
 	Matrix Acos();
+	Matrix Asin();
 
 	Matrix Exp(float base = std::exp(1.0));
 	Matrix Exp(std::vector<float> base);
@@ -240,6 +246,7 @@ private:
 	__m256 SIMDSec(__m256 opOne, __m256 opTwo);
 	__m256 SIMDCsc(__m256 opOne, __m256 opTwo);
 	__m256 SIMDAcos(__m256 opOne, __m256 opTwo);
+	__m256 SIMDAsin(__m256 opOne, __m256 opTwo);
 
 	float RemainderAdd(float a, float b);
 	float RemainderSub(float a, float b);
@@ -252,4 +259,5 @@ private:
 	float RemainderSec(float a, float b);
 	float RemainderCsc(float a, float b);
 	float RemainderAcos(float a, float b);
+	float RemainderAsin(float a, float b);
 };
