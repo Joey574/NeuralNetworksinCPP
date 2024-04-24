@@ -22,14 +22,6 @@
 std::vector<int> dimensions = { 2, 32, 32, 1 };
 std::unordered_set<int> resNet = {  };
 
-// Feature Engineering
-int fourierSeries = 16;
-int chebyshevSeries = 0;
-int taylorSeries = 0;
-int legendreSeries = 0;
-int laguerreSeries = 0;
-
-// Hyperparameters cont.
 float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
@@ -37,6 +29,13 @@ Matrix::init initType = Matrix::init::He;
 int epochs = 1400;
 int batchSize = 500;
 float learningRate = 0.035f;
+
+// Feature Engineering
+int fourierSeries = 16;
+int chebyshevSeries = 0;
+int taylorSeries = 0;
+int legendreSeries = 0;
+int laguerreSeries = 0;
 
 // Inputs
 Matrix input;
@@ -88,7 +87,6 @@ void ShuffleInput();
 Matrix GetNextInput(Matrix totalInput, int size, int i);
 void InitializeNetwork();
 void InitializeResultMatrices(int size);
-float Accuracy(std::vector<int> predictions, std::vector<int> labels);
 void CleanTime(double time);
 void TrainNetwork();
 void UpdateNetwork();
@@ -221,19 +219,6 @@ void InitializeResultMatrices(int size) {
 
         activation.emplace_back(aTotal[i].RowCount, size);
     }
-}
-
-float Accuracy(std::vector<float> predictions, std::vector<int> labels) {
-    int correct = 0;
-
-    for (int i = 0; i < predictions.size(); i++)
-    {
-        if (predictions[i] == labels[i])
-        {
-            correct++;
-        }
-    }
-    return (float)correct / (float)predictions.size();
 }
 
 void CleanTime(double time) {
