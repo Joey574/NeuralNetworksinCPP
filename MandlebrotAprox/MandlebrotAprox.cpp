@@ -65,7 +65,7 @@ std::string NetworkPath = "Network.txt";
 int dataSize = 20000;
 int mandlebrotIterations = 50;
 int epochPerDataset = 2;
-int epochPerImage = -1;
+int epochPerImage = 5;
 
 Matrix image;
 int imageWidth = 160;
@@ -74,7 +74,7 @@ int imageHeight = 90;
 int finalWidth = 160;
 int finalHeight = 90;
 
-float confidenceThreshold = 0.99f;
+float confidenceThreshold = 0.95f;
 
 // Prototypes
 std::wstring NarrowToWide(const std::string& narrowStr);
@@ -94,7 +94,6 @@ void TrainNetwork();
 void UpdateNetwork();
 void SaveNetwork(std::string filename);
 void LoadNetwork(std::string filename);
-
 
 int main()
 {
@@ -378,6 +377,10 @@ void TrainNetwork() {
 
         tStart = std::chrono::high_resolution_clock::now();
 
+        std::time_t t = std::time(0); std::tm now; localtime_s(&now, &t);
+        std::string date = std::to_string(now.tm_mon + 1).append("_").append(std::to_string(now.tm_mday)).append("_")
+            .append(std::to_string(now.tm_year - 100));
+
         if (e % epochPerDataset == 0) { MakeDataSet(dataSize); }
 
         for (int i = 0; i < iterations; i++) {
@@ -390,7 +393,7 @@ void TrainNetwork() {
         }
 
         if (e % epochPerImage == epochPerImage - 1) {
-            std::string filename = "MandlebrotAproximations\\" + std::to_string(e).append(".bmp");
+            std::string filename = ("MandlebrotAproximations\\" + date + "_epoch_" + std::to_string(e + 1) + ".bmp");
             MakeBMP(filename, imageWidth, imageHeight);
             InitializeResultMatrices(batchSize);
         }
