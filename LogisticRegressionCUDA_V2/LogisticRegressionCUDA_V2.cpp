@@ -13,31 +13,24 @@
 #include <cmath>
 
 #include "Matrix.h"
-#include "ActivationFunctions.h"
 
-// Hyperparameters
-std::vector<int> dimensions = { 784, 64, 64, 10 };
+//Hyperparameters
+std::vector<int> dimensions = { 784, 784, 10 };
 std::unordered_set<int> resNet = {  };
-
-// Feature Extractions
 int fourierSeries = 0;
-int chebyshevSeries = 8;
 int taylorSeries = 0;
-int legendreSeries = 0;
-int laguerreSeries = 0;
 
-// Hyperparameters cont.
-float lowerNormalized = -1.0f;
-float upperNormalized = 1.0f;
+float lowerNormalized = 0;
+float upperNormalized = 1.0;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 700;
+int epochs = 25;
 int batchSize = 500;
 float learningRate = 0.1;
 
 // Save / Load
-bool SaveOnComplete = true;
-bool LoadOnInit = true;
+bool SaveOnComplete = false;
+bool LoadOnInit = false;
 std::string NetworkPath = "Network.txt";
 
 // Inputs
@@ -80,7 +73,7 @@ void SaveNetwork(std::string filename);
 void LoadNetwork(std::string filename);
 void CleanTime(double time);
 void ShuffleInput();
-Matrix MakeFeatures(Matrix in);
+Matrix SoftMax(Matrix total);
 
 int main()
 {
@@ -102,6 +95,10 @@ int main()
 	if (SaveOnComplete) { SaveNetwork(NetworkPath); }
 
 	return 0;
+}
+
+Matrix SoftMax(Matrix total) {
+	return (total - total.LogSumExp()).Exp();
 }
 
 void ShuffleInput() {
@@ -227,8 +224,40 @@ void LoadInput() {
 	std::chrono::duration<double, std::milli> time = std::chrono::high_resolution_clock::now() - sTime;
 	std::cout << "Time to load input: " << (time.count() / 1000.00) << " seconds" << std::endl;
 
-	testData = MakeFeatures(testData);
-	input = MakeFeatures(input);
+	Matrix oldI = input;
+	Matrix oldT = testData;
+
+	// Compute Fourier Series
+	if (fourierSeries > 0) {
+		sTime = std::chrono::high_resolution_clock::now();
+		std::cout << "Computing " << fourierSeries << " order(s) of Fourier Series..." << std::endl;
+
+		for (int f = 0; f < fourierSeries; f++) {
+			input = input.Combine(oldI.FourierSeries(f + 1));
+			testData = testData.Combine(oldT.FourierSeries(f + 1));
+		}
+		dimensions[0] = input.RowCount;
+
+		std::cout << "Fourier Features: " << input.RowCount - oldI.RowCount << std::endl;
+
+		time = std::chrono::high_resolution_clock::now() - sTime;
+		std::cout << "Time to compute " << fourierSeries << " order(s): " << time.count() / 1000.00 << " seconds" << std::endl;
+	}
+
+	// Compute Taylor Series
+	if (taylorSeries > 0) {
+		sTime = std::chrono::high_resolution_clock::now();
+		std::cout << "Computing " << taylorSeries << " order(s) of Taylor Series..." << std::endl;
+
+		for (int t = 1; t < taylorSeries + 1; t++) {
+			input = input.Combine(oldI.TaylorSeries(t + 1));
+			testData = testData.Combine(oldT.TaylorSeries(t + 1));
+		}
+		dimensions[0] = input.RowCount;
+
+		time = std::chrono::high_resolution_clock::now() - sTime;
+		std::cout << "Time to compute " << taylorSeries << " order(s): " << time.count() / 1000.00 << " seconds" << std::endl;
+	}
 }
 
 int ReadBigInt(std::ifstream* fr) {
@@ -241,52 +270,6 @@ int ReadBigInt(std::ifstream* fr) {
 	std::swap(bytes[1], bytes[2]);
 
 	return littleInt;
-}
-
-Matrix MakeFeatures(Matrix in) {
-	// Normalize
-	Matrix taylorNormal = in.Normalized(0.0f, 1.0f);
-	Matrix fourierNormal = in.Normalized(-M_PI, M_PI);
-	Matrix chebyshevNormal = in.Normalized(-1.0f, 1.0f);
-	in = in.Normalized(lowerNormalized, upperNormalized);
-
-	// Compute Taylor Series
-	if (taylorSeries) {
-		for (int t = 0; t < taylorSeries; t++) {
-			in = in.Combine(taylorNormal.TaylorSeries(t + 1));
-		}
-	}
-
-	// Compute Chebyshev Series
-	if (chebyshevSeries) {
-		for (int c = 0; c < chebyshevSeries; c++) {
-			in = in.Combine(chebyshevNormal.ChebyshevSeries(c + 1));
-		}
-	}
-
-	// Compute Legendre Series
-	if (legendreSeries) {
-		for (int l = 0; l < legendreSeries; l++) {
-			in = in.Combine(chebyshevNormal.LegendreSeries(l + 1));
-		}
-	}
-
-	// Compute Laguerre Series
-	if (laguerreSeries) {
-		for (int l = 0; l < laguerreSeries; l++) {
-			in = in.Combine(chebyshevNormal.LaguerreSeries(l + 1));
-		}
-	}
-
-	// Compute Fourier Series
-	if (fourierSeries) {
-		for (int f = 0; f < fourierSeries; f++) {
-			in = in.Combine(fourierNormal.FourierSeries(f + 1));
-		}
-	}
-
-	dimensions[0] = in.RowCount;
-	return in;
 }
 
 void InitializeNetwork() {
@@ -309,7 +292,8 @@ void InitializeNetwork() {
 	for (int i = 0; i < dimensions.size() - 1; i++) {
 		if (resNet.find(i - 1) != resNet.end()) {
 			weights.emplace_back(dimensions[i] + dimensions[0], dimensions[i + 1], initType);
-		} else {
+		}
+		else {
 			weights.emplace_back(dimensions[i], dimensions[i + 1], initType);
 		}
 		std::cout << "Weights[" << i << "] connections: " << (weights[i].ColumnCount * weights[i].RowCount) << std::endl;
@@ -447,15 +431,16 @@ void ForwardPropogation(Matrix in) {
 
 	for (int i = 0; i < aTotal.size(); i++) {
 		if (resNet.find(i) != resNet.end()) {
-			
+
 			aTotal[i].Insert(0, in);
 			activation[i].Insert(0, in);
 
 			aTotal[i].Insert(in.RowCount, (weights[i].DotProduct(i == 0 ? in : activation[i - 1]) + biases[i]).Transpose());
-		} else {
+		}
+		else {
 			aTotal[i] = (weights[i].DotProduct(i == 0 ? in : activation[i - 1]) + biases[i]).Transpose();
 		}
-		activation[i] = i < aTotal.size() - 1 ? LeakyReLU(aTotal[i]) : SoftMax(aTotal[i]);
+		activation[i] = i < aTotal.size() - 1 ? (aTotal[i].LeakyReLU()) : SoftMax(aTotal[i]);
 	}
 }
 
@@ -466,10 +451,10 @@ void BackwardPropogation() {
 	for (int i = dTotal.size() - 2; i > -1; i--) {
 
 		if (resNet.find(i) != resNet.end()) {
-			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].SegmentR(batch.RowCount))).Transpose() * LeakyReLUDerivative(aTotal[i].SegmentR(batch.RowCount)));
+			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].SegmentR(batch.RowCount))).Transpose() * (aTotal[i].SegmentR(batch.RowCount).LeakyReLUDeriv()));
 		}
 		else {
-			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * LeakyReLUDerivative(aTotal[i]));
+			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * (aTotal[i].LeakyReLUDeriv()));
 		}
 	}
 
@@ -524,39 +509,29 @@ float Accuracy(std::vector<int> predictions, std::vector<int> labels) {
 void SaveNetwork(std::string filename) {
 	std::ofstream fw = std::ofstream(filename, std::ios::out | std::ios::binary);
 
-	// Number of layers
-	int s = dimensions.size();
+	int s = weights.size() - 1;
 	fw.write(reinterpret_cast<const char*>(&s), sizeof(int));
 
-	// Number of resNet
-	int r = resNet.size();
-	fw.write(reinterpret_cast<const char*>(&r), sizeof(int));
-
-	// Write dimensions of network
-	fw.write(reinterpret_cast<const char*>(dimensions.data()), dimensions.size() * sizeof(int));
-
-	// Write resNet layers
-	std::vector<int> res;
-	for (auto it = resNet.begin(); it != resNet.end(); ) {
-		res.push_back(std::move(resNet.extract(it++).value()));
+	std::vector<int> dims = std::vector<int>(dimensions.size());
+	for (int i = 0; i < dims.size(); i++) {
+		dims[i] = dimensions[i];
 	}
-	fw.write(reinterpret_cast<const char*>(res.data()), res.size() * sizeof(int));
 
-	// Write weights
+	fw.write(reinterpret_cast<const char*>(dims.data()), dims.size() * sizeof(int));
+
 	for (int i = 0; i < weights.size(); i++) {
 		for (int r = 0; r < weights[i].RowCount; r++) {
 			fw.write(reinterpret_cast<const char*>(weights[i].Row(r).data()), weights[i].Row(r).size() * sizeof(float));
 		}
 	}
 
-	// Write biases
 	for (int i = 0; i < biases.size(); i++) {
 		fw.write(reinterpret_cast<const char*>(biases[i].data()), biases[i].size() * sizeof(float));
 	}
 
-	fw.close();
-
 	std::cout << "NETWORK SAVED" << std::endl;
+
+	fw.close();
 }
 
 void LoadNetwork(std::string filename) {
@@ -569,30 +544,14 @@ void LoadNetwork(std::string filename) {
 		std::cout << "Network not found..." << std::endl;
 	}
 
-	// Network size
 	int s;
 	fr.read(reinterpret_cast<char*>(&s), sizeof(int));
 
-	// ResNet size
-	int r;
-	fr.read(reinterpret_cast<char*>(&r), sizeof(int));
-
-	// Read dimensions
 	dimensions = std::vector<int>(s);
 	fr.read(reinterpret_cast<char*>(dimensions.data()), s * sizeof(int));
 
-	// Read resNet
-	resNet.clear();
-	std::vector<int> res = std::vector<int>(r);
-	fr.read(reinterpret_cast<char*>(res.data()), r * sizeof(int));
-
-	for (int i = 0; i < res.size(); i++) {
-		resNet.insert(res[i]);
-	}
-
 	InitializeNetwork();
 
-	// Read weights
 	for (int i = 0; i < weights.size(); i++) {
 		for (int r = 0; r < weights[i].RowCount; r++) {
 			std::vector<float> row = std::vector<float>(weights[i].ColumnCount);
@@ -602,7 +561,6 @@ void LoadNetwork(std::string filename) {
 		}
 	}
 
-	// Read biases
 	for (int i = 0; i < biases.size(); i++) {
 		fr.read(reinterpret_cast<char*>(biases[i].data()), biases[i].size() * sizeof(float));
 	}

@@ -34,9 +34,9 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 1800;
+int epochs = 1400;
 int batchSize = 500;
-float learningRate = 0.025f;
+float learningRate = 0.035f;
 
 // Inputs
 Matrix input;
@@ -63,12 +63,12 @@ std::string NetworkPath = "Network.txt";
 
 // Image stuff / Mandlebrot specific
 int dataSize = 20000;
-int epochPerDataset = 2;
+int epochPerDataset = 5;
 int epochPerImage = -1;
 
 Matrix image;
-int imageWidth = 800;
-int imageHeight = 450;
+int imageWidth = 160;
+int imageHeight = 90;
 
 int finalWidth = 160;
 int finalHeight = 90;

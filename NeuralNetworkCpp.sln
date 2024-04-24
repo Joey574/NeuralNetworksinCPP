@@ -25,6 +25,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LogistricRegressionCUDA", "
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CudaNeuralNetwork", "CudaNeuralNetwork\CudaNeuralNetwork.vcxproj", "{4AC26D39-602E-4CCB-A708-12915AB2B18B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LogisticRegressionCUDA_V2", "LogisticRegressionCUDA_V2\LogisticRegressionCUDA_V2.vcxproj", "{56B5BE62-969F-498F-966F-F885A0BE34D4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -121,6 +123,14 @@ Global
 		{4AC26D39-602E-4CCB-A708-12915AB2B18B}.Release|x64.Build.0 = Release|x64
 		{4AC26D39-602E-4CCB-A708-12915AB2B18B}.Release|x86.ActiveCfg = Release|Win32
 		{4AC26D39-602E-4CCB-A708-12915AB2B18B}.Release|x86.Build.0 = Release|Win32
+		{56B5BE62-969F-498F-966F-F885A0BE34D4}.Debug|x64.ActiveCfg = Debug|x64
+		{56B5BE62-969F-498F-966F-F885A0BE34D4}.Debug|x64.Build.0 = Debug|x64
+		{56B5BE62-969F-498F-966F-F885A0BE34D4}.Debug|x86.ActiveCfg = Debug|Win32
+		{56B5BE62-969F-498F-966F-F885A0BE34D4}.Debug|x86.Build.0 = Debug|Win32
+		{56B5BE62-969F-498F-966F-F885A0BE34D4}.Release|x64.ActiveCfg = Release|x64
+		{56B5BE62-969F-498F-966F-F885A0BE34D4}.Release|x64.Build.0 = Release|x64
+		{56B5BE62-969F-498F-966F-F885A0BE34D4}.Release|x86.ActiveCfg = Release|Win32
+		{56B5BE62-969F-498F-966F-F885A0BE34D4}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
