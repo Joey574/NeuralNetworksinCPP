@@ -26,9 +26,9 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 2400;
+int epochs = 5;
 int batchSize = 500;
-float learningRate = 0.035f;
+float learningRate = 0.025f;
 
 // Feature Engineering
 int fourierSeries = 16;
@@ -70,8 +70,8 @@ Matrix image;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 800;
-int finalHeight = 450;
+int finalWidth = 1900;
+int finalHeight = 1000;
 
 float confidenceThreshold = 0.95f;
 
@@ -98,7 +98,6 @@ int main()
     srand(time(0));
 
     MakeDataSet(dataSize);
-    MakeImageFeatures(imageWidth, imageHeight);
 
     if (LoadOnInit) {
         LoadNetwork(NetworkPath);
@@ -106,6 +105,8 @@ int main()
     else {
         InitializeNetwork();
     }
+
+    MakeImageFeatures(imageWidth, imageHeight);
 
     TrainNetwork();
 
@@ -324,6 +325,7 @@ void MakeBMP(std::string filename, int width, int height) {
     mandlebrot.Create(width, height, 24);
 
     InitializeResultMatrices(image.ColumnCount);
+
     ForwardPropogation(image);
 
     std::vector<float> pixelsData = activation[activation.size() - 1].Row(0);
@@ -405,7 +407,6 @@ void TrainNetwork() {
 }
 
 void ForwardPropogation(Matrix in) {
-
     for (int i = 0; i < aTotal.size(); i++) {
         if (resNet.find(i) != resNet.end()) {
 
