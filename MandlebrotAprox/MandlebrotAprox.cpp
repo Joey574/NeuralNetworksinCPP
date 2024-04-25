@@ -31,7 +31,7 @@ int batchSize = 500;
 float learningRate = 0.05f;
 
 // Feature Engineering
-int fourierSeries = 16;
+int fourierSeries = 2;
 int chebyshevSeries = 0;
 int taylorSeries = 0;
 int legendreSeries = 0;
@@ -70,8 +70,10 @@ std::vector<Matrix> imageVector;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 80;
-int finalHeight = 45;
+int finalWidth = 160;
+int finalHeight = 90;
+
+// 2560 x 1440
 
 float confidenceThreshold = 0.95f;
 
@@ -320,7 +322,6 @@ void MakeImageFeatures(int width, int height) {
         imageVector[i] = imageVector[i].ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries,
             laguerreSeries, lowerNormalized, upperNormalized);
     }
-
     dimensions[0] = imageVector[0].RowCount;
 }
 
@@ -335,11 +336,9 @@ void MakeBMP(std::string filename, int width, int height) {
     Matrix currentActivation;
     Matrix currentTotal;
 
-    InitializeResultMatrices(imageVector[0].ColumnCount);
-
     // Forward prop
     for (int y = 0; y < imageVector.size(); y++) {
-       /* for (int i = 0; i < aTotal.size(); i++) {
+        for (int i = 0; i < aTotal.size(); i++) {
 
             if (resNet.find(i) != resNet.end()) {
                 currentTotal = Matrix(weights[i].ColumnCount + dimensions[0], imageVector[y].ColumnCount);
@@ -360,45 +359,17 @@ void MakeBMP(std::string filename, int width, int height) {
             }
             currentActivation = i < aTotal.size() - 1 ? LeakyReLU(currentTotal) : Sigmoid(currentTotal);
             lastActivation = currentActivation;
-        }*/
-
-        for (int i = 0; i < aTotal.size(); i++) {
-            if (resNet.find(i) != resNet.end()) {
-
-                aTotal[i].Insert(0, imageVector[y]);
-                activation[i].Insert(0, imageVector[y]);
-
-                aTotal[i].Insert(imageVector[y].RowCount, (weights[i].DotProduct(i == 0 ? imageVector[y] : activation[i - 1]) + biases[i]).Transpose());
-            }
-            else {
-                aTotal[i] = (weights[i].DotProduct(i == 0 ? imageVector[y] : activation[i - 1]) + biases[i]).Transpose();
-            }
-            activation[i] = i < aTotal.size() - 1 ? LeakyReLU(aTotal[i]) : Sigmoid(aTotal[i]);
         }
 
-        std::cout << activation[activation.size() - 1].ToString();
-
         // Set pixel data
-        //std::vector<float> pixelData = currentActivation.Row(0);
-
-        std::vector<float> pixelData = activation[activation.size() - 1].Row(0);
+        std::vector<float> pixelData = currentActivation.Row(0);
 
         for (int x = 0; x < pixelData.size(); x++) {
-            if (x == width - 1) {
-               /* std::cout << pixelData[x] << " :: " << imageVector[y].Column(x)[0] << ", " << imageVector[y].Column(x)[1] << " mb: " << mandlebrot(imageVector[y].Column(x)[0], imageVector[y].Column(x)[1], 50);
-                InitializeResultMatrices(imageVector[y].ColumnCount);
-                ForwardPropogation(imageVector[y]);
-                InitializeResultMatrices(batchSize);
-                std::cout << " fp: " << activation[activation.size() - 1].Row(0)[x] << " ca: " << currentActivation.Row(0)[x] << std::endl;*/
-
-            }
             float r = pixelData[x] * 255.0f;
             float other = pixelData[x] > confidenceThreshold ? 255 : 0;
             mandle.SetPixel(x, y, RGB(r, other, other));
         }
     }
-
-    InitializeResultMatrices(batchSize);
 
     mandle.Save(fp.c_str(), Gdiplus::ImageFormatBMP);
     mandle.Destroy();
