@@ -34,7 +34,7 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 1400;
+int epochs = 2400;
 int batchSize = 500;
 float learningRate = 0.035f;
 
@@ -57,24 +57,24 @@ std::vector<Matrix> dWeights;
 std::vector<std::vector<float>> dBiases;
 
 // Save / Load
-bool SaveOnComplete = false;
-bool LoadOnInit = false;
+bool SaveOnComplete = true;
+bool LoadOnInit = true;
 std::string NetworkPath = "Network.txt";
 
 // Image stuff / Mandlebrot specific
 int dataSize = 20000;
-int mandlebrotIterations = 50;
-int epochPerDataset = 2;
+int mandlebrotIterations = 500;
+int epochPerDataset = 5;
 int epochPerImage = -1;
 
 Matrix image;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 160;
-int finalHeight = 90;
+int finalWidth = 800;
+int finalHeight = 450;
 
-float confidenceThreshold = 0.99f;
+float confidenceThreshold = 0.95f;
 
 // Prototypes
 std::wstring NarrowToWide(const std::string& narrowStr);
