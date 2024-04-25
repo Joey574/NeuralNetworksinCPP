@@ -26,7 +26,7 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 5;
+int epochs = 1;
 int batchSize = 500;
 float learningRate = 0.025f;
 
@@ -67,11 +67,12 @@ int epochPerDataset = 5;
 int epochPerImage = -1;
 
 Matrix image;
+std::vector<Matrix> imageVector;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 1900;
-int finalHeight = 1000;
+int finalWidth = 160;
+int finalHeight = 90;
 
 float confidenceThreshold = 0.95f;
 
@@ -305,16 +306,26 @@ void MakeImageFeatures(int width, int height) {
     float scaleX = (std::abs(xMin - xMax)) / (width - 1);
     float scaleY = (std::abs(yMin - yMax)) / (height - 1);
 
+    imageVector = std::vector<Matrix>(height);
+    Matrix iVec = Matrix(2, width);
+
+    for (int i = 0; i < imageVector.size(); i++) {
+        imageVector[i] = iVec;
+    }
+
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             std::vector<float> val = { xMin + (float)x * scaleX, yMin + (float)y * scaleY };
-            image.SetColumn(x + (y * width), val);
+            imageVector[y].SetColumn(x, val);
         }
     }
 
-    image = image.ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries, 
-        laguerreSeries, lowerNormalized, upperNormalized);
-    dimensions[0] = image.RowCount; 
+    for (int i = 0; i < imageVector.size(); i++) {
+        imageVector[i] = imageVector[i].ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries,
+            laguerreSeries, lowerNormalized, upperNormalized);
+    }
+
+    dimensions[0] = imageVector[0].RowCount;
 }
 
 void MakeBMP(std::string filename, int width, int height) {
@@ -324,23 +335,47 @@ void MakeBMP(std::string filename, int width, int height) {
 
     mandlebrot.Create(width, height, 24);
 
-    InitializeResultMatrices(image.ColumnCount);
+    Matrix lastActivation;
+    Matrix currentActivation;
+    Matrix currentTotal;
 
-    ForwardPropogation(image);
+    // Forward prop
 
-    std::vector<float> pixelsData = activation[activation.size() - 1].Row(0);
+    for (int y = 0; y < imageVector.size(); y++) {
+        for (int i = 0; i < aTotal.size(); i++) {
 
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
+            lastActivation = currentActivation;
 
-            float r = pixelsData[x + (y * width)] * 255;
-            float other = pixelsData[x + (y * width)] > confidenceThreshold ? 255 : 0;
+            if (resNet.find(i) != resNet.end()) {
+                currentTotal = Matrix(weights[i].ColumnCount + dimensions[0], imageVector[y].ColumnCount);
+            }
+            else {
+                currentTotal = Matrix(weights[i].ColumnCount, imageVector[y].ColumnCount);
+            }
+            currentActivation = Matrix(currentTotal.RowCount, currentTotal.ColumnCount);
 
+            if (resNet.find(i) != resNet.end()) {
+                currentTotal.Insert(0, imageVector[y]);
+                currentActivation.Insert(0, imageVector[y]);
+
+                currentTotal.Insert(imageVector[y].RowCount, (weights[i].DotProduct(i == 0 ? imageVector[y] : lastActivation) + biases[i]).Transpose());
+            }
+            else {
+                currentTotal = (weights[i].DotProduct(i == 0 ? imageVector[y] : lastActivation) + biases[i]).Transpose();
+            }
+            currentActivation = i < aTotal.size() - 1 ? LeakyReLU(currentTotal) : Sigmoid(currentTotal);
+        }
+
+        // Set pixel data
+        std::vector<float> pixelData = currentActivation.Row(0);
+        std::cout << pixelData.size() << std::endl;
+
+        for (int x = 0; x < pixelData.size(); x++) {
+            float r = pixelData[x] * 255;
+            float other = pixelData[x] > confidenceThreshold ? 255 : 0;
             mandlebrot.SetPixel(x, y, RGB(r, other, other));
         }
     }
-
-    InitializeResultMatrices(batchSize);
 
     mandlebrot.Save(fp.c_str(), Gdiplus::ImageFormatBMP);
     mandlebrot.Destroy();
@@ -357,16 +392,16 @@ void TrainNetwork() {
 
     totalStart = std::chrono::high_resolution_clock::now();
 
+    std::time_t t = std::time(0); std::tm now; localtime_s(&now, &t);
+    std::string date = std::to_string(now.tm_mon + 1).append("_").append(std::to_string(now.tm_mday)).append("_")
+        .append(std::to_string(now.tm_year - 100));
+
     int iterations = input.ColumnCount / batchSize;
 
     std::cout << std::fixed << std::setprecision(4);
     for (int e = 0; e < epochs; e++) {
 
         tStart = std::chrono::high_resolution_clock::now();
-
-        std::time_t t = std::time(0); std::tm now; localtime_s(&now, &t);
-        std::string date = std::to_string(now.tm_mon + 1).append("_").append(std::to_string(now.tm_mday)).append("_")
-            .append(std::to_string(now.tm_year - 100));
 
         if (e % epochPerDataset == 0) { MakeDataSet(dataSize); }
 
@@ -397,7 +432,7 @@ void TrainNetwork() {
     std::cout << "Average Epoch Time: "; CleanTime(epochTime);
 
     tStart = std::chrono::high_resolution_clock::now();
-    std::string filename = "MandlebrotAproximations\\MandlebrotAproxFinal.bmp";
+    std::string filename = ("MandlebrotAproximations\\" + date + "_final.bmp");
     MakeImageFeatures(finalWidth, finalHeight);
     MakeBMP(filename, finalWidth, finalHeight);
     time = (std::chrono::high_resolution_clock::now() - tStart);
