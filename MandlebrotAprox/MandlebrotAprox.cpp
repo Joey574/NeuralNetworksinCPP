@@ -70,8 +70,8 @@ std::vector<Matrix> imageVector;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 160;
-int finalHeight = 90;
+int finalWidth = 2560;
+int finalHeight = 1440;
 
 // 2560 x 1440
 
@@ -322,6 +322,7 @@ void MakeImageFeatures(int width, int height) {
         imageVector[i] = imageVector[i].ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries,
             laguerreSeries, lowerNormalized, upperNormalized);
     }
+
     dimensions[0] = imageVector[0].RowCount;
 }
 
@@ -336,7 +337,7 @@ void MakeBMP(std::string filename, int width, int height) {
     Matrix currentActivation;
     Matrix currentTotal;
 
-    // Forward prop
+    //Forward prop
     for (int y = 0; y < imageVector.size(); y++) {
         for (int i = 0; i < aTotal.size(); i++) {
 
