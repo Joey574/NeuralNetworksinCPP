@@ -22,14 +22,6 @@
 std::vector<int> dimensions = { 2, 32, 32, 1 };
 std::unordered_set<int> resNet = {  };
 
-// Feature Engineering
-int fourierSeries = 16;
-int chebyshevSeries = 0;
-int taylorSeries = 0;
-int legendreSeries = 0;
-int laguerreSeries = 0;
-
-// Hyperparameters cont.
 float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
@@ -37,6 +29,13 @@ Matrix::init initType = Matrix::init::He;
 int epochs = 2400;
 int batchSize = 500;
 float learningRate = 0.035f;
+
+// Feature Engineering
+int fourierSeries = 16;
+int chebyshevSeries = 0;
+int taylorSeries = 0;
+int legendreSeries = 0;
+int laguerreSeries = 0;
 
 // Inputs
 Matrix input;
@@ -88,13 +87,11 @@ void ShuffleInput();
 Matrix GetNextInput(Matrix totalInput, int size, int i);
 void InitializeNetwork();
 void InitializeResultMatrices(int size);
-float Accuracy(std::vector<int> predictions, std::vector<int> labels);
 void CleanTime(double time);
 void TrainNetwork();
 void UpdateNetwork();
 void SaveNetwork(std::string filename);
 void LoadNetwork(std::string filename);
-
 
 int main()
 {
@@ -222,19 +219,6 @@ void InitializeResultMatrices(int size) {
 
         activation.emplace_back(aTotal[i].RowCount, size);
     }
-}
-
-float Accuracy(std::vector<float> predictions, std::vector<int> labels) {
-    int correct = 0;
-
-    for (int i = 0; i < predictions.size(); i++)
-    {
-        if (predictions[i] == labels[i])
-        {
-            correct++;
-        }
-    }
-    return (float)correct / (float)predictions.size();
 }
 
 void CleanTime(double time) {
@@ -378,6 +362,10 @@ void TrainNetwork() {
 
         tStart = std::chrono::high_resolution_clock::now();
 
+        std::time_t t = std::time(0); std::tm now; localtime_s(&now, &t);
+        std::string date = std::to_string(now.tm_mon + 1).append("_").append(std::to_string(now.tm_mday)).append("_")
+            .append(std::to_string(now.tm_year - 100));
+
         if (e % epochPerDataset == 0) { MakeDataSet(dataSize); }
 
         for (int i = 0; i < iterations; i++) {
@@ -390,7 +378,7 @@ void TrainNetwork() {
         }
 
         if (e % epochPerImage == epochPerImage - 1) {
-            std::string filename = "MandlebrotAproximations\\" + std::to_string(e).append(".bmp");
+            std::string filename = ("MandlebrotAproximations\\" + date + "_epoch_" + std::to_string(e + 1) + ".bmp");
             MakeBMP(filename, imageWidth, imageHeight);
             InitializeResultMatrices(batchSize);
         }
