@@ -26,7 +26,7 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 1000;
+int epochs = 0;
 int batchSize = 500;
 float learningRate = 0.05f;
 
@@ -70,10 +70,23 @@ std::vector<Matrix> imageVector;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 2560;
-int finalHeight = 1440;
+int finalWidth = 7680;
+int finalHeight = 4320;
 
-// 2560 x 1440
+/*
+Common Resolutions:
+
+16:9
+    800 x 450
+    1920 x 1080
+    2560 x 1440
+    3840 x 2160
+    7680 x 4320
+
+16:10
+    1920 x 1200
+    2560 x 1600
+*/
 
 float confidenceThreshold = 0.95f;
 
@@ -337,33 +350,42 @@ void MakeBMP(std::string filename, int width, int height) {
     Matrix currentActivation;
     Matrix currentTotal;
 
+    InitializeResultMatrices(imageVector[0].ColumnCount);
+
     //Forward prop
     for (int y = 0; y < imageVector.size(); y++) {
-        for (int i = 0; i < aTotal.size(); i++) {
+        //for (int i = 0; i < aTotal.size(); i++) {
 
-            if (resNet.find(i) != resNet.end()) {
-                currentTotal = Matrix(weights[i].ColumnCount + dimensions[0], imageVector[y].ColumnCount);
-            }
-            else {
-                currentTotal = Matrix(weights[i].ColumnCount, imageVector[y].ColumnCount);
-            }
-            currentActivation = Matrix(currentTotal.RowCount, currentTotal.ColumnCount);
+        //    if (resNet.find(i) != resNet.end()) {
+        //        currentTotal = Matrix(weights[i].ColumnCount + dimensions[0], imageVector[y].ColumnCount);
+        //    }
+        //    else {
+        //        currentTotal = Matrix(weights[i].ColumnCount, imageVector[y].ColumnCount);
+        //    }
+        //    currentActivation = Matrix(currentTotal.RowCount, currentTotal.ColumnCount);
 
-            if (resNet.find(i) != resNet.end()) {
-                currentTotal.Insert(0, imageVector[y]);
-                currentActivation.Insert(0, imageVector[y]);
+        //    if (resNet.find(i) != resNet.end()) {
+        //        currentTotal.Insert(0, imageVector[y]);
+        //        currentActivation.Insert(0, imageVector[y]);
 
-                currentTotal.Insert(imageVector[y].RowCount, (weights[i].DotProduct(i == 0 ? imageVector[y] : lastActivation) + biases[i]).Transpose());
-            }
-            else {
-                currentTotal = (weights[i].DotProduct(i == 0 ? imageVector[y] : lastActivation) + biases[i]).Transpose();
-            }
-            currentActivation = i < aTotal.size() - 1 ? LeakyReLU(currentTotal) : Sigmoid(currentTotal);
-            lastActivation = currentActivation;
-        }
+        //        currentTotal.Insert(imageVector[y].RowCount, (weights[i].DotProduct(i == 0 ? imageVector[y] : lastActivation) + biases[i]).Transpose());
+        //    }
+        //    else {
+        //        currentTotal = (weights[i].DotProduct(i == 0 ? imageVector[y] : lastActivation) + biases[i]).Transpose();
+        //    }
+        //    currentActivation = i < aTotal.size() - 1 ? LeakyReLU(currentTotal) : Sigmoid(currentTotal);
+        //    lastActivation = currentActivation;
+        //}
 
-        // Set pixel data
-        std::vector<float> pixelData = currentActivation.Row(0);
+        //// Set pixel data
+        //std::vector<float> pixelData = currentActivation.Row(0);
+
+        ForwardPropogation(imageVector[y]);
+
+        //std::cout << activation[activation.size() - 1].RowCount << " :: " << activation[activation.size() - 1].ColumnCount << std::endl;
+
+        std::vector<float> pixelData = activation[activation.size() - 1].Row(0);
+        //std::cout << pixelData.size() << std::endl;
 
         for (int x = 0; x < pixelData.size(); x++) {
             float r = pixelData[x] * 255.0f;
@@ -371,6 +393,8 @@ void MakeBMP(std::string filename, int width, int height) {
             mandle.SetPixel(x, y, RGB(r, other, other));
         }
     }
+
+    InitializeResultMatrices(batchSize);
 
     mandle.Save(fp.c_str(), Gdiplus::ImageFormatBMP);
     mandle.Destroy();
@@ -388,7 +412,7 @@ void TrainNetwork() {
     totalStart = std::chrono::high_resolution_clock::now();
 
     std::time_t t = std::time(0); std::tm now; localtime_s(&now, &t);
-    std::string date = std::to_string(now.tm_mon + 1).append("_").append(std::to_string(now.tm_mday)).append("_")
+    std::string date = "MandlebrotAproximations\\" + std::to_string(now.tm_mon + 1).append("_").append(std::to_string(now.tm_mday)).append("_")
         .append(std::to_string(now.tm_year - 100));
 
     int iterations = input.ColumnCount / batchSize;
@@ -410,7 +434,7 @@ void TrainNetwork() {
         }
 
         if (e % epochPerImage == epochPerImage - 1) {
-            std::string filename = ("MandlebrotAproximations\\" + date + "_epoch" + std::to_string(e + 1) + ".bmp");
+            std::string filename = (date + "_epoch" + std::to_string(e + 1) + ".bmp");
             MakeBMP(filename, imageWidth, imageHeight);
             InitializeResultMatrices(batchSize);
         }
@@ -427,7 +451,7 @@ void TrainNetwork() {
     std::cout << "Average Epoch Time: "; CleanTime(epochTime);
 
     tStart = std::chrono::high_resolution_clock::now();
-    std::string filename = ("MandlebrotAproximations\\" + date + "_final.bmp");
+    std::string filename = (date + "_final.bmp");
     MakeImageFeatures(finalWidth, finalHeight);
     MakeBMP(filename, finalWidth, finalHeight);
     time = (std::chrono::high_resolution_clock::now() - tStart);
