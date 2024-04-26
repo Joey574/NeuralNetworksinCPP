@@ -136,7 +136,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\LogisticRegressionStandalone\ActivationFunctions.cpp" />
     <ClCompile Include="..\LogisticRegressionStandalone\Matrix.cpp" />
     <ClCompile Include="MandlebrotAprox.cpp" />
   </ItemGroup>

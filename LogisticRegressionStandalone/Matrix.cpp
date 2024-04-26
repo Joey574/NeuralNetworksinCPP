@@ -8,7 +8,6 @@ Matrix::Matrix() {
 	RowCount = 0;
 	transposeBuilt = false;
 }
-
 Matrix::Matrix(int rows, int columns) {
 	matrix = std::vector<std::vector<float>>(rows);
 
@@ -20,7 +19,6 @@ Matrix::Matrix(int rows, int columns) {
 	RowCount = rows;
 	transposeBuilt = false;
 }
-
 Matrix::Matrix(int rows, int columns, float value) {
 	matrix = std::vector<std::vector<float>>(rows);
 
@@ -32,7 +30,6 @@ Matrix::Matrix(int rows, int columns, float value) {
 	RowCount = rows;
 	transposeBuilt = false;
 }
-
 Matrix::Matrix(int rows, int columns, init initType) {
 	matrix = std::vector<std::vector<float>>(rows);
 
@@ -88,7 +85,6 @@ Matrix::Matrix(int rows, int columns, init initType) {
 
 	transposeBuilt = false;
 }
-
 Matrix::Matrix(std::vector<std::vector<float>> matrix) {
 	this->matrix = matrix;
 	ColumnCount = matrix[0].size();
@@ -105,7 +101,6 @@ void Matrix::SetColumn(int index, std::vector<float> vector) {
 
 	transposeBuilt = false;
 }
-
 void Matrix::SetColumn(int index, std::vector<int> vector) {
 	for (int i = 0; i < RowCount; i++) {
 		matrix[i][index] = vector[i];
@@ -121,7 +116,6 @@ void Matrix::SetRow(int index, std::vector<float> vector) {
 
 	transposeBuilt = false;
 }
-
 void Matrix::SetRow(int index, std::vector<int> vector) {
 	for (int i = 0; i < ColumnCount; i++) {
 		matrix[index][i] = vector[i];
@@ -138,7 +132,6 @@ void Matrix::Insert(int startRow, Matrix element) {
 	transposeBuilt = false;
 }
 
-
 Matrix Matrix::SegmentR(int startRow, int endRow) {
 	Matrix a = Matrix(endRow - startRow, ColumnCount);
 
@@ -148,7 +141,6 @@ Matrix Matrix::SegmentR(int startRow, int endRow) {
 
 	return a;
 }
-
 Matrix Matrix::SegmentR(int startRow) {
 	Matrix a = Matrix(RowCount - startRow, ColumnCount);
 
@@ -168,7 +160,6 @@ Matrix Matrix::SegmentC(int startColumn, int endColumn) {
 
 	return a;
 }
-
 Matrix Matrix::SegmentC(int startColumn) {
 	Matrix a = Matrix(RowCount, ColumnCount - startColumn);
 
@@ -179,7 +170,6 @@ Matrix Matrix::SegmentC(int startColumn) {
 	return a;
 }
 
-
 std::vector<float> Matrix::ColumnSums() {
 	if (transposeBuilt) {
 		return HorizontalSum(matrixT);
@@ -188,7 +178,6 @@ std::vector<float> Matrix::ColumnSums() {
 		return VerticalSum(matrix);
 	}
 }
-
 std::vector<float> Matrix::RowSums() {
 	std::vector<float> sums = std::vector<float>(matrix.size());
 
@@ -212,7 +201,6 @@ std::vector<float> Matrix::Column(int index) {
 		return column;
 	}
 }
-
 std::vector<float> Matrix::Row(int index) {
 	return matrix[index];
 }
@@ -291,7 +279,31 @@ Matrix Matrix::DotProduct(Matrix element) {
 	return mat;
 }
 
+std::vector<float> Matrix::LogSumExp() {
+
+	std::vector<float> logSum = std::vector<float>(ColumnCount);
+
+	for (int c = 0; c < ColumnCount; c++) {
+
+		std::vector<float> col = Column(c);
+
+		auto maxElement = std::max_element(col.begin(), col.end());
+		float max = *maxElement;
+		float sum = 0;
+
+		for (int i = 0; i < col.size(); i++) {
+			sum += std::exp(col[i] - max);
+		}
+		logSum[c] = max + std::log(sum);
+	}
+	return logSum;
+}
+
 // Basic Math
+Matrix Matrix::Negative() {
+	return SingleFloatOperation(&Matrix::SIMDMul, &Matrix::RemainderMul, -1);
+}
+
 Matrix Matrix::Add(float scalar) {
 	return SingleFloatOperation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, scalar);
 }
@@ -366,28 +378,26 @@ Matrix Matrix::Asin() {
 	return this->SingleFloatOperation(&Matrix::SIMDAsin, &Matrix::RemainderAcos, 0);
 }
 
-Matrix Matrix::Negative() {
-	return SingleFloatOperation(&Matrix::SIMDMul, &Matrix::RemainderMul, -1);
+// Activation Functions
+Matrix Matrix::LeakyReLU(float alpha) {
+	return MatrixFloatOperation(&Matrix::SIMDMax, &Matrix::RemainderMax, this->Multiply(alpha));
+}
+Matrix Matrix::Sigmoid() {
+
 }
 
-std::vector<float> Matrix::LogSumExp() {
-
-	std::vector<float> logSum = std::vector<float>(ColumnCount);
-
+// Activation Derivatives
+Matrix Matrix::LeakyReLUDerivative(float alpha) {
+	Matrix deriv = matrix;
 	for (int c = 0; c < ColumnCount; c++) {
-
-		std::vector<float> col = Column(c);
-
-		auto maxElement = std::max_element(col.begin(), col.end());
-		float max = *maxElement;
-		float sum = 0;
-
-		for (int i = 0; i < col.size(); i++) {
-			sum += std::exp(col[i] - max);
+		for (int r = 0; r < RowCount; r++) {
+			deriv[r][c] > 0.0f ? 1.0f : alpha;
 		}
-		logSum[c] = max + std::log(sum);
 	}
-	return logSum;
+	return deriv;
+}
+Matrix Matrix::SigmoidDerivative() {
+
 }
 
 
@@ -505,6 +515,11 @@ __m256 Matrix::SIMDPow(__m256 opOne, __m256 opTwo) {
 __m256 Matrix::SIMDExp(__m256 opOne, __m256 opTwo) {
 	return _mm256_pow_ps(opTwo, opOne);
 }
+__m256 Matrix::SIMDMax(__m256 opOne, __m256 opTwo) {
+	return _mm256_max_ps(opOne, opTwo);
+}
+
+// SIMD Trig
 __m256 Matrix::SIMDSin(__m256 opOne, __m256 opTwo) {
 	return _mm256_sin_ps(opOne);
 }
@@ -542,6 +557,11 @@ float Matrix::RemainderPow(float a, float b) {
 float Matrix::RemainderExp(float a, float b) {
 	return std::pow(b, a);
 }
+float Matrix::RemainderMax(float a, float b) {
+	return std::max(a, b);
+}
+
+// SIMD Trig
 float Matrix::RemainderSin(float a, float b) {
 	return std::sin(a);
 }

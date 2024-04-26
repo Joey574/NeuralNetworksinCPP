@@ -33,14 +33,6 @@ public:
 	void SetRow(int index, std::vector<float> row);
 	void SetRow(int index, std::vector<int> row);
 
-	Matrix ExtractFeatures(int fourier, int taylor, int chebyshev, int legendre, int laguerre, float lowerNormal, float upperNormal);
-
-	Matrix FourierSeries(int order);
-	Matrix TaylorSeries(int order);
-	Matrix ChebyshevSeries(int order);
-	Matrix LegendreSeries(int order);
-	Matrix LaguerreSeries(int order);
-
 	Matrix SegmentR(int startRow, int endRow);
 	Matrix SegmentR(int startRow);
 
@@ -50,9 +42,21 @@ public:
 	std::vector<float> ColumnSums();
 	std::vector<float> RowSums();
 
-	Matrix Negative();
+	// "Advanced" Math
+	Matrix ExtractFeatures(int fourier, int taylor, int chebyshev, int legendre, int laguerre, float lowerNormal, float upperNormal);
+
+	Matrix FourierSeries(int order);
+	Matrix TaylorSeries(int order);
+	Matrix ChebyshevSeries(int order);
+	Matrix LegendreSeries(int order);
+	Matrix LaguerreSeries(int order);
 
 	Matrix DotProduct(Matrix element);
+
+	std::vector<float> LogSumExp();
+
+	// Basic Math
+	Matrix Negative();
 
 	Matrix Add(float scalar);
 	Matrix Add(std::vector<float> scalar);
@@ -83,7 +87,14 @@ public:
 	Matrix Exp(std::vector<float> base);
 	Matrix Exp(Matrix base);
 
-	std::vector<float> LogSumExp();
+	// Activation Functions
+	Matrix Sigmoid();
+	Matrix LeakyReLU(float alpha = 0.1f);
+
+
+	// Activation Derivatives
+	Matrix SigmoidDerivative();
+	Matrix LeakyReLUDerivative(float alpha = 0.1f);
 
 	Matrix Transpose();
 	Matrix Combine(Matrix element);
@@ -241,6 +252,9 @@ private:
 	__m256 SIMDDiv(__m256 opOne, __m256 opTwo);
 	__m256 SIMDPow(__m256 opOne, __m256 opTwo);
 	__m256 SIMDExp(__m256 opOne, __m256 opTwo);
+	__m256 SIMDMax(__m256 opOne, __m256 opTwo);
+
+	// SIMD Trig
 	__m256 SIMDSin(__m256 opOne, __m256 opTwo);
 	__m256 SIMDCos(__m256 opOne, __m256 opTwo);
 	__m256 SIMDSec(__m256 opOne, __m256 opTwo);
@@ -254,6 +268,9 @@ private:
 	float RemainderDiv(float a, float b);
 	float RemainderPow(float a, float b);
 	float RemainderExp(float a, float b);
+	float RemainderMax(float a, float b);
+
+	// SIMD Trig
 	float RemainderSin(float a, float b);
 	float RemainderCos(float a, float b);
 	float RemainderSec(float a, float b);

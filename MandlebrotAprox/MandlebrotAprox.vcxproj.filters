@@ -18,9 +18,6 @@
     <ClCompile Include="MandlebrotAprox.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\LogisticRegressionStandalone\ActivationFunctions.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\LogisticRegressionStandalone\Matrix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
