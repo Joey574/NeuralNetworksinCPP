@@ -26,7 +26,7 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 1;
+int epochs = 1000;
 int batchSize = 500;
 float learningRate = 0.025f;
 
@@ -71,8 +71,8 @@ std::vector<Matrix> imageVector;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 160;
-int finalHeight = 90;
+int finalWidth = 800;
+int finalHeight = 450;
 
 float confidenceThreshold = 0.95f;
 
