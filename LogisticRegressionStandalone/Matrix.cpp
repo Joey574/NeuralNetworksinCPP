@@ -383,7 +383,13 @@ Matrix Matrix::LeakyReLU(float alpha) {
 	return MatrixFloatOperation(&Matrix::SIMDMax, &Matrix::RemainderMax, this->Multiply(alpha));
 }
 Matrix Matrix::Sigmoid() {
-
+	Matrix a = matrix;
+	for (int r = 0; r < a.RowCount; r++) {
+		for (int c = 0; c < a.ColumnCount; c++) {
+			a[r][c] = 1 / (1 + std::exp(-matrix[r][c]));
+		}
+	}
+	return a;
 }
 
 // Activation Derivatives
@@ -397,10 +403,11 @@ Matrix Matrix::LeakyReLUDerivative(float alpha) {
 	return deriv;
 }
 Matrix Matrix::SigmoidDerivative() {
-
+	Matrix a = matrix;
+	return this->Sigmoid() * (a - this->Sigmoid());
 }
 
-
+// SIMD Implementations
 Matrix Matrix::SingleFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo),
 	float (Matrix::* remainderOperation)(float a, float b), float scalar) {
 	std::vector<std::vector<float>> mat = matrix;

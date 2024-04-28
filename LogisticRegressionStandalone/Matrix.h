@@ -91,7 +91,6 @@ public:
 	Matrix Sigmoid();
 	Matrix LeakyReLU(float alpha = 0.1f);
 
-
 	// Activation Derivatives
 	Matrix SigmoidDerivative();
 	Matrix LeakyReLUDerivative(float alpha = 0.1f);

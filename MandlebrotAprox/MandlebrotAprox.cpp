@@ -16,21 +16,22 @@
 #include <atlimage.h>
 
 #include "Matrix.h"
+#include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 64, 64, 1 };
+std::vector<int> dimensions = { 2, 32, 32, 1 };
 std::unordered_set<int> resNet = {  };
 
 float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 0;
+int epochs = 1;
 int batchSize = 500;
 float learningRate = 0.05f;
 
 // Feature Engineering
-int fourierSeries = 2;
+int fourierSeries = 16;
 int chebyshevSeries = 0;
 int taylorSeries = 0;
 int legendreSeries = 0;
@@ -60,22 +61,24 @@ bool LoadOnInit = true;
 std::string NetworkPath = "Network.txt";
 
 // Image stuff / Mandlebrot specific
-int dataSize = 20000;
+int dataSize = 2000;
 int mandlebrotIterations = 500;
 int epochPerDataset = 5;
-int epochPerImage = -1;
+int epochPerImage = 1;
 
 std::vector<Matrix> imageVector;
-int imageWidth = 160;
-int imageHeight = 90;
+int imageWidth = 2560;
+int imageHeight = 1440;
 
-int finalWidth = 160;
-int finalHeight = 90;
+int finalWidth = 3840;
+int finalHeight = 2160;
 
 /*
 Common Resolutions:
 
 16:9
+    160 x 90
+    320 x 180
     800 x 450
     1920 x 1080
     2560 x 1440
@@ -435,7 +438,6 @@ void TrainNetwork() {
 void ForwardPropogation(Matrix in) {
     for (int i = 0; i < aTotal.size(); i++) {
         if (resNet.find(i) != resNet.end()) {
-
             aTotal[i].Insert(0, in);
             activation[i].Insert(0, in);
 
@@ -444,7 +446,7 @@ void ForwardPropogation(Matrix in) {
         else {
             aTotal[i] = (weights[i].DotProduct(i == 0 ? in : activation[i - 1]) + biases[i]).Transpose();
         }
-        activation[i] = i < aTotal.size() - 1 ? aTotal[i].LeakyReLU() : aTotal[i].Sigmoid();
+        activation[i] = i < aTotal.size() - 1 ? LeakyReLU(aTotal[i]) : Sigmoid(aTotal[i]);
     }
 }
 
@@ -455,10 +457,10 @@ void BackwardPropogation() {
     for (int i = dTotal.size() - 2; i > -1; i--) {
 
         if (resNet.find(i) != resNet.end()) {
-            dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].SegmentR(batch.RowCount))).Transpose() * aTotal[i].SegmentR(batch.RowCount).LeakyReLUDerivative());
+            dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].SegmentR(batch.RowCount))).Transpose() * LeakyReLUDerivative(aTotal[i].SegmentR(batch.RowCount)));
         }
         else {
-            dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * aTotal[i].LeakyReLUDerivative());
+            dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * LeakyReLUDerivative(aTotal[i]));
         }
     }
 
