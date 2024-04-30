@@ -1,6 +1,7 @@
 #pragma comment(linker, "/STACK:20000000")
 #pragma comment(linker, "/HEAP:20000000")
 
+#define NOMINMAX
 #define _USE_MATH_DEFINES
 #include <iostream>
 #include <complex>
@@ -14,6 +15,7 @@
 #include <iomanip>
 #include <cmath>
 #include <atlimage.h>
+#include <algorithm>
 
 #include "Matrix.h"
 #include "ActivationFunctions.h"
@@ -26,7 +28,7 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 1;
+int epochs = 0;
 int batchSize = 500;
 float learningRate = 0.05f;
 
@@ -57,11 +59,11 @@ std::vector<std::vector<float>> dBiases;
 
 // Save / Load
 bool SaveOnComplete = false;
-bool LoadOnInit = false;
+bool LoadOnInit = true;
 std::string NetworkPath = "Network.txt";
 
 // Image stuff / Mandlebrot specific
-int dataSize = 2000;
+int dataSize = 20000;
 int mandlebrotIterations = 500;
 int epochPerDataset = 5;
 int epochPerImage = 5;
@@ -73,7 +75,7 @@ int imageHeight = 90;
 int finalWidth = 160;
 int finalHeight = 90;
 
-int cacheSize = 4000000;
+int cacheSize = 3 * 1000000;
 int pixelPerMatrix;
 
 /*
@@ -338,31 +340,24 @@ void MakeImageFeatures(int width, int height) {
 
     image.Transpose();
 
-    std::cout << sizeof(float) << std::endl;
-
     int connections = 0;
     for (int i = 0; i < weights.size(); i++) {
         connections += (weights[i].RowCount * weights[i].ColumnCount) + biases[i].size();
     }
 
-    /* Reserve size for network
-    connections = weights + biases in the network
-    image.rowcount * 3 = result matrices size */
+    // Reserve size for network itself
+    int cacheSizeTemp = cacheSize - ((connections + (image.RowCount * 2)) * sizeof(float));
 
-    int cacheSizeTemp = cacheSize - ((connections + (image.RowCount * 3)) * sizeof(float));
+    // How many pixels per matrix we can store in cache
+    pixelPerMatrix = std::max(std::floor((float)cacheSizeTemp / (image.RowCount * sizeof(float))), 10.0f);
 
-    // How many pixels per matrix we can store
-    pixelPerMatrix = std::floor(cacheSizeTemp / (image.RowCount * sizeof(float)));
-    std::cout << "pPM: " << pixelPerMatrix << std::endl;
-
-    // Minimum number of matrices we need for the image at optimal number
+    // Minimum number of matrices we need for the image at optimal number of pixels
     int matrices = std::ceil((float)(width * height) / (float)pixelPerMatrix);
-    std::cout << "matrices needed: " << matrices << std::endl;
 
     imageVector = std::vector<Matrix>(matrices);
 
     for (int i = 0; i < matrices; i++) {
-        imageVector[i] = image.SegmentC(i * pixelPerMatrix, (i * pixelPerMatrix) + pixelPerMatrix);
+        imageVector[i] = image.SegmentC(i * pixelPerMatrix, std::min((i * pixelPerMatrix) + pixelPerMatrix, image.ColumnCount));
     }
 
     dimensions[0] = imageVector[0].RowCount;
@@ -376,43 +371,38 @@ void MakeBMP(std::string filename, int width, int height) {
     mandle.Create(width, height, 24);
 
     Matrix currentTotal;
-    Matrix currentActivation;
     Matrix lastActivation;
 
-    InitializeResultMatrices(imageVector[0].ColumnCount);
+    // Pixel index
+    int pI = 0;
 
     //Forward prop on image
     for (int y = 0; y < imageVector.size(); y++) {
 
-        // Forward prop on row
-        ForwardPropogation(imageVector[y]);
-        
-        /*
         for (int i = 0; i < aTotal.size(); i++) {
+            currentTotal = Matrix(aTotal[i].RowCount, imageVector[y].ColumnCount);
             if (resNet.find(i) != resNet.end()) {
-                aTotal[i].Insert(0, in);
-                activation[i].Insert(0, in);
-
-                aTotal[i].Insert(in.RowCount, (weights[i].DotProduct(i == 0 ? in : activation[i - 1]) + biases[i]).Transpose());
+                currentTotal.Insert(0, imageVector[y]);
+                currentTotal.Insert(imageVector[y].RowCount, (weights[i].DotProduct(i == 0 ? imageVector[y] : lastActivation) + biases[i]).Transpose());
             }
             else {
-                aTotal[i] = (weights[i].DotProduct(i == 0 ? in : activation[i - 1]) + biases[i]).Transpose();
+                currentTotal = (weights[i].DotProduct(i == 0 ? imageVector[y] : lastActivation) + biases[i]).Transpose();
             }
-            activation[i] = i < aTotal.size() - 1 ? LeakyReLU(aTotal[i]) : Sigmoid(aTotal[i]);
-        */
-        
+            lastActivation = i < aTotal.size() - 1 ? LeakyReLU(currentTotal) : Sigmoid(currentTotal);
+        }
+
         // Get pixel data
-        std::vector<float> pixelData = activation[activation.size() - 1].Row(0);
+        std::vector<float> pixelData = lastActivation.Row(0);
 
         // Set pixels
         for (int x = 0; x < pixelData.size(); x++) {
             float r = pixelData[x] * 255.0f;
             float other = pixelData[x] > confidenceThreshold ? 255 : 0;
-            mandle.SetPixel(x, y, RGB(r, other, other));
+
+            mandle.SetPixel(pI % width, pI / width, RGB(r, other, other));
+            pI++;
         }
     }
-
-    InitializeResultMatrices(batchSize);
 
     mandle.Save(fp.c_str(), Gdiplus::ImageFormatBMP);
     mandle.Destroy();
