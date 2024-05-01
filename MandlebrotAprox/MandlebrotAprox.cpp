@@ -72,10 +72,10 @@ std::vector<Matrix> imageVector;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 160;
-int finalHeight = 90;
+int finalWidth = 1920;
+int finalHeight = 1080;
 
-int cacheSize = 3 * 1000000;
+int cacheSize = 4 * 1000000;
 int pixelPerMatrix;
 
 /*
@@ -119,14 +119,14 @@ int main()
 {
     srand(time(0));
 
-    MakeDataSet(dataSize);
-
     if (LoadOnInit) {
         LoadNetwork(NetworkPath);
     }
     else {
         InitializeNetwork();
     }
+
+    MakeDataSet(dataSize);
 
     MakeImageFeatures(imageWidth, imageHeight);
 
@@ -346,10 +346,10 @@ void MakeImageFeatures(int width, int height) {
     }
 
     // Reserve size for network itself
-    int cacheSizeTemp = cacheSize - ((connections + (image.RowCount * 2)) * sizeof(float));
+    int cacheSizeTemp = cacheSize - (connections * sizeof(float));
 
-    // How many pixels per matrix we can store in cache
-    pixelPerMatrix = std::max(std::floor((float)cacheSizeTemp / (image.RowCount * sizeof(float))), 10.0f);
+    // How many pixels per matrix we can store in cache (pixel size + result matrices)
+    pixelPerMatrix = std::max(std::floor((float)cacheSizeTemp / ((image.RowCount + (aTotal[0].RowCount * 2)) * sizeof(float))), 10.0f);
 
     // Minimum number of matrices we need for the image at optimal number of pixels
     int matrices = std::ceil((float)(width * height) / (float)pixelPerMatrix);
@@ -395,7 +395,7 @@ void MakeBMP(std::string filename, int width, int height) {
         std::vector<float> pixelData = lastActivation.Row(0);
 
         // Set pixels
-        for (int x = 0; x < pixelData.size(); x++) {
+        for (int x = 0; x < pixelData.size() && pI < width * height; x++) {
             float r = pixelData[x] * 255.0f;
             float other = pixelData[x] > confidenceThreshold ? 255 : 0;
 
