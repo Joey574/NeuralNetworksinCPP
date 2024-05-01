@@ -72,10 +72,10 @@ std::vector<Matrix> imageVector;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 1920;
-int finalHeight = 1080;
+int finalWidth = 2560;
+int finalHeight = 1440;
 
-int cacheSize = 4 * 1000000;
+int cacheSize = (4 * 1000000);
 int pixelPerMatrix;
 
 /*
