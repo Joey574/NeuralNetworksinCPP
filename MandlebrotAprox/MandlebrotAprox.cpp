@@ -1,6 +1,7 @@
 #pragma comment(linker, "/STACK:20000000")
 #pragma comment(linker, "/HEAP:20000000")
 
+#define NOMINMAX
 #define _USE_MATH_DEFINES
 #include <iostream>
 #include <complex>
@@ -14,6 +15,7 @@
 #include <iomanip>
 #include <cmath>
 #include <atlimage.h>
+#include <algorithm>
 
 #include "Matrix.h"
 #include "ActivationFunctions.h"
@@ -70,8 +72,11 @@ std::vector<Matrix> imageVector;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 320;
-int finalHeight = 160;
+int finalWidth = 2560;
+int finalHeight = 1440;
+
+int cacheSize = (4 * 1000000);
+int pixelPerMatrix;
 
 /*
 Common Resolutions:
@@ -114,14 +119,14 @@ int main()
 {
     srand(time(0));
 
-    MakeDataSet(dataSize);
-
     if (LoadOnInit) {
         LoadNetwork(NetworkPath);
     }
     else {
         InitializeNetwork();
     }
+
+    MakeDataSet(dataSize);
 
     MakeImageFeatures(imageWidth, imageHeight);
 
@@ -320,7 +325,6 @@ void MakeImageFeatures(int width, int height) {
     float scaleX = (std::abs(xMin - xMax)) / (width - 1);
     float scaleY = (std::abs(yMin - yMax)) / (height - 1);
 
-    imageVector = std::vector<Matrix>(height);
 
     Matrix image = Matrix(2, width * height);
 
@@ -336,8 +340,24 @@ void MakeImageFeatures(int width, int height) {
 
     image.Transpose();
 
-    for (int i = 0; i < height; i++) {
-        imageVector[i] = image.SegmentC(i * width, (i * width) + width);
+    int connections = 0;
+    for (int i = 0; i < weights.size(); i++) {
+        connections += (weights[i].RowCount * weights[i].ColumnCount) + biases[i].size();
+    }
+
+    // Reserve size for network itself
+    int cacheSizeTemp = cacheSize - (connections * sizeof(float));
+
+    // How many pixels per matrix we can store in cache (pixel size + result matrices)
+    pixelPerMatrix = std::max(std::floor((float)cacheSizeTemp / ((image.RowCount + (aTotal[0].RowCount * 2)) * sizeof(float))), 10.0f);
+
+    // Minimum number of matrices we need for the image at optimal number of pixels
+    int matrices = std::ceil((float)(width * height) / (float)pixelPerMatrix);
+
+    imageVector = std::vector<Matrix>(matrices);
+
+    for (int i = 0; i < matrices; i++) {
+        imageVector[i] = image.SegmentC(i * pixelPerMatrix, std::min((i * pixelPerMatrix) + pixelPerMatrix, image.ColumnCount));
     }
 
     dimensions[0] = imageVector[0].RowCount;
@@ -350,26 +370,39 @@ void MakeBMP(std::string filename, int width, int height) {
 
     mandle.Create(width, height, 24);
 
-    InitializeResultMatrices(imageVector[0].ColumnCount);
+    Matrix currentTotal;
+    Matrix lastActivation;
+
+    // Pixel index
+    int pI = 0;
 
     //Forward prop on image
     for (int y = 0; y < imageVector.size(); y++) {
 
-        // Forward prop on row
-        ForwardPropogation(imageVector[y]);
+        for (int i = 0; i < aTotal.size(); i++) {
+            currentTotal = Matrix(aTotal[i].RowCount, imageVector[y].ColumnCount);
+            if (resNet.find(i) != resNet.end()) {
+                currentTotal.Insert(0, imageVector[y]);
+                currentTotal.Insert(imageVector[y].RowCount, (weights[i].DotProduct(i == 0 ? imageVector[y] : lastActivation) + biases[i]).Transpose());
+            }
+            else {
+                currentTotal = (weights[i].DotProduct(i == 0 ? imageVector[y] : lastActivation) + biases[i]).Transpose();
+            }
+            lastActivation = i < aTotal.size() - 1 ? LeakyReLU(currentTotal) : Sigmoid(currentTotal);
+        }
 
         // Get pixel data
-        std::vector<float> pixelData = activation[activation.size() - 1].Row(0);
+        std::vector<float> pixelData = lastActivation.Row(0);
 
         // Set pixels
-        for (int x = 0; x < pixelData.size(); x++) {
+        for (int x = 0; x < pixelData.size() && pI < width * height; x++) {
             float r = pixelData[x] * 255.0f;
             float other = pixelData[x] > confidenceThreshold ? 255 : 0;
-            mandle.SetPixel(x, y, RGB(r, other, other));
+
+            mandle.SetPixel(pI % width, pI / width, RGB(r, other, other));
+            pI++;
         }
     }
-
-    InitializeResultMatrices(batchSize);
 
     mandle.Save(fp.c_str(), Gdiplus::ImageFormatBMP);
     mandle.Destroy();
