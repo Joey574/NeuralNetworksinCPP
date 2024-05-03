@@ -21,8 +21,8 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 64, 64, 1 };
-std::unordered_set<int> resNet = {  };
+std::vector<int> dimensions = { 2, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 1 };
+std::unordered_set<int> resNet = { 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18 };
 
 float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
@@ -30,10 +30,10 @@ float upperNormalized = M_PI;
 Matrix::init initType = Matrix::init::He;
 int epochs = 100;
 int batchSize = 500;
-float learningRate = 0.05f;
+float learningRate = 0.025f;
 
 // Feature Engineering
-int fourierSeries = 0;
+int fourierSeries = 256;
 int chebyshevSeries = 0;
 int taylorSeries = 0;
 int legendreSeries = 0;
@@ -58,15 +58,15 @@ std::vector<Matrix> dWeights;
 std::vector<std::vector<float>> dBiases;
 
 // Save / Load
-bool SaveOnComplete = false;
-bool LoadOnInit = false;
-std::string NetworkPath = "Network.txt";
+bool SaveOnComplete = true;
+bool LoadOnInit = true;
+std::string NetworkPath = "18_150_256_0_0_0_0.txt";
 
 // Image stuff / Mandlebrot specific
 int dataSize = 20000;
 int mandlebrotIterations = 500;
 int epochPerDataset = 5;
-int epochPerImage = 5;
+int epochPerImage = 25;
 
 std::vector<Matrix> imageVector;
 int imageWidth = 160;
@@ -575,14 +575,17 @@ void LoadNetwork(std::string filename) {
     // Network size
     int s;
     fr.read(reinterpret_cast<char*>(&s), sizeof(int));
+    std::cout << "Network Layers: " << s << std::endl;
 
     // ResNet size
     int r;
     fr.read(reinterpret_cast<char*>(&r), sizeof(int));
+    std::cout << "Resnet Layers: " << r << std::endl;
 
     // Read dimensions
     dimensions = std::vector<int>(s);
     fr.read(reinterpret_cast<char*>(dimensions.data()), s * sizeof(int));
+    std::cout << "Layer Size: " << dimensions[1] << std::endl;
 
     // Read resNet
     resNet.clear();
