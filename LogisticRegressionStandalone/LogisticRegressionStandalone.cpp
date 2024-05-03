@@ -21,23 +21,23 @@ std::unordered_set<int> resNet = {  };
 
 // Feature Extractions
 int fourierSeries = 0;
-int chebyshevSeries = 8;
+int chebyshevSeries = 0;
 int taylorSeries = 0;
 int legendreSeries = 0;
 int laguerreSeries = 0;
 
 // Hyperparameters cont.
-float lowerNormalized = -1.0f;
+float lowerNormalized = 0.0f;
 float upperNormalized = 1.0f;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 700;
+int epochs = 5;
 int batchSize = 500;
 float learningRate = 0.1;
 
 // Save / Load
-bool SaveOnComplete = true;
-bool LoadOnInit = true;
+bool SaveOnComplete = false;
+bool LoadOnInit = false;
 std::string NetworkPath = "Network.txt";
 
 // Inputs
@@ -80,7 +80,6 @@ void SaveNetwork(std::string filename);
 void LoadNetwork(std::string filename);
 void CleanTime(double time);
 void ShuffleInput();
-Matrix MakeFeatures(Matrix in);
 
 int main()
 {
@@ -227,8 +226,8 @@ void LoadInput() {
 	std::chrono::duration<double, std::milli> time = std::chrono::high_resolution_clock::now() - sTime;
 	std::cout << "Time to load input: " << (time.count() / 1000.00) << " seconds" << std::endl;
 
-	testData = MakeFeatures(testData);
-	input = MakeFeatures(input);
+	testData = testData.ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries, laguerreSeries, lowerNormalized, upperNormalized);
+	input = input.ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries, laguerreSeries, lowerNormalized, upperNormalized);
 }
 
 int ReadBigInt(std::ifstream* fr) {
@@ -241,52 +240,6 @@ int ReadBigInt(std::ifstream* fr) {
 	std::swap(bytes[1], bytes[2]);
 
 	return littleInt;
-}
-
-Matrix MakeFeatures(Matrix in) {
-	// Normalize
-	Matrix taylorNormal = in.Normalized(0.0f, 1.0f);
-	Matrix fourierNormal = in.Normalized(-M_PI, M_PI);
-	Matrix chebyshevNormal = in.Normalized(-1.0f, 1.0f);
-	in = in.Normalized(lowerNormalized, upperNormalized);
-
-	// Compute Taylor Series
-	if (taylorSeries) {
-		for (int t = 0; t < taylorSeries; t++) {
-			in = in.Combine(taylorNormal.TaylorSeries(t + 1));
-		}
-	}
-
-	// Compute Chebyshev Series
-	if (chebyshevSeries) {
-		for (int c = 0; c < chebyshevSeries; c++) {
-			in = in.Combine(chebyshevNormal.ChebyshevSeries(c + 1));
-		}
-	}
-
-	// Compute Legendre Series
-	if (legendreSeries) {
-		for (int l = 0; l < legendreSeries; l++) {
-			in = in.Combine(chebyshevNormal.LegendreSeries(l + 1));
-		}
-	}
-
-	// Compute Laguerre Series
-	if (laguerreSeries) {
-		for (int l = 0; l < laguerreSeries; l++) {
-			in = in.Combine(chebyshevNormal.LaguerreSeries(l + 1));
-		}
-	}
-
-	// Compute Fourier Series
-	if (fourierSeries) {
-		for (int f = 0; f < fourierSeries; f++) {
-			in = in.Combine(fourierNormal.FourierSeries(f + 1));
-		}
-	}
-
-	dimensions[0] = in.RowCount;
-	return in;
 }
 
 void InitializeNetwork() {
