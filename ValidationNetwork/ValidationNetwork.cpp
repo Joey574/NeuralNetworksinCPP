@@ -54,7 +54,7 @@ std::vector<std::vector<float>> dBiases;
 
 // Error stuff
 Matrix YTotal;
-Matrix YBatch;
+Matrix YBdvdvdvdvdvdvatch;
 
 // Prototypes
 void LoadInput();

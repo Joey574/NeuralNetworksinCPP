@@ -212,7 +212,6 @@ Matrix Matrix::ExtractFeatures(int fourier, int taylor, int chebyshev, int legen
 	Matrix taylorNormal = mat.Normalized(0.0f, 1.0f);
 	Matrix fourierNormal = mat.Normalized(-M_PI, M_PI);
 	Matrix chebyshevNormal = mat.Normalized(-1.0f, 1.0f);
-	mat = mat.Normalized(lowerNormal, upperNormal);
 
 	// Compute Fourier Series
 	if (fourier) {
@@ -249,14 +248,16 @@ Matrix Matrix::ExtractFeatures(int fourier, int taylor, int chebyshev, int legen
 		}
 	}
 
+	mat = mat.Normalized(lowerNormal, upperNormal);
+
 	return mat;
 }
 
 Matrix Matrix::FourierSeries(int order) {
 	return this->Multiply(order).Sin().Combine(this->Multiply(order).Cos());
 }
-Matrix Matrix::TaylorSeries(int orders) {
-	return this->Pow(orders);
+Matrix Matrix::TaylorSeries(int order) {
+	return this->Pow(order);
 }
 Matrix Matrix::ChebyshevSeries(int order) {
 	return this->Acos().Multiply(order).Cos();
