@@ -36,9 +36,9 @@ int batchSize = 500;
 float learningRate = 0.1;
 
 // Save / Load
-bool SaveOnComplete = false;
-bool LoadOnInit = false;
-std::string NetworkPath = "Network.txt";
+bool SaveOnComplete = true;
+bool LoadOnInit = true;
+std::string NetworkPath = "2_64_0_0_0_0_0.txt";
 
 // Inputs
 Matrix input;
@@ -87,12 +87,12 @@ int main()
 
 	srand(time(0));
 
-	LoadInput();
-
 	if (LoadOnInit) {
 		LoadNetwork(NetworkPath);
+		LoadInput();
 	}
 	else {
+		LoadInput();
 		InitializeNetwork();
 	}
 
