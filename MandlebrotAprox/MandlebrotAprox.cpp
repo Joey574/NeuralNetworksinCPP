@@ -28,7 +28,7 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 300;
+int epochs = 100;
 int batchSize = 500;
 float learningRate = 0.025f;
 
@@ -121,12 +121,13 @@ int main()
 
     if (LoadOnInit) {
         LoadNetwork(NetworkPath);
+        MakeDataSet(dataSize);
+
     }
     else {
+        MakeDataSet(dataSize);
         InitializeNetwork();
     }
-
-    MakeDataSet(dataSize);
 
     MakeImageFeatures(imageWidth, imageHeight);
 
@@ -209,6 +210,7 @@ void InitializeNetwork() {
     activation.reserve(weights.size());
     dTotal.reserve(weights.size());
 
+    // Initialize Result Matrices
     for (int i = 0; i < weights.size(); i++) {
         if (resNet.find(i) != resNet.end()) {
             aTotal.emplace_back(weights[i].ColumnCount + dimensions[0], batchSize);
@@ -419,6 +421,7 @@ void TrainNetwork() {
 
     totalStart = std::chrono::high_resolution_clock::now();
 
+    // Get date for file naming
     std::time_t t = std::time(0); std::tm now; localtime_s(&now, &t);
     std::string date = "MandlebrotAproximations\\" + std::to_string(now.tm_mon + 1).append("_").append(std::to_string(now.tm_mday)).append("_")
         .append(std::to_string(now.tm_year - 100));
@@ -442,7 +445,7 @@ void TrainNetwork() {
         }
 
         if (e % epochPerImage == epochPerImage - 1) {
-            std::string filename = (date + "_epoch" + std::to_string(e + 1) + ".bmp");
+            std::string filename = (date + "_ep").append(std::to_string(e + 1)).append(".bmp");
             MakeBMP(filename, imageWidth, imageHeight);
             InitializeResultMatrices(batchSize);
         }
