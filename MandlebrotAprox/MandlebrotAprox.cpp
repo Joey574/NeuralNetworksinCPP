@@ -28,7 +28,7 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 250;
+int epochs = 300;
 int batchSize = 500;
 float learningRate = 0.025f;
 
@@ -60,7 +60,7 @@ std::vector<std::vector<float>> dBiases;
 // Save / Load
 bool SaveOnComplete = true;
 bool LoadOnInit = true;
-std::string NetworkPath = "18_150_256_0_0_0_0.txt";
+std::string NetworkPath = "22_150_256_0_0_0_0.txt";
 
 // Image stuff / Mandlebrot specific
 int dataSize = 20000;
@@ -72,10 +72,10 @@ std::vector<Matrix> imageVector;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 2560;
-int finalHeight = 1440;
+int finalWidth = 800;
+int finalHeight = 450;
 
-int cacheSize = (4 * 1000000);
+int cacheSize = (2.7 * 1000000);
 int pixelPerMatrix;
 
 /*
