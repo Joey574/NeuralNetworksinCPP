@@ -54,7 +54,7 @@ std::vector<std::vector<float>> dBiases;
 
 // Error stuff
 Matrix YTotal;
-Matrix YBdvdvdvdvdvdvatch;
+Matrix YBatch;
 
 // Prototypes
 void LoadInput();
@@ -293,4 +293,41 @@ std::tuple<std::vector<Matrix>, std::vector<Matrix>> ForwardPropogation(Matrix i
 	}
 
 	return std::make_tuple( A, Z );
+}
+
+std::tuple<std::vector<Matrix>, std::vector<std::vector<float>> > BackwardPropogation(Matrix Y, std::vector<Matrix> w, std::vector<std::vector<float>> b,
+	std::vector<Matrix> a, std::vector<Matrix> Z, std::unordered_set<int> res, ) {
+
+
+	// Backward prop
+	dTotal[dTotal.size() - 1] = activation[activation.size() - 1] - YBatch;
+
+	for (int i = dTotal.size() - 2; i > -1; i--) {
+
+		if (resNet.find(i) != resNet.end()) {
+			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].SegmentR(batch.RowCount))).Transpose() * LeakyReLUDerivative(aTotal[i].SegmentR(batch.RowCount)));
+		}
+		else {
+			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * LeakyReLUDerivative(aTotal[i]));
+		}
+	}
+
+	std::for_each(std::execution::par_unseq, dWeights.begin(), dWeights.end(), [&](auto&& item) {
+		size_t i = &item - dWeights.data();
+		item = (dTotal[i].Transpose().DotProduct(i == 0 ? batch.Transpose() : activation[i - 1].Transpose()) * (1.0f / (float)batchSize)).Transpose();
+		dBiases[i] = dTotal[i].Multiply(1.0f / (float)batchSize).RowSums();
+	});
+
+	// Update Network
+	for (int i = 0; i < weights.size(); i++) {
+		weights[i] -= dWeights[i].Multiply(learningRate);
+	}
+
+	for (int i = 0; i < biases.size(); i++) {
+		for (int x = 0; x < biases[i].size(); x++) {
+			biases[i][x] -= (dBiases[i][x] * learningRate);
+		}
+	}
+
+	return std::make_tuple(w, b);
 }
