@@ -60,7 +60,7 @@ std::vector<std::vector<float>> dBiases;
 // Save / Load
 bool SaveOnComplete = true;
 bool LoadOnInit = true;
-std::string NetworkPath = "18_150_256_0_0_0_0.txt";
+std::string NetworkPath = "22_150_256_0_0_0_0.txt";
 
 // Image stuff / Mandlebrot specific
 int dataSize = 20000;
@@ -75,7 +75,7 @@ int imageHeight = 90;
 int finalWidth = 800;
 int finalHeight = 450;
 
-int cacheSize = (4 * 1000000);
+int cacheSize = (2.7 * 1000000);
 int pixelPerMatrix;
 
 /*
