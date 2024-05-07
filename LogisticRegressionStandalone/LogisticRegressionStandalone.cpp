@@ -16,7 +16,7 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 784, 64, 64, 10 };
+std::vector<int> dimensions = { 784, 784, 32, 10 };
 std::unordered_set<int> resNet = {  };
 
 // Feature Extractions
@@ -31,14 +31,14 @@ float lowerNormalized = 0.0f;
 float upperNormalized = 1.0f;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 5;
+int epochs = 100;
 int batchSize = 500;
-float learningRate = 0.1;
+float learningRate = 0.025;
 
 // Save / Load
 bool SaveOnComplete = true;
-bool LoadOnInit = true;
-std::string NetworkPath = "2_64_0_0_0_0_0.txt";
+bool LoadOnInit = false;
+std::string NetworkPath = "1_784_0_0_0_0_0_stepped_down.txt";
 
 // Inputs
 Matrix input;
@@ -430,7 +430,7 @@ void BackwardPropogation() {
 		size_t i = &item - dWeights.data();
 		item = (dTotal[i].Transpose().DotProduct(i == 0 ? batch.Transpose() : activation[i - 1].Transpose()) * (1.0f / (float)batchSize)).Transpose();
 		dBiases[i] = dTotal[i].Multiply(1.0f / (float)batchSize).RowSums();
-		});
+	});
 
 }
 
