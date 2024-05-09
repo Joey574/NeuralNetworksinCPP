@@ -14,7 +14,7 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> vnn_dimensions = { 784, 16, 16, 1 };
+std::vector<int> vnn_dimensions = { 784, 30, 30, 1 };
 std::vector<int> gpnn_dimensions = { 784, 32, 32, 10 };
 std::vector<int> dnn_dimensions = { 784, 32, 32, 10 };
 
@@ -24,9 +24,9 @@ float lowerNormalized = 0.0f;
 float upperNormalized = 1.0f;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 1;
+int epochs = 50;
 int batchSize = 500;
-float learningRate = 0.0025;
+float learningRate = 0.01;
 
 // Feature Engineering
 int fourierSeries = 0;
@@ -59,6 +59,7 @@ void LoadInput();
 int ReadBigInt(std::ifstream* fr);
 
 std::tuple<Matrix, std::vector<float>> MakeDataset(Matrix data, std::vector<float> labels, int num);
+std::vector<float> MakeTestDataset(std::vector<float> labels, int num);
 std::tuple<Matrix, std::vector<float>> GetNextInput(Matrix in, std::vector<float> labels, int size, int i);
 void TrainVNN();
 void TrainGPNN();
@@ -67,7 +68,7 @@ std::tuple<std::vector<Matrix>, std::vector<Matrix>> ForwardPropogation(Matrix i
 	std::vector<Matrix> A, std::vector<Matrix> Z, std::unordered_set<int> res);
 std::tuple<std::vector<Matrix>, std::vector<std::vector<float>> > BackwardPropogation(Matrix in, std::vector<float> labels, std::vector<Matrix> w, std::vector<std::vector<float>> b,
 	std::vector<Matrix> A, std::vector<Matrix> Z, std::unordered_set<int> res);
-float TestNetwork(std::vector<Matrix> w, std::vector<std::vector<float>> b, std::unordered_set<int> res);
+float TestNetwork(std::vector<Matrix> w, std::vector<std::vector<float>> b, std::unordered_set<int> res, std::vector<float> labels);
 
 
 int main()
@@ -281,11 +282,8 @@ void LoadInput() {
 	std::chrono::duration<double, std::milli> time = std::chrono::high_resolution_clock::now() - sTime;
 	std::cout << "Time to load input: " << (time.count() / 1000.00) << " seconds" << std::endl;
 
-	input = input.Normalized(lowerNormalized, upperNormalized);
-	testData = testData.Normalized(lowerNormalized, upperNormalized);
-
-	//input = input.ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries, laguerreSeries, lowerNormalized, upperNormalized);
-	//testData = testData.ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries, laguerreSeries, lowerNormalized, upperNormalized);
+	input = input.ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries, laguerreSeries, lowerNormalized, upperNormalized);
+	testData = testData.ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries, laguerreSeries, lowerNormalized, upperNormalized);
 
 	gpnn_dimensions[0] = input.RowCount;
 	vnn_dimensions[0] = input.RowCount;
@@ -317,7 +315,7 @@ std::tuple<Matrix, std::vector<float>> MakeDataset(Matrix data, std::vector<floa
 	std::unordered_set<int> used (target_index.begin(), target_index.end());
 	std::vector<int> value_index;
 
-	// Get random instances that aren't num equal to size of instances of num
+	// Get random instances that aren't num
 	for (int i = 0; value_index.size() < target_index.size(); i++) {
 
 		int r = rand() % labels.size();
@@ -338,18 +336,31 @@ std::tuple<Matrix, std::vector<float>> MakeDataset(Matrix data, std::vector<floa
 
 	Matrix dataset = Matrix(data.RowCount, all_indexes.size());
 	std::vector<float> dataset_labels;
+	dataset_labels.reserve(all_indexes.size());
 
 	// Actually make dataset
 	for (int i = 0; i < all_indexes.size(); i++) {
-		dataset.SetColumn(i, data.Column(i));
-		dataset_labels.push_back(labels[i]);
+		dataset.SetColumn(i, data.Column(all_indexes[i]));
+
+		labels[all_indexes[i]] == num ? dataset_labels.push_back(1) : dataset_labels.push_back(0);
 	}
 
 	return std::make_tuple(dataset, dataset_labels);
 }
 
+ std::vector<float> MakeTestDataset(std::vector<float> labels, int num) {
+
+	for (int i = 0; i < labels.size(); i++) {
+		labels[i] == num ? labels[i] = 1 : labels[i] = 0;
+	}
+
+	return labels;
+}
+
+
 std::tuple<Matrix, std::vector<float>> GetNextInput(Matrix in, std::vector<float> labels, int size, int i) {
 	std::vector<float> batch_labels = std::vector<float>();
+	batch_labels.reserve(size);
 
 	for (int x = i * size; x < i * size + size; x++) {
 		batch_labels.push_back(labels[x]);
@@ -372,11 +383,10 @@ void TrainVNN() {
 
 	for (int v = 0; v < 10; v++) {
 
-		std::cout << "Training Validation Network: " << v << std::endl;
+		std::cout << "Training Validation Network " << v  << ":" << std::endl;
 
 		// Make dataset containing 50% target value
 		std::tie(vnn_data, vnn_labels) = MakeDataset(input, inputLabels, v);
-
 		int iterations = vnn_data.ColumnCount / batchSize;
 
 		for (int e = 0; e < epochs; e++) {
@@ -392,7 +402,10 @@ void TrainVNN() {
 				std::tie(vnn_activation[v], vnn_total[v]) = ForwardPropogation(vnn_batch, vnn_weights[v], vnn_biases[v], vnn_activation[v], vnn_total[v], vnn_res);
 				std::tie(vnn_weights[v], vnn_biases[v]) = BackwardPropogation(vnn_batch, vnn_batch_labels, vnn_weights[v], vnn_biases[v], vnn_activation[v], vnn_total[v], vnn_res);
 			}
-			float acc = TestNetwork(vnn_weights[v], vnn_biases[v], vnn_res);
+
+			std::vector<float> vnn_test_labels = MakeTestDataset(testLabels, v);
+
+			float acc = TestNetwork(vnn_weights[v], vnn_biases[v], vnn_res, vnn_test_labels);
 
 			time = std::chrono::high_resolution_clock::now() - tStart;
 			std::cout << "Vnn: " << v << " Epoch: " << e << " Accuracy: " << acc << " Epoch Time: ";
@@ -463,10 +476,12 @@ std::tuple<std::vector<Matrix>, std::vector<std::vector<float>> > BackwardPropog
 		dB[i] = dT[i].Multiply(1.0f / (float)in.ColumnCount).RowSums();
 		});
 
+
 	// Update Network
 	for (int i = 0; i < w.size(); i++) {
 		w[i] -= dW[i].Multiply(learningRate);
 	}
+
 
 	for (int i = 0; i < b.size(); i++) {
 		for (int x = 0; x < b[i].size(); x++) {
@@ -478,7 +493,7 @@ std::tuple<std::vector<Matrix>, std::vector<std::vector<float>> > BackwardPropog
 }
 
 
-float TestNetwork(std::vector<Matrix> w, std::vector<std::vector<float>> b, std::unordered_set<int> res) {
+float TestNetwork(std::vector<Matrix> w, std::vector<std::vector<float>> b, std::unordered_set<int> res, std::vector<float> labels) {
 
 	Matrix current_total;
 	Matrix last_activation;
@@ -495,21 +510,19 @@ float TestNetwork(std::vector<Matrix> w, std::vector<std::vector<float>> b, std:
 		else {
 			current_total = (w[i].DotProduct(i == 0 ? testData : last_activation) + b[i]).Transpose();
 		}
-		last_activation = i < w.size() - 1 ? LeakyReLU(current_total) : SoftMax(current_total);
+		last_activation = i < w.size() - 1 ? LeakyReLU(current_total) : Sigmoid(current_total);
 	}
 
 	// Calculate accuracy
-	std::vector<int> predictions = std::vector<int>(last_activation.ColumnCount);
+	std::vector<float> predictions = std::vector<float>(last_activation.ColumnCount);
 	int correct = 0;
 
 	for (int i = 0; i < last_activation.ColumnCount; i++) {
 
-		std::vector<float> val = last_activation.Column(i);
+		predictions[i] = last_activation.Column(i)[0];
+		predictions[i] > 0.5f ? predictions[i] = 1 : predictions[i] = 0;
 
-		auto maxElementIterator = std::max_element(val.begin(), val.end());
-		predictions[i] = std::distance(val.begin(), maxElementIterator);
-
-		if (predictions[i] == testLabels[i]) { correct++; }
+		if (predictions[i] == labels[i]) { correct++; }
 	}
 	return (float)correct / testData.ColumnCount;
 }
