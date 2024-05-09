@@ -16,7 +16,7 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 784, 784, 32, 10 };
+std::vector<int> dimensions = { 784, 32, 32, 10 };
 std::unordered_set<int> resNet = {  };
 
 // Feature Extractions
@@ -31,14 +31,14 @@ float lowerNormalized = 0.0f;
 float upperNormalized = 1.0f;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 100;
+int epochs = 10;
 int batchSize = 500;
 float learningRate = 0.025;
 
 // Save / Load
-bool SaveOnComplete = true;
+bool SaveOnComplete = false;
 bool LoadOnInit = false;
-std::string NetworkPath = "1_784_0_0_0_0_0_stepped_down.txt";
+std::string NetworkPath = "2_32_0_0_0_0_0.txt";
 
 // Inputs
 Matrix input;

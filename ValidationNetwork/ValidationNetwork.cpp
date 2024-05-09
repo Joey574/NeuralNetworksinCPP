@@ -242,6 +242,12 @@ int ReadBigInt(std::ifstream* fr) {
 }
 
 
+std::tuple<Matrix> MakeDataset() {
+
+}
+
+
+
 void TrainVNN() {
 
 	int iterations = input.ColumnCount / batchSize;
@@ -275,6 +281,7 @@ void TrainDNN() {
 
 }
 
+
 std::tuple<std::vector<Matrix>, std::vector<Matrix>> ForwardPropogation(Matrix in, std::vector<Matrix> w, std::vector<std::vector<float>> b, 
 	std::vector<Matrix> A, std::vector<Matrix> Z, std::unordered_set<int> res) {
 
@@ -295,37 +302,47 @@ std::tuple<std::vector<Matrix>, std::vector<Matrix>> ForwardPropogation(Matrix i
 	return std::make_tuple( A, Z );
 }
 
-std::tuple<std::vector<Matrix>, std::vector<std::vector<float>> > BackwardPropogation(Matrix Y, std::vector<Matrix> w, std::vector<std::vector<float>> b,
-	std::vector<Matrix> a, std::vector<Matrix> Z, std::unordered_set<int> res, ) {
+std::tuple<std::vector<Matrix>, std::vector<std::vector<float>> > BackwardPropogation(Matrix in, Matrix Y, std::vector<Matrix> w, std::vector<std::vector<float>> b,
+	std::vector<Matrix> A, std::vector<Matrix> Z, std::unordered_set<int> res) {
 
+	std::vector<Matrix> dT = std::vector<Matrix>();
+	std::vector<Matrix> dW = std::vector<Matrix>();
+	std::vector<std::vector<float>> dB = std::vector<std::vector<float>>();
+	
+	for (int i = 0; i < w.size(); i++) {
+		dT.emplace_back(A[i].RowCount, A[i].ColumnCount);
+
+		dW.emplace_back(w[i].RowCount, w[i].ColumnCount);
+		dB.emplace_back(b[i].size());
+	}
 
 	// Backward prop
-	dTotal[dTotal.size() - 1] = activation[activation.size() - 1] - YBatch;
+	dT[dT.size() - 1] = A[A.size() - 1] - Y;
 
-	for (int i = dTotal.size() - 2; i > -1; i--) {
+	for (int i = dT.size() - 2; i > -1; i--) {
 
-		if (resNet.find(i) != resNet.end()) {
-			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].SegmentR(batch.RowCount))).Transpose() * LeakyReLUDerivative(aTotal[i].SegmentR(batch.RowCount)));
+		if (res.find(i) != res.end()) {
+			dT[i] = ((dT[i + 1].DotProduct(w[i + 1].SegmentR(in.RowCount))).Transpose() * LeakyReLUDerivative(Z[i].SegmentR(in.RowCount)));
 		}
 		else {
-			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * LeakyReLUDerivative(aTotal[i]));
+			dT[i] = ((dT[i + 1].DotProduct(w[i + 1])).Transpose() * LeakyReLUDerivative(Z[i]));
 		}
 	}
 
-	std::for_each(std::execution::par_unseq, dWeights.begin(), dWeights.end(), [&](auto&& item) {
-		size_t i = &item - dWeights.data();
-		item = (dTotal[i].Transpose().DotProduct(i == 0 ? batch.Transpose() : activation[i - 1].Transpose()) * (1.0f / (float)batchSize)).Transpose();
-		dBiases[i] = dTotal[i].Multiply(1.0f / (float)batchSize).RowSums();
+	std::for_each(std::execution::par, dW.begin(), dW.end(), [&](auto&& item) {
+		size_t i = &item - dW.data();
+		item = (dT[i].Transpose().DotProduct(i == 0 ? in.Transpose() : A[i - 1].Transpose()) * (1.0f / (float)in.ColumnCount)).Transpose();
+		dB[i] = dT[i].Multiply(1.0f / (float)in.ColumnCount).RowSums();
 	});
 
 	// Update Network
-	for (int i = 0; i < weights.size(); i++) {
-		weights[i] -= dWeights[i].Multiply(learningRate);
+	for (int i = 0; i < w.size(); i++) {
+		w[i] -= dW[i].Multiply(learningRate);
 	}
 
-	for (int i = 0; i < biases.size(); i++) {
-		for (int x = 0; x < biases[i].size(); x++) {
-			biases[i][x] -= (dBiases[i][x] * learningRate);
+	for (int i = 0; i < b.size(); i++) {
+		for (int x = 0; x < b[i].size(); x++) {
+			b[i][x] -= (dB[i][x] * learningRate);
 		}
 	}
 

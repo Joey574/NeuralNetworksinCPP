@@ -21,8 +21,9 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 1 };
-std::unordered_set<int> resNet = { 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18 };
+std::vector<int> dimensions = { 2, 32, 32, 32, 32, 32, 32, 32, 32, 1 };
+std::unordered_set<int> resNet = {  };
+std::unordered_set<int> batch_normalization = {  };
 
 float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
@@ -30,10 +31,10 @@ float upperNormalized = M_PI;
 Matrix::init initType = Matrix::init::He;
 int epochs = 100;
 int batchSize = 500;
-float learningRate = 0.025f;
+float learningRate = 0.02f;
 
 // Feature Engineering
-int fourierSeries = 256;
+int fourierSeries = 64;
 int chebyshevSeries = 0;
 int taylorSeries = 0;
 int legendreSeries = 0;
@@ -58,15 +59,15 @@ std::vector<Matrix> dWeights;
 std::vector<std::vector<float>> dBiases;
 
 // Save / Load
-bool SaveOnComplete = true;
-bool LoadOnInit = true;
+bool SaveOnComplete = false;
+bool LoadOnInit = false;
 std::string NetworkPath = "22_150_256_0_0_0_0.txt";
 
 // Image stuff / Mandlebrot specific
 int dataSize = 20000;
 int mandlebrotIterations = 500;
 int epochPerDataset = 5;
-int epochPerImage = 25;
+int epochPerImage = 5;
 
 std::vector<Matrix> imageVector;
 int imageWidth = 160;
@@ -75,7 +76,7 @@ int imageHeight = 90;
 int finalWidth = 800;
 int finalHeight = 450;
 
-int cacheSize = (2.7 * 1000000);
+int cacheSize = (4 * 1000000);
 int pixelPerMatrix;
 
 /*
@@ -483,6 +484,10 @@ void ForwardPropogation(Matrix in) {
             aTotal[i] = (weights[i].DotProduct(i == 0 ? in : activation[i - 1]) + biases[i]).Transpose();
         }
         activation[i] = i < aTotal.size() - 1 ? LeakyReLU(aTotal[i]) : Sigmoid(aTotal[i]);
+
+        if (batch_normalization.find(i) != batch_normalization.end()) {
+            activation[i].Normalized(lowerNormalized, upperNormalized);
+        }
     }
 }
 
