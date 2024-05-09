@@ -26,9 +26,9 @@ float lowerNormalized = 0.0f;
 float upperNormalized = 1.0f;
 
 Matrix::init initType = Matrix::init::He;
-int vnn_epochs = 50;
+int vnn_epochs = 1;
 int batchSize = 500;
-float learningRate = 0.01;
+float learningRate = 0.02;
 
 int test_a_size = 1000;
 
@@ -47,13 +47,23 @@ Matrix YTotal;
 std::vector<float> inputLabels;
 std::vector<float> testLabels;
 
-// VNN weights and biases
+// VNN weights, biases, and results
 std::vector<std::vector<Matrix>> vnn_weights;
 std::vector<std::vector<std::vector<float>>> vnn_biases;
 
-// VNN results
 std::vector<std::vector<Matrix>> vnn_total;
 std::vector<std::vector<Matrix>> vnn_activation;
+
+std::vector<Matrix> vnn_final_activations;
+std::vector<float> vnn_final_accuracy;
+
+// DNNweights, biases, and results
+std::vector<Matrix> dnn_weights;
+std::vector<std::vector<float>> dnn_biases;
+
+std::vector<Matrix> dnn_total;
+std::vector<Matrix> dnn_activation;
+
 
 // Prototypes
 void CleanTime(double time);
@@ -67,7 +77,7 @@ std::vector<float> MakeTestDataset(std::vector<float> labels, int num);
 std::tuple<Matrix, std::vector<float>> GetNextInput(Matrix in, std::vector<float> labels, int size, int i);
 void TrainVNN(int epochs, Matrix vnn_test_data, std::vector<float> vnn_test_data_labels);
 void TrainGPNN();
-void TrainDNN();
+void TrainDNN(int epochs, Matrix dnn_test_data, std::vector<float> dnn_test_data_labels);
 std::tuple<std::vector<Matrix>, std::vector<Matrix>> ForwardPropogation(Matrix in, std::vector<Matrix> w, std::vector<std::vector<float>> b,
 	std::vector<Matrix> A, std::vector<Matrix> Z, std::unordered_set<int> res);
 std::tuple<std::vector<Matrix>, std::vector<std::vector<float>> > BackwardPropogation(Matrix in, std::vector<float> labels, std::vector<Matrix> w, std::vector<std::vector<float>> b,
@@ -81,6 +91,7 @@ int main()
 
 	InitializeNetworks();
 
+	// Get first 1000 data points in test set
 	std::vector<float> test_a_labels;
 	for (int i = 0; i < test_a_size; i++) {
 		test_a_labels.push_back(testLabels[i]);
@@ -168,27 +179,32 @@ void InitializeNetworks() {
 
 	// TODO: Initialize gpnn
 
-	// TODO: Initialize dnn
+	// Initialize dnn
+	dnn_weights.reserve(dnn_dimensions.size() - 1);
+	dnn_biases.reserve(dnn_dimensions.size() - 1);
+
+	dnn_total.reserve(dnn_dimensions.size() - 1);
+	dnn_activation.reserve(dnn_dimensions.size() - 1);
+
 	for (int i = 0; i < dnn_dimensions.size() - 1; i++) {
 
 		if (dnn_res.find(i - 1) != dnn_res.end()) {
-			weight.emplace_back(dnn_dimensions[i] + dnn_dimensions[0], dnn_dimensions[i + 1], initType);
+			dnn_weights.emplace_back(dnn_dimensions[i] + dnn_dimensions[0], dnn_dimensions[i + 1], initType);
 		}
 		else {
-			weight.emplace_back(dnn_dimensions[i], dnn_dimensions[i + 1], initType);
+			dnn_weights.emplace_back(dnn_dimensions[i], dnn_dimensions[i + 1], initType);
 		}
-		bias.emplace_back(std::vector<float>(dnn_dimensions[i + 1], 0));
-
+		dnn_biases.emplace_back(std::vector<float>(dnn_dimensions[i + 1], 0));
 	}
 
-	for (int i = 0; i < weight.size(); i++) {
+	for (int i = 0; i < dnn_weights.size(); i++) {
 		if (dnn_res.find(i) != dnn_res.end()) {
-			total.emplace_back(weight[i].ColumnCount + dnn_dimensions[0], batchSize);
+			dnn_total.emplace_back(dnn_weights[i].ColumnCount + dnn_dimensions[0], batchSize);
 		}
 		else {
-			total.emplace_back(weight[i].ColumnCount, batchSize);
+			dnn_total.emplace_back(dnn_weights[i].ColumnCount, batchSize);
 		}
-		activation.emplace_back(total[i].RowCount, batchSize);
+		dnn_activation.emplace_back(dnn_weights[i].RowCount, batchSize);
 	}
 	
 
@@ -424,6 +440,7 @@ void TrainVNN(int epochs, Matrix vnn_test_data, std::vector<float> vnn_test_data
 		// Make dataset containing 50% target value
 		std::tie(vnn_data, vnn_labels) = MakeDataset(input, inputLabels, v);
 		int iterations = vnn_data.ColumnCount / batchSize;
+		float acc;
 
 		for (int e = 0; e < epochs; e++) {
 
@@ -441,14 +458,19 @@ void TrainVNN(int epochs, Matrix vnn_test_data, std::vector<float> vnn_test_data
 
 			std::vector<float> vnn_test_labels = MakeTestDataset(vnn_test_data_labels, v);
 
-			float acc = TestNetwork(vnn_weights[v], vnn_biases[v], vnn_res, vnn_test_data, vnn_test_labels);
-
-			// TODO: Store best weights for later use
+			acc = TestNetwork(vnn_weights[v], vnn_biases[v], vnn_res, vnn_test_data, vnn_test_labels);
 
 			time = std::chrono::high_resolution_clock::now() - tStart;
 			std::cout << "Vnn: " << v << " Epoch: " << e << " Accuracy: " << acc << " Epoch Time: ";
 			CleanTime(time.count());
 		}
+
+		// Get and store activation of all training samples
+		std::tie(vnn_activation[v], vnn_total[v]) = ForwardPropogation(input, vnn_weights[v], vnn_biases[v], vnn_activation[v], vnn_total[v], vnn_res);
+		vnn_final_activations.push_back(vnn_activation[v][vnn_activation[v].size() - 1]);
+
+		// Most recent accuracy score on first test dataset
+		vnn_final_accuracy.push_back(acc);
 
 		// TODO: Rollback to best weights after network training done
 	}
@@ -458,7 +480,7 @@ void TrainGPNN() {
 
 }
 
-void TrainDNN() {
+void TrainDNN(int epochs, Matrix dnn_test_data, std::vector<float> dnn_test_data_labels) {
 
 }
 
