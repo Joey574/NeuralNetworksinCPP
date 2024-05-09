@@ -136,7 +136,13 @@
   <ItemGroup>
     <ClCompile Include="..\LogisticRegressionStandalone\ActivationFunctions.cpp" />
     <ClCompile Include="..\LogisticRegressionStandalone\Matrix.cpp" />
+    <ClCompile Include="DnnHelpers.cpp" />
     <ClCompile Include="ValidationNetwork.cpp" />
+    <ClCompile Include="VnnHelpers.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="DnnHelpers.h" />
+    <ClInclude Include="VnnHelpers.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
