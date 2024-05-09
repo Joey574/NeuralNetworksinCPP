@@ -14,7 +14,9 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 784, 16, 16, 10 };
+std::vector<int> vnn_dimensions = { 784, 16, 16, 1 };
+std::vector<int> gpnn_dimensions = { 784, 32, 32, 10 };
+std::vector<int> dnn_dimensions = { 784, 32, 32, 10 };
 std::unordered_set<int> resNet = {  };
 int fourierSeries = 0;
 int taylorSeries = 0;
@@ -27,30 +29,16 @@ int epochs = 100;
 int batchSize = 500;
 float learningRate = 0.05;
 
-// Save / Load
-bool SaveOnComplete = false;
-bool LoadOnInit = false;
-std::string NetworkPath = "Network.txt";
-
 // Inputs
 Matrix input;
 Matrix testData;
-Matrix batch;
 
 std::vector<int> inputLabels;
 std::vector<int> testLabels;
-std::vector<int> batchLabels;
 
 // Neural Network Matrices
 std::vector<Matrix> weights;
 std::vector<std::vector<float>> biases;
-
-std::vector<Matrix> activation;
-std::vector<Matrix> aTotal;
-
-std::vector<Matrix> dTotal;
-std::vector<Matrix> dWeights;
-std::vector<std::vector<float>> dBiases;
 
 // Error stuff
 Matrix YTotal;
@@ -60,10 +48,12 @@ Matrix YBatch;
 void LoadInput();
 int ReadBigInt(std::ifstream* fr);
 std::tuple<Matrix, Matrix, std::vector<int>> ShuffleInput(Matrix in, Matrix Y, std::vector<int> labels);
+std::tuple<Matrix, Matrix, std::vector<int>> MakeDataset(Matrix data, Matrix Y, std::vector<int> labels, int num);
 
 int main()
 {
 	LoadInput();
+	MakeDataset(input, YTotal, inputLabels, 1);
 }
 
 
@@ -242,27 +232,70 @@ int ReadBigInt(std::ifstream* fr) {
 }
 
 
-std::tuple<Matrix> MakeDataset() {
+std::tuple<Matrix, Matrix, std::vector<int>> MakeDataset(Matrix data, Matrix Y, std::vector<int> labels, int num) {
 
+	// Find all instances of num in data
+	std::vector<int> target_index;
+	for (int i = 0; i < labels.size(); i++) {
+		if (labels[i] == num) {
+			target_index.push_back(i);
+		}
+	}
+
+	std::unordered_set<int> used (target_index.begin(), target_index.end());
+	std::vector<int> value_index;
+
+	// Get random instances that aren't num equal to size of instances of num
+	for (int i = 0; value_index.size() < target_index.size(); i++) {
+
+		int r = rand() % labels.size();
+
+		if (used.find(r) == used.end()) {
+			used.insert(r);
+
+			value_index.push_back(r);
+		}
+	}
+
+	// Get all indexes used
+	std::vector<int> all_indexes;
+
+	all_indexes.reserve(used.size());
+	all_indexes.insert(all_indexes.end(), target_index.begin(), target_index.end());
+	all_indexes.insert(all_indexes.end(), value_index.begin(), value_index.end());
+
+	Matrix dataset = Matrix(data.RowCount, all_indexes.size());
+	Matrix dataset_y = Matrix(Y.RowCount, all_indexes.size());
+	std::vector<int> dataset_labels;
+
+	// Actually make dataset
+	for (int i = 0; i < all_indexes.size(); i++) {
+		dataset.SetColumn(i, data.Column(i));
+		dataset_y.SetColumn(i, Y.Column(i));
+		dataset_labels.push_back(labels[i]);
+	}
+
+	return std::make_tuple(dataset, dataset_y, dataset_labels);
 }
 
 
 
 void TrainVNN() {
 
-	int iterations = input.ColumnCount / batchSize;
-
-	Matrix VNNData;
-	Matrix VNNY;
-	std::vector<int> VNNLabels;
+	Matrix VNN_Data;
+	Matrix VNN_Y;
+	std::vector<int> VNN_Labels;
 
 	for (int v = 0; v < 10; v++) {
 
-		// TODO Make dataset -> want 50% target value + 50% random spread of other
+		// Make dataset containing 50% target value
+		std::tie(VNN_Data, VNN_Y, VNN_Labels) = MakeDataset(input, YTotal, inputLabels, v);
+
+		int iterations = VNN_Data.ColumnCount / batchSize;
 
 		for (int e = 0; e < epochs; e++) {
 
-			std::tie(VNNData, VNNY, VNNLabels) = ShuffleInput(VNNData, VNNY, VNNLabels);
+			std::tie(VNN_Data, VNN_Y, VNN_Labels) = ShuffleInput(VNN_Data, VNN_Y, VNN_Labels);
 
 			for (int i = 0; i < iterations; i++) {
 
