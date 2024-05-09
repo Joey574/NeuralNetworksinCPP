@@ -166,9 +166,9 @@ void InitializeNetworks() {
 		vnn_activation.push_back(activation);
 	}
 
-	// Initialize gpnn
+	// TODO: Initialize gpnn
 
-	// Initialize dnn
+	// TODO: Initialize dnn
 	for (int i = 0; i < dnn_dimensions.size() - 1; i++) {
 
 		if (dnn_res.find(i - 1) != dnn_res.end()) {
