@@ -209,9 +209,13 @@ std::vector<float> Matrix::Row(int index) {
 Matrix Matrix::ExtractFeatures(int fourier, int taylor, int chebyshev, int legendre, int laguerre, float lowerNormal, float upperNormal) {
 	// Normalize
 	Matrix mat = this->matrix;
-	Matrix taylorNormal = mat.Normalized(0.0f, 1.0f);
-	Matrix fourierNormal = mat.Normalized(-M_PI, M_PI);
-	Matrix chebyshevNormal = mat.Normalized(-1.0f, 1.0f);
+	Matrix taylorNormal;
+	Matrix fourierNormal;
+	Matrix chebyshevNormal;
+
+	if (fourier) { fourierNormal = mat.Normalized(-M_PI, M_PI); }
+	if (taylor) { taylorNormal = mat.Normalized(0.0f, 1.0f); }
+	if (chebyshev + legendre + laguerre) { chebyshevNormal = mat.Normalized(-1.0f, 1.0f); }
 
 	// Compute Fourier Series
 	if (fourier) {
