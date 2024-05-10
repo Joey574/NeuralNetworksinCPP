@@ -17,7 +17,7 @@ std::tuple<std::vector<Matrix>, std::vector<std::vector<float>> > BackwardPropog
 
 	// Backward prop
 	dT[dT.size() - 1] = A[A.size() - 1] - y;
-
+	
 	for (int i = dT.size() - 2; i > -1; i--) {
 
 		if (res.find(i) != res.end()) {
@@ -32,14 +32,12 @@ std::tuple<std::vector<Matrix>, std::vector<std::vector<float>> > BackwardPropog
 		size_t i = &item - dW.data();
 		item = (dT[i].Transpose().DotProduct(i == 0 ? in.Transpose() : A[i - 1].Transpose()) * (1.0f / (float)in.ColumnCount)).Transpose();
 		dB[i] = dT[i].Multiply(1.0f / (float)in.ColumnCount).RowSums();
-		});
-
+	});
 
 	// Update Network
 	for (int i = 0; i < w.size(); i++) {
 		w[i] -= dW[i].Multiply(learning_rate);
 	}
-
 
 	for (int i = 0; i < b.size(); i++) {
 		for (int x = 0; x < b[i].size(); x++) {
@@ -50,10 +48,9 @@ std::tuple<std::vector<Matrix>, std::vector<std::vector<float>> > BackwardPropog
 	return std::make_tuple(w, b);
 }
 
-
 float DNN_Accuracy(Matrix last_activation, std::vector<float> labels) {
 	// Calculate accuracy
-	std::vector<float> predictions = std::vector<float>(last_activation.ColumnCount);
+	std::vector<int> predictions = std::vector<int>(last_activation.ColumnCount);
 	int correct = 0;
 
 	for (int i = 0; i < last_activation.ColumnCount; i++) {
@@ -63,7 +60,7 @@ float DNN_Accuracy(Matrix last_activation, std::vector<float> labels) {
 		auto maxElementIterator = std::max_element(a.begin(), a.end());
 		predictions[i] = std::distance(a.begin(), maxElementIterator);
 
-		if (predictions[i] == labels[i]) { correct++; }
+		if (predictions[i] == (int)labels[i]) { correct++; }
 	}
 	return (float)correct / labels.size();
 }

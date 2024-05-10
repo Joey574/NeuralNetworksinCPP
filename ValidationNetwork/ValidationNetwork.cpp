@@ -18,7 +18,7 @@
 // Hyperparameters
 std::vector<int> vnn_dimensions = { 784, 30, 30, 1 };
 std::vector<int> gpnn_dimensions = { 784, 32, 32, 10 };
-std::vector<int> dnn_dimensions = { 20, 32, 32, 10 };
+std::vector<int> dnn_dimensions = { 20, 32, 32, 32, 10 };
 
 std::unordered_set<int> vnn_res = {  }; 
 std::unordered_set<int> gpnn_res = {  }; 
@@ -83,7 +83,7 @@ void TrainGPNN();
 void TrainDNN(int epochs, Matrix dnn_test_data, std::vector<float> dnn_test_data_labels);
 std::tuple<std::vector<Matrix>, std::vector<Matrix>> ForwardPropogation(Matrix in, std::vector<Matrix> w, std::vector<std::vector<float>> b,
 	std::vector<Matrix> A, std::vector<Matrix> Z, std::unordered_set<int> res, Matrix(*operation)(Matrix mat));
-Matrix LastActivation(std::vector<Matrix> w, std::vector<std::vector<float>> b, std::unordered_set<int> res, Matrix test_data);
+Matrix LastActivation(std::vector<Matrix> w, std::vector<std::vector<float>> b, std::unordered_set<int> res, Matrix test_data, Matrix(*operation)(Matrix mat));
 
 
 int main()
@@ -456,7 +456,7 @@ void TrainVNN(int epochs, Matrix vnn_test_data, std::vector<float> vnn_test_data
 
 			std::vector<float> vnn_test_labels = MakeTestDataset(vnn_test_data_labels, v);
 
-			acc = VNN_Accuracy(LastActivation(vnn_weights[v], vnn_biases[v], vnn_res, vnn_test_data), vnn_test_labels);
+			acc = VNN_Accuracy(LastActivation(vnn_weights[v], vnn_biases[v], vnn_res, vnn_test_data, &Sigmoid), vnn_test_labels);
 
 			time = std::chrono::high_resolution_clock::now() - tStart;
 			std::cout << "Vnn: " << v << " Epoch: " << e << " Accuracy: " << acc << " Epoch Time: ";
@@ -490,16 +490,17 @@ void TrainDNN(int epochs, Matrix test_b_data, std::vector<float> dnn_test_data_l
 
 	Matrix dnn_test_data = Matrix(0, test_b_data.ColumnCount);
 
-	// TODO: Make dataset
-	
+	// Make dataset
 	for (int v = 0; v < vnn_final_activations.size(); v++) {
 		dnn_dataset = dnn_dataset.Combine(vnn_final_activations[v]);
 	}
 
+	// Make test dataset
 	for (int v = 0; v < vnn_final_activations.size(); v++) {
-		dnn_test_data = dnn_test_data.Combine(LastActivation(vnn_weights[v], vnn_biases[v], vnn_res, test_b_data));
+		dnn_test_data = dnn_test_data.Combine(LastActivation(vnn_weights[v], vnn_biases[v], vnn_res, test_b_data, &Sigmoid));
 	}
 
+	// Add accuracy on test_a to dataset
 	for (int v = 0; v < vnn_final_accuracy.size(); v++) {
 		std::vector<float> temp = std::vector<float>(input.ColumnCount, vnn_final_accuracy[v]);
 		Matrix a = Matrix(1, temp.size());
@@ -508,6 +509,7 @@ void TrainDNN(int epochs, Matrix test_b_data, std::vector<float> dnn_test_data_l
 		dnn_dataset = dnn_dataset.Combine(a);
 	}
 
+	// Add accuracy on test_a to test_b dataset
 	for (int v = 0; v < vnn_final_accuracy.size(); v++) {
 		std::vector<float> temp = std::vector<float>(test_b_data.ColumnCount, vnn_final_accuracy[v]);
 		Matrix a = Matrix(1, temp.size());
@@ -521,7 +523,6 @@ void TrainDNN(int epochs, Matrix test_b_data, std::vector<float> dnn_test_data_l
 	std::cout << "Training Decision Network:" << std::endl;
 
 	int iterations = dnn_dataset.ColumnCount / batchSize;
-	float acc = -1.0f;
 
 	for (int e = 0; e < epochs; e++) {
 
@@ -532,11 +533,10 @@ void TrainDNN(int epochs, Matrix test_b_data, std::vector<float> dnn_test_data_l
 			std::tie(dnn_batch_dataset, dnn_batch_y, dnn_batch_labels) = GetNextInput(dnn_dataset, dnn_y, dnn_dataset_labels, batchSize, i);
 
 			std::tie(dnn_activation, dnn_total) = ForwardPropogation(dnn_batch_dataset, dnn_weights, dnn_biases, dnn_activation, dnn_total, dnn_res, &SoftMax);
-			std::tie(dnn_weights, dnn_biases) = BackwardPropogation(dnn_batch_dataset, dnn_batch_y, dnn_weights, dnn_biases, dnn_activation,
-				dnn_total, dnn_res, learningRate);
+			std::tie(dnn_weights, dnn_biases) = BackwardPropogation(dnn_batch_dataset, dnn_batch_y, dnn_weights, dnn_biases, dnn_activation, dnn_total, dnn_res, learningRate);
 		}
 
-		acc = DNN_Accuracy(LastActivation(dnn_weights, dnn_biases, dnn_res, dnn_test_data), dnn_test_data_labels);
+		float acc = DNN_Accuracy(LastActivation(dnn_weights, dnn_biases, dnn_res, dnn_test_data, &SoftMax), dnn_test_data_labels);
 
 		time = std::chrono::high_resolution_clock::now() - tStart;
 		std::cout << "Dnn Epoch: " << e << " Accuracy: " << acc << " Epoch Time: ";
@@ -559,14 +559,14 @@ std::tuple<std::vector<Matrix>, std::vector<Matrix>> ForwardPropogation(Matrix i
 		else {
 			Z[i] = (w[i].DotProduct(i == 0 ? in : A[i - 1]) + b[i]).Transpose();
 		}
-		A[i] = i < Z.size() - 1 ? LeakyReLU(Z[i]) : (operation)(Z[i]);
+		A[i] = i < Z.size() - 1 ? LeakyReLU(Z[i]) : (*operation)(Z[i]);
 	}
 
 	return std::make_tuple( A, Z );
 }
 
 
-Matrix LastActivation(std::vector<Matrix> w, std::vector<std::vector<float>> b, std::unordered_set<int> res, Matrix test_data) {
+Matrix LastActivation(std::vector<Matrix> w, std::vector<std::vector<float>> b, std::unordered_set<int> res, Matrix test_data, Matrix(*operation)(Matrix mat)) {
 	
 	Matrix current_total;
 	Matrix last_activation;
@@ -583,7 +583,7 @@ Matrix LastActivation(std::vector<Matrix> w, std::vector<std::vector<float>> b, 
 		else {
 			current_total = (w[i].DotProduct(i == 0 ? test_data : last_activation) + b[i]).Transpose();
 		}
-		last_activation = i < w.size() - 1 ? LeakyReLU(current_total) : Sigmoid(current_total);
+		last_activation = i < w.size() - 1 ? LeakyReLU(current_total) : (*operation)(current_total);
 	}
 	return last_activation;
 }
