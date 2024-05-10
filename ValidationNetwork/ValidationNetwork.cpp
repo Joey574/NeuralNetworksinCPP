@@ -28,9 +28,11 @@ float lowerNormalized = 0.0f;
 float upperNormalized = 1.0f;
 Matrix::init initType = Matrix::init::He;
 int batchSize = 500;
-float learningRate = 0.02;
 
-int vnn_epochs = 1;
+float vnn_learning_rate = 0.01f;
+float dnn_learning_rate = 0.2f;
+
+int vnn_epochs = 25;
 int dnn_epochs = 10;
 
 int test_a_size = 1000;
@@ -444,6 +446,9 @@ void TrainVNN(int epochs, Matrix vnn_test_data, std::vector<float> vnn_test_data
 		for (int e = 0; e < epochs; e++) {
 
 			tStart = std::chrono::high_resolution_clock::now();
+			
+			// Make dataset containing 50% target value
+			//std::tie(vnn_data, vnn_labels) = MakeDataset(input, inputLabels, v);
 			std::tie(vnn_data, vnn_labels) = ShuffleInput(vnn_data, vnn_labels);
 
 			for (int i = 0; i < iterations; i++) {
@@ -451,7 +456,7 @@ void TrainVNN(int epochs, Matrix vnn_test_data, std::vector<float> vnn_test_data
 				std::tie(vnn_batch, vnn_batch_labels) = GetNextInput(vnn_data, vnn_labels, batchSize, i);
 
 				std::tie(vnn_activation[v], vnn_total[v]) = ForwardPropogation(vnn_batch, vnn_weights[v], vnn_biases[v], vnn_activation[v], vnn_total[v], vnn_res, &Sigmoid);
-				std::tie(vnn_weights[v], vnn_biases[v]) = BackwardPropogation(vnn_batch, vnn_batch_labels, vnn_weights[v], vnn_biases[v], vnn_activation[v], vnn_total[v], vnn_res, learningRate);
+				std::tie(vnn_weights[v], vnn_biases[v]) = BackwardPropogation(vnn_batch, vnn_batch_labels, vnn_weights[v], vnn_biases[v], vnn_activation[v], vnn_total[v], vnn_res, vnn_learning_rate);
 			}
 
 			std::vector<float> vnn_test_labels = MakeTestDataset(vnn_test_data_labels, v);
@@ -527,13 +532,13 @@ void TrainDNN(int epochs, Matrix test_b_data, std::vector<float> dnn_test_data_l
 	for (int e = 0; e < epochs; e++) {
 
 		tStart = std::chrono::high_resolution_clock::now();
-		std::tie(dnn_batch_dataset, dnn_batch_y, dnn_batch_labels) = ShuffleInput(dnn_dataset, dnn_y, dnn_dataset_labels);
+		std::tie(dnn_dataset, dnn_y, dnn_dataset_labels) = ShuffleInput(dnn_dataset, dnn_y, dnn_dataset_labels);
 
 		for (int i = 0; i < iterations; i++) {
 			std::tie(dnn_batch_dataset, dnn_batch_y, dnn_batch_labels) = GetNextInput(dnn_dataset, dnn_y, dnn_dataset_labels, batchSize, i);
 
 			std::tie(dnn_activation, dnn_total) = ForwardPropogation(dnn_batch_dataset, dnn_weights, dnn_biases, dnn_activation, dnn_total, dnn_res, &SoftMax);
-			std::tie(dnn_weights, dnn_biases) = BackwardPropogation(dnn_batch_dataset, dnn_batch_y, dnn_weights, dnn_biases, dnn_activation, dnn_total, dnn_res, learningRate);
+			std::tie(dnn_weights, dnn_biases) = BackwardPropogation(dnn_batch_dataset, dnn_batch_y, dnn_weights, dnn_biases, dnn_activation, dnn_total, dnn_res, dnn_learning_rate);
 		}
 
 		float acc = DNN_Accuracy(LastActivation(dnn_weights, dnn_biases, dnn_res, dnn_test_data, &SoftMax), dnn_test_data_labels);
@@ -561,6 +566,9 @@ std::tuple<std::vector<Matrix>, std::vector<Matrix>> ForwardPropogation(Matrix i
 		}
 		A[i] = i < Z.size() - 1 ? LeakyReLU(Z[i]) : (*operation)(Z[i]);
 	}
+
+	//if (Z[Z.size() - 1].RowCount > 1) { std::cout << A[Z.size() - 1].Transpose().SegmentR(0, 5).ToString() << std::endl; }
+	//if (Z[Z.size() - 1].RowCount > 1) { std::cout << Z[Z.size() - 1].Transpose().SegmentR(0, 5).ToString() << std::endl; }
 
 	return std::make_tuple( A, Z );
 }
