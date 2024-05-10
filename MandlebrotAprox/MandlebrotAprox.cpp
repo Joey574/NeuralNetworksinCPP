@@ -29,9 +29,9 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 350;
+int epochs = 200;
 int batchSize = 500;
-float learningRate = 0.02f;
+float learningRate = 0.01f;
 
 // Feature Engineering
 int fourierSeries = 64;
@@ -59,22 +59,22 @@ std::vector<Matrix> dWeights;
 std::vector<std::vector<float>> dBiases;
 
 // Save / Load
-bool SaveOnComplete = false;
-bool LoadOnInit = false;
+bool SaveOnComplete = true;
+bool LoadOnInit = true;
 std::string NetworkPath = "22_150_256_0_0_0_0.txt";
 
 // Image stuff / Mandlebrot specific
 int dataSize = 20000;
 int mandlebrotIterations = 500;
 int epochPerDataset = 5;
-int epochPerImage = 5;
+int epochPerImage = 25;
 
 std::vector<Matrix> imageVector;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 800;
-int finalHeight = 450;
+int finalWidth = 1920;
+int finalHeight = 1080;
 
 int cacheSize = (4 * 1000000);
 int pixelPerMatrix;
