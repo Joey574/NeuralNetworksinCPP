@@ -12,21 +12,28 @@
 
 #include "Matrix.h"
 #include "ActivationFunctions.h"
+#include "VnnHelpers.h"
+#include "DnnHelpers.h"
 
 // Hyperparameters
-std::vector<int> vnn_dimensions = { 784, 16, 16, 1 };
+std::vector<int> vnn_dimensions = { 784, 30, 30, 1 };
 std::vector<int> gpnn_dimensions = { 784, 32, 32, 10 };
-std::vector<int> dnn_dimensions = { 784, 32, 32, 10 };
+std::vector<int> dnn_dimensions = { 20, 32, 32, 10 };
 
 std::unordered_set<int> vnn_res = {  }; 
+std::unordered_set<int> gpnn_res = {  }; 
+std::unordered_set<int> dnn_res = {  }; 
 
 float lowerNormalized = 0.0f;
 float upperNormalized = 1.0f;
-
 Matrix::init initType = Matrix::init::He;
-int epochs = 1;
 int batchSize = 500;
-float learningRate = 0.0025;
+float learningRate = 0.02;
+
+int vnn_epochs = 1;
+int dnn_epochs = 10;
+
+int test_a_size = 1000;
 
 // Feature Engineering
 int fourierSeries = 0;
@@ -43,31 +50,40 @@ Matrix YTotal;
 std::vector<float> inputLabels;
 std::vector<float> testLabels;
 
-// VNN weights and biases
+// VNN weights, biases, and results
 std::vector<std::vector<Matrix>> vnn_weights;
 std::vector<std::vector<std::vector<float>>> vnn_biases;
 
-// VNN results
 std::vector<std::vector<Matrix>> vnn_total;
 std::vector<std::vector<Matrix>> vnn_activation;
+
+std::vector<Matrix> vnn_final_activations;
+std::vector<float> vnn_final_accuracy;
+
+// DNNweights, biases, and results
+std::vector<Matrix> dnn_weights;
+std::vector<std::vector<float>> dnn_biases;
+
+std::vector<Matrix> dnn_total;
+std::vector<Matrix> dnn_activation;
+
 
 // Prototypes
 void CleanTime(double time);
 void InitializeNetworks();
-std::tuple<Matrix, std::vector<float>> ShuffleInput(Matrix in, std::vector<float> labels);
 void LoadInput();
 int ReadBigInt(std::ifstream* fr);
 
 std::tuple<Matrix, std::vector<float>> MakeDataset(Matrix data, std::vector<float> labels, int num);
+std::vector<float> MakeTestDataset(std::vector<float> labels, int num);
 std::tuple<Matrix, std::vector<float>> GetNextInput(Matrix in, std::vector<float> labels, int size, int i);
-void TrainVNN();
+std::tuple<Matrix, Matrix, std::vector<float>> GetNextInput(Matrix in, Matrix y, std::vector<float> labels, int size, int i);
+void TrainVNN(int epochs, Matrix vnn_test_data, std::vector<float> vnn_test_data_labels);
 void TrainGPNN();
-void TrainDNN();
+void TrainDNN(int epochs, Matrix dnn_test_data, std::vector<float> dnn_test_data_labels);
 std::tuple<std::vector<Matrix>, std::vector<Matrix>> ForwardPropogation(Matrix in, std::vector<Matrix> w, std::vector<std::vector<float>> b,
-	std::vector<Matrix> A, std::vector<Matrix> Z, std::unordered_set<int> res);
-std::tuple<std::vector<Matrix>, std::vector<std::vector<float>> > BackwardPropogation(Matrix in, std::vector<float> labels, std::vector<Matrix> w, std::vector<std::vector<float>> b,
-	std::vector<Matrix> A, std::vector<Matrix> Z, std::unordered_set<int> res);
-float TestNetwork(std::vector<Matrix> w, std::vector<std::vector<float>> b, std::unordered_set<int> res);
+	std::vector<Matrix> A, std::vector<Matrix> Z, std::unordered_set<int> res, Matrix(*operation)(Matrix mat));
+Matrix LastActivation(std::vector<Matrix> w, std::vector<std::vector<float>> b, std::unordered_set<int> res, Matrix test_data);
 
 
 int main()
@@ -76,7 +92,20 @@ int main()
 
 	InitializeNetworks();
 
-	TrainVNN();
+	// Get first 1000 data points in test set A
+	std::vector<float> test_a_labels;
+	for (int i = 0; i < test_a_size; i++) {
+		test_a_labels.push_back(testLabels[i]);
+	}
+
+	std::vector<float> test_b_labels;
+	for (int i = test_a_size; i < testLabels.size(); i++) {
+		test_b_labels.push_back(testLabels[i]);
+	}
+
+	TrainVNN(vnn_epochs, testData.SegmentC(0, test_a_size), test_a_labels);
+
+	TrainDNN(dnn_epochs, testData.SegmentC(test_a_size), test_b_labels);
 }
 
 
@@ -118,6 +147,7 @@ void InitializeNetworks() {
 	std::vector<Matrix> total;
 	std::vector<Matrix> activation;
 
+	// Initialize vnn
 	for (int v = 0; v < 10; v++) {
 
 		weight.clear();
@@ -155,29 +185,40 @@ void InitializeNetworks() {
 		vnn_activation.push_back(activation);
 	}
 
+	// TODO: Initialize gpnn
+
+	// Initialize dnn
+	dnn_weights.reserve(dnn_dimensions.size() - 1);
+	dnn_biases.reserve(dnn_dimensions.size() - 1);
+
+	dnn_total.reserve(dnn_dimensions.size() - 1);
+	dnn_activation.reserve(dnn_dimensions.size() - 1);
+
+	for (int i = 0; i < dnn_dimensions.size() - 1; i++) {
+
+		if (dnn_res.find(i - 1) != dnn_res.end()) {
+			dnn_weights.emplace_back(dnn_dimensions[i] + dnn_dimensions[0], dnn_dimensions[i + 1], initType);
+		}
+		else {
+			dnn_weights.emplace_back(dnn_dimensions[i], dnn_dimensions[i + 1], initType);
+		}
+		dnn_biases.emplace_back(std::vector<float>(dnn_dimensions[i + 1], 0));
+	}
+
+	for (int i = 0; i < dnn_weights.size(); i++) {
+		if (dnn_res.find(i) != dnn_res.end()) {
+			dnn_total.emplace_back(dnn_weights[i].ColumnCount + dnn_dimensions[0], batchSize);
+		}
+		else {
+			dnn_total.emplace_back(dnn_weights[i].ColumnCount, batchSize);
+		}
+		dnn_activation.emplace_back(dnn_weights[i].RowCount, batchSize);
+	}
+	
+
 	auto initEnd = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> initTime = initEnd - initStart;
 	std::cout << "INITIALIZATION COMPLETE (" << initTime.count() << "ms)" << std::endl;
-}
-
-std::tuple<Matrix, std::vector<float>> ShuffleInput(Matrix in, std::vector<float> labels) {
-
-	// Shuffle input
-	for (int k = 0; k < in.ColumnCount; k++) {
-
-		int r = k + rand() % (in.ColumnCount - k);
-
-		std::vector<float> tempI = in.Column(k);
-		int tempL = labels[k];
-
-		in.SetColumn(k, in.Column(r));
-		labels[k] = labels[r];
-
-		in.SetColumn(r, tempI);
-		labels[r] = tempL;
-	}
-
-	return std::make_tuple(in, labels);
 }
 
 
@@ -281,11 +322,8 @@ void LoadInput() {
 	std::chrono::duration<double, std::milli> time = std::chrono::high_resolution_clock::now() - sTime;
 	std::cout << "Time to load input: " << (time.count() / 1000.00) << " seconds" << std::endl;
 
-	input = input.Normalized(lowerNormalized, upperNormalized);
-	testData = testData.Normalized(lowerNormalized, upperNormalized);
-
-	//input = input.ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries, laguerreSeries, lowerNormalized, upperNormalized);
-	//testData = testData.ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries, laguerreSeries, lowerNormalized, upperNormalized);
+	input = input.ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries, laguerreSeries, lowerNormalized, upperNormalized);
+	testData = testData.ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries, laguerreSeries, lowerNormalized, upperNormalized);
 
 	gpnn_dimensions[0] = input.RowCount;
 	vnn_dimensions[0] = input.RowCount;
@@ -317,7 +355,7 @@ std::tuple<Matrix, std::vector<float>> MakeDataset(Matrix data, std::vector<floa
 	std::unordered_set<int> used (target_index.begin(), target_index.end());
 	std::vector<int> value_index;
 
-	// Get random instances that aren't num equal to size of instances of num
+	// Get random instances that aren't num
 	for (int i = 0; value_index.size() < target_index.size(); i++) {
 
 		int r = rand() % labels.size();
@@ -338,18 +376,31 @@ std::tuple<Matrix, std::vector<float>> MakeDataset(Matrix data, std::vector<floa
 
 	Matrix dataset = Matrix(data.RowCount, all_indexes.size());
 	std::vector<float> dataset_labels;
+	dataset_labels.reserve(all_indexes.size());
 
 	// Actually make dataset
 	for (int i = 0; i < all_indexes.size(); i++) {
-		dataset.SetColumn(i, data.Column(i));
-		dataset_labels.push_back(labels[i]);
+		dataset.SetColumn(i, data.Column(all_indexes[i]));
+
+		labels[all_indexes[i]] == num ? dataset_labels.push_back(1) : dataset_labels.push_back(0);
 	}
 
 	return std::make_tuple(dataset, dataset_labels);
 }
 
+ std::vector<float> MakeTestDataset(std::vector<float> labels, int num) {
+
+	for (int i = 0; i < labels.size(); i++) {
+		labels[i] == num ? labels[i] = 1 : labels[i] = 0;
+	}
+
+	return labels;
+}
+
+
 std::tuple<Matrix, std::vector<float>> GetNextInput(Matrix in, std::vector<float> labels, int size, int i) {
 	std::vector<float> batch_labels = std::vector<float>();
+	batch_labels.reserve(size);
 
 	for (int x = i * size; x < i * size + size; x++) {
 		batch_labels.push_back(labels[x]);
@@ -358,8 +409,19 @@ std::tuple<Matrix, std::vector<float>> GetNextInput(Matrix in, std::vector<float
 	return std::make_tuple(in.SegmentC(i * size, i * size + size), batch_labels);
 }
 
+std::tuple<Matrix, Matrix, std::vector<float>> GetNextInput(Matrix in, Matrix y, std::vector<float> labels, int size, int i) {
+	std::vector<float> batch_labels = std::vector<float>();
+	batch_labels.reserve(size);
 
-void TrainVNN() {
+	for (int x = i * size; x < i * size + size; x++) {
+		batch_labels.push_back(labels[x]);
+	}
+
+	return std::make_tuple(in.SegmentC(i * size, i * size + size), y.SegmentC(i * size, i * size + size), batch_labels);
+}
+
+
+void TrainVNN(int epochs, Matrix vnn_test_data, std::vector<float> vnn_test_data_labels) {
 
 	std::chrono::steady_clock::time_point tStart;
 	std::chrono::duration<double, std::milli> time;
@@ -372,32 +434,43 @@ void TrainVNN() {
 
 	for (int v = 0; v < 10; v++) {
 
-		std::cout << "Training Validation Network: " << v << std::endl;
+		std::cout << "Training Validation Network " << v  << ":" << std::endl;
 
 		// Make dataset containing 50% target value
 		std::tie(vnn_data, vnn_labels) = MakeDataset(input, inputLabels, v);
-
 		int iterations = vnn_data.ColumnCount / batchSize;
+		float acc;
 
 		for (int e = 0; e < epochs; e++) {
 
 			tStart = std::chrono::high_resolution_clock::now();
-
 			std::tie(vnn_data, vnn_labels) = ShuffleInput(vnn_data, vnn_labels);
 
 			for (int i = 0; i < iterations; i++) {
 
 				std::tie(vnn_batch, vnn_batch_labels) = GetNextInput(vnn_data, vnn_labels, batchSize, i);
 
-				std::tie(vnn_activation[v], vnn_total[v]) = ForwardPropogation(vnn_batch, vnn_weights[v], vnn_biases[v], vnn_activation[v], vnn_total[v], vnn_res);
-				std::tie(vnn_weights[v], vnn_biases[v]) = BackwardPropogation(vnn_batch, vnn_batch_labels, vnn_weights[v], vnn_biases[v], vnn_activation[v], vnn_total[v], vnn_res);
+				std::tie(vnn_activation[v], vnn_total[v]) = ForwardPropogation(vnn_batch, vnn_weights[v], vnn_biases[v], vnn_activation[v], vnn_total[v], vnn_res, &Sigmoid);
+				std::tie(vnn_weights[v], vnn_biases[v]) = BackwardPropogation(vnn_batch, vnn_batch_labels, vnn_weights[v], vnn_biases[v], vnn_activation[v], vnn_total[v], vnn_res, learningRate);
 			}
-			float acc = TestNetwork(vnn_weights[v], vnn_biases[v], vnn_res);
+
+			std::vector<float> vnn_test_labels = MakeTestDataset(vnn_test_data_labels, v);
+
+			acc = VNN_Accuracy(LastActivation(vnn_weights[v], vnn_biases[v], vnn_res, vnn_test_data), vnn_test_labels);
 
 			time = std::chrono::high_resolution_clock::now() - tStart;
 			std::cout << "Vnn: " << v << " Epoch: " << e << " Accuracy: " << acc << " Epoch Time: ";
 			CleanTime(time.count());
 		}
+
+		// Get and store activation of all training samples
+		std::tie(vnn_activation[v], vnn_total[v]) = ForwardPropogation(input, vnn_weights[v], vnn_biases[v], vnn_activation[v], vnn_total[v], vnn_res, &Sigmoid);
+		vnn_final_activations.push_back(vnn_activation[v][vnn_activation[v].size() - 1]);
+
+		// Most recent accuracy score on first test dataset
+		vnn_final_accuracy.push_back(acc);
+
+		// TODO: Rollback to best weights after network training done
 	}
 }
 
@@ -405,13 +478,75 @@ void TrainGPNN() {
 
 }
 
-void TrainDNN() {
+void TrainDNN(int epochs, Matrix test_b_data, std::vector<float> dnn_test_data_labels) {
 
+	Matrix dnn_dataset = Matrix(0, input.ColumnCount);
+	Matrix dnn_y = YTotal;
+	std::vector<float> dnn_dataset_labels = inputLabels;
+
+	Matrix dnn_batch_dataset;
+	Matrix dnn_batch_y;
+	std::vector<float> dnn_batch_labels;
+
+	Matrix dnn_test_data = Matrix(0, test_b_data.ColumnCount);
+
+	// TODO: Make dataset
+	
+	for (int v = 0; v < vnn_final_activations.size(); v++) {
+		dnn_dataset = dnn_dataset.Combine(vnn_final_activations[v]);
+	}
+
+	for (int v = 0; v < vnn_final_activations.size(); v++) {
+		dnn_test_data = dnn_test_data.Combine(LastActivation(vnn_weights[v], vnn_biases[v], vnn_res, test_b_data));
+	}
+
+	for (int v = 0; v < vnn_final_accuracy.size(); v++) {
+		std::vector<float> temp = std::vector<float>(input.ColumnCount, vnn_final_accuracy[v]);
+		Matrix a = Matrix(1, temp.size());
+		a.SetRow(0, temp);
+		
+		dnn_dataset = dnn_dataset.Combine(a);
+	}
+
+	for (int v = 0; v < vnn_final_accuracy.size(); v++) {
+		std::vector<float> temp = std::vector<float>(test_b_data.ColumnCount, vnn_final_accuracy[v]);
+		Matrix a = Matrix(1, temp.size());
+		a.SetRow(0, temp);
+
+		dnn_test_data = dnn_test_data.Combine(a);
+	}
+
+	std::chrono::steady_clock::time_point tStart;
+	std::chrono::duration<double, std::milli> time;
+	std::cout << "Training Decision Network:" << std::endl;
+
+	int iterations = dnn_dataset.ColumnCount / batchSize;
+	float acc = -1.0f;
+
+	for (int e = 0; e < epochs; e++) {
+
+		tStart = std::chrono::high_resolution_clock::now();
+		std::tie(dnn_batch_dataset, dnn_batch_y, dnn_batch_labels) = ShuffleInput(dnn_dataset, dnn_y, dnn_dataset_labels);
+
+		for (int i = 0; i < iterations; i++) {
+			std::tie(dnn_batch_dataset, dnn_batch_y, dnn_batch_labels) = GetNextInput(dnn_dataset, dnn_y, dnn_dataset_labels, batchSize, i);
+
+			std::tie(dnn_activation, dnn_total) = ForwardPropogation(dnn_batch_dataset, dnn_weights, dnn_biases, dnn_activation, dnn_total, dnn_res, &SoftMax);
+			std::tie(dnn_weights, dnn_biases) = BackwardPropogation(dnn_batch_dataset, dnn_batch_y, dnn_weights, dnn_biases, dnn_activation,
+				dnn_total, dnn_res, learningRate);
+		}
+
+		acc = DNN_Accuracy(LastActivation(dnn_weights, dnn_biases, dnn_res, dnn_test_data), dnn_test_data_labels);
+
+		time = std::chrono::high_resolution_clock::now() - tStart;
+		std::cout << "Dnn Epoch: " << e << " Accuracy: " << acc << " Epoch Time: ";
+		CleanTime(time.count());
+	}
 }
 
 
 std::tuple<std::vector<Matrix>, std::vector<Matrix>> ForwardPropogation(Matrix in, std::vector<Matrix> w, std::vector<std::vector<float>> b, 
-	std::vector<Matrix> A, std::vector<Matrix> Z, std::unordered_set<int> res) {
+	std::vector<Matrix> A, std::vector<Matrix> Z, std::unordered_set<int> res, Matrix (*operation)(Matrix mat)) {
 
 	for (int i = 0; i < Z.size(); i++) {
 		if (res.find(i) != res.end()) {
@@ -424,92 +559,31 @@ std::tuple<std::vector<Matrix>, std::vector<Matrix>> ForwardPropogation(Matrix i
 		else {
 			Z[i] = (w[i].DotProduct(i == 0 ? in : A[i - 1]) + b[i]).Transpose();
 		}
-		A[i] = i < Z.size() - 1 ? LeakyReLU(Z[i]) : Sigmoid(Z[i]);
+		A[i] = i < Z.size() - 1 ? LeakyReLU(Z[i]) : (operation)(Z[i]);
 	}
 
 	return std::make_tuple( A, Z );
 }
 
-std::tuple<std::vector<Matrix>, std::vector<std::vector<float>> > BackwardPropogation(Matrix in, std::vector<float> labels, std::vector<Matrix> w, std::vector<std::vector<float>> b,
-	std::vector<Matrix> A, std::vector<Matrix> Z, std::unordered_set<int> res) {
 
-	std::vector<Matrix> dT = std::vector<Matrix>();
-	std::vector<Matrix> dW = std::vector<Matrix>();
-	std::vector<std::vector<float>> dB = std::vector<std::vector<float>>();
-
-	for (int i = 0; i < w.size(); i++) {
-		dT.emplace_back(A[i].RowCount, A[i].ColumnCount);
-
-		dW.emplace_back(w[i].RowCount, w[i].ColumnCount);
-		dB.emplace_back(b[i].size());
-	}
-
-	// Backward prop
-	dT[dT.size() - 1] = A[A.size() - 1] - labels;
-
-	for (int i = dT.size() - 2; i > -1; i--) {
-
-		if (res.find(i) != res.end()) {
-			dT[i] = ((dT[i + 1].DotProduct(w[i + 1].SegmentR(in.RowCount))).Transpose() * LeakyReLUDerivative(Z[i].SegmentR(in.RowCount)));
-		}
-		else {
-			dT[i] = ((dT[i + 1].DotProduct(w[i + 1])).Transpose() * LeakyReLUDerivative(Z[i]));
-		}
-	}
-
-	std::for_each(std::execution::par, dW.begin(), dW.end(), [&](auto&& item) {
-		size_t i = &item - dW.data();
-		item = (dT[i].Transpose().DotProduct(i == 0 ? in.Transpose() : A[i - 1].Transpose()) * (1.0f / (float)in.ColumnCount)).Transpose();
-		dB[i] = dT[i].Multiply(1.0f / (float)in.ColumnCount).RowSums();
-		});
-
-	// Update Network
-	for (int i = 0; i < w.size(); i++) {
-		w[i] -= dW[i].Multiply(learningRate);
-	}
-
-	for (int i = 0; i < b.size(); i++) {
-		for (int x = 0; x < b[i].size(); x++) {
-			b[i][x] -= (dB[i][x] * learningRate);
-		}
-	}
-
-	return std::make_tuple(w, b);
-}
-
-
-float TestNetwork(std::vector<Matrix> w, std::vector<std::vector<float>> b, std::unordered_set<int> res) {
-
+Matrix LastActivation(std::vector<Matrix> w, std::vector<std::vector<float>> b, std::unordered_set<int> res, Matrix test_data) {
+	
 	Matrix current_total;
 	Matrix last_activation;
 
 	for (int i = 0; i < w.size(); i++) {
-		current_total = Matrix(w[i].RowCount, testData.ColumnCount);
+		current_total = Matrix(w[i].RowCount, test_data.ColumnCount);
 		if (res.find(i) != res.end()) {
 
-			current_total.Insert(0, testData);
-			last_activation.Insert(0, testData);
+			current_total.Insert(0, test_data);
+			last_activation.Insert(0, test_data);
 
-			current_total.Insert(testData.RowCount, (w[i].DotProduct(i == 0 ? testData : last_activation) + b[i]).Transpose());
+			current_total.Insert(test_data.RowCount, (w[i].DotProduct(i == 0 ? test_data : last_activation) + b[i]).Transpose());
 		}
 		else {
-			current_total = (w[i].DotProduct(i == 0 ? testData : last_activation) + b[i]).Transpose();
+			current_total = (w[i].DotProduct(i == 0 ? test_data : last_activation) + b[i]).Transpose();
 		}
-		last_activation = i < w.size() - 1 ? LeakyReLU(current_total) : SoftMax(current_total);
+		last_activation = i < w.size() - 1 ? LeakyReLU(current_total) : Sigmoid(current_total);
 	}
-
-	// Calculate accuracy
-	std::vector<int> predictions = std::vector<int>(last_activation.ColumnCount);
-	int correct = 0;
-
-	for (int i = 0; i < last_activation.ColumnCount; i++) {
-
-		std::vector<float> val = last_activation.Column(i);
-
-		auto maxElementIterator = std::max_element(val.begin(), val.end());
-		predictions[i] = std::distance(val.begin(), maxElementIterator);
-
-		if (predictions[i] == testLabels[i]) { correct++; }
-	}
-	return (float)correct / testData.ColumnCount;
+	return last_activation;
 }
