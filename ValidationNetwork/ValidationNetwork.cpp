@@ -18,7 +18,7 @@
 // Hyperparameters
 std::vector<int> vnn_dimensions = { 784, 30, 30, 1 };
 std::vector<int> gpnn_dimensions = { 784, 32, 32, 10 };
-std::vector<int> dnn_dimensions = { 20, 32, 32, 32, 10 };
+std::vector<int> dnn_dimensions = { 804, 32, 32, 32, 10 };
 
 std::unordered_set<int> vnn_res = {  }; 
 std::unordered_set<int> gpnn_res = {  }; 
@@ -30,10 +30,10 @@ Matrix::init initType = Matrix::init::He;
 int batchSize = 500;
 
 float vnn_learning_rate = 0.01f;
-float dnn_learning_rate = 0.2f;
+float dnn_learning_rate = 0.05f;
 
-int vnn_epochs = 25;
-int dnn_epochs = 10;
+int vnn_epochs = 3;
+int dnn_epochs = 30;
 
 int test_a_size = 1000;
 
@@ -106,6 +106,13 @@ int main()
 	}
 
 	TrainVNN(vnn_epochs, testData.SegmentC(0, test_a_size), test_a_labels);
+
+	// Get and store activation of all training samples
+	std::cout << "Making training dataset" << std::endl;
+	for (int v = 0; v < 10; v++) {
+		std::tie(vnn_activation[v], vnn_total[v]) = ForwardPropogation(input, vnn_weights[v], vnn_biases[v], vnn_activation[v], vnn_total[v], vnn_res, &Sigmoid);
+		vnn_final_activations.push_back(vnn_activation[v][vnn_activation[v].size() - 1]);
+	}
 
 	TrainDNN(dnn_epochs, testData.SegmentC(test_a_size), test_b_labels);
 }
@@ -468,10 +475,6 @@ void TrainVNN(int epochs, Matrix vnn_test_data, std::vector<float> vnn_test_data
 			CleanTime(time.count());
 		}
 
-		// Get and store activation of all training samples
-		std::tie(vnn_activation[v], vnn_total[v]) = ForwardPropogation(input, vnn_weights[v], vnn_biases[v], vnn_activation[v], vnn_total[v], vnn_res, &Sigmoid);
-		vnn_final_activations.push_back(vnn_activation[v][vnn_activation[v].size() - 1]);
-
 		// Most recent accuracy score on first test dataset
 		vnn_final_accuracy.push_back(acc);
 
@@ -485,7 +488,7 @@ void TrainGPNN() {
 
 void TrainDNN(int epochs, Matrix test_b_data, std::vector<float> dnn_test_data_labels) {
 
-	Matrix dnn_dataset = Matrix(0, input.ColumnCount);
+	Matrix dnn_dataset = input;
 	Matrix dnn_y = YTotal;
 	std::vector<float> dnn_dataset_labels = inputLabels;
 
@@ -493,7 +496,7 @@ void TrainDNN(int epochs, Matrix test_b_data, std::vector<float> dnn_test_data_l
 	Matrix dnn_batch_y;
 	std::vector<float> dnn_batch_labels;
 
-	Matrix dnn_test_data = Matrix(0, test_b_data.ColumnCount);
+	Matrix dnn_test_data = test_b_data;
 
 	// Make dataset
 	for (int v = 0; v < vnn_final_activations.size(); v++) {

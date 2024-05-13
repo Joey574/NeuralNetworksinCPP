@@ -2,7 +2,7 @@
 
 
 std::tuple<std::vector<Matrix>, std::vector<std::vector<float>> > BackwardPropogation(Matrix in, Matrix y, std::vector<Matrix> w, std::vector<std::vector<float>> b,
-	std::vector<Matrix> A, std::vector<Matrix> Z, std::unordered_set<int> res, int learning_rate) {
+	std::vector<Matrix> A, std::vector<Matrix> Z, std::unordered_set<int> res, float learning_rate) {
 
 	std::vector<Matrix> dT = std::vector<Matrix>();
 	std::vector<Matrix> dW = std::vector<Matrix>();
@@ -38,7 +38,6 @@ std::tuple<std::vector<Matrix>, std::vector<std::vector<float>> > BackwardPropog
 	for (int i = 0; i < w.size(); i++) {
 		w[i] -= dW[i].Multiply(learning_rate);
 	}
-
 	for (int i = 0; i < b.size(); i++) {
 		for (int x = 0; x < b[i].size(); x++) {
 			b[i][x] -= (dB[i][x] * learning_rate);
