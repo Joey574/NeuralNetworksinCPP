@@ -57,6 +57,7 @@ public:
 
 	// Basic Math
 	Matrix Negative();
+	Matrix Abs();
 
 	Matrix Add(float scalar);
 	Matrix Add(std::vector<float> scalar);
@@ -252,6 +253,7 @@ private:
 	__m256 SIMDPow(__m256 opOne, __m256 opTwo);
 	__m256 SIMDExp(__m256 opOne, __m256 opTwo);
 	__m256 SIMDMax(__m256 opOne, __m256 opTwo);
+	__m256 SIMDAbs(__m256 opOne, __m256 opTwo);
 
 	// SIMD Trig
 	__m256 SIMDSin(__m256 opOne, __m256 opTwo);
@@ -268,6 +270,7 @@ private:
 	float RemainderPow(float a, float b);
 	float RemainderExp(float a, float b);
 	float RemainderMax(float a, float b);
+	float RemainderAbs(float a, float b);
 
 	// SIMD Trig
 	float RemainderSin(float a, float b);

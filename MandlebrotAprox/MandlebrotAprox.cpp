@@ -21,7 +21,7 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 32, 32, 32, 32, 32, 32, 32, 32, 1 };
+std::vector<int> dimensions = { 2, 32, 32, 1 };
 std::unordered_set<int> resNet = {  };
 std::unordered_set<int> batch_normalization = {  };
 
@@ -29,12 +29,12 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 200;
+int epochs = 5;
 int batchSize = 500;
 float learningRate = 0.01f;
 
 // Feature Engineering
-int fourierSeries = 64;
+int fourierSeries = 12;
 int chebyshevSeries = 0;
 int taylorSeries = 0;
 int legendreSeries = 0;
@@ -59,22 +59,22 @@ std::vector<Matrix> dWeights;
 std::vector<std::vector<float>> dBiases;
 
 // Save / Load
-bool SaveOnComplete = true;
-bool LoadOnInit = true;
+bool SaveOnComplete = false;
+bool LoadOnInit = false;
 std::string NetworkPath = "22_150_256_0_0_0_0.txt";
 
 // Image stuff / Mandlebrot specific
 int dataSize = 20000;
 int mandlebrotIterations = 500;
-int epochPerDataset = 5;
-int epochPerImage = 25;
+int epochPerDataset = 10;
+int epochPerImage = 10;
 
 std::vector<Matrix> imageVector;
 int imageWidth = 160;
 int imageHeight = 90;
 
-int finalWidth = 1920;
-int finalHeight = 1080;
+int finalWidth = 160;
+int finalHeight = 90;
 
 int cacheSize = (4 * 1000000);
 int pixelPerMatrix;
@@ -115,6 +115,7 @@ void TrainNetwork();
 void UpdateNetwork();
 void SaveNetwork(std::string filename);
 void LoadNetwork(std::string filename);
+void NetworkToImage(std::string filename);
 
 int main()
 {
@@ -470,6 +471,8 @@ void TrainNetwork() {
 
     std::cout << "Image Made: ";
     CleanTime(time.count());
+
+    NetworkToImage("test.bmp");
 }
 
 void ForwardPropogation(Matrix in) {
@@ -630,4 +633,78 @@ void LoadNetwork(std::string filename) {
     fr.close();
 
     std::cout << "NETWORK LOADED" << std::endl;
+}
+
+
+void NetworkToImage(std::string filename) {
+    std::wstring fp = NarrowToWide(filename);
+
+    CImage network;
+
+    std::vector<std::vector<float>> normalized_biases = biases;
+
+    // get abs of biases
+    for (int i = 0; i < biases.size(); i++) {
+        for (int x = 0; x < biases[i].size(); x++) {
+            normalized_biases[i][x] = std::abs(biases[i][x]);
+        }
+    }
+    
+    // get min and max of biases
+    std::vector<float> b_max_vec;
+    std::vector<float> b_min_vec;
+    for (int b = 0; b < biases.size(); b++) {
+        b_max_vec.push_back(*std::max_element(normalized_biases[b].begin(), normalized_biases[b].end()));
+        b_min_vec.push_back(*std::min_element(normalized_biases[b].begin(), normalized_biases[b].end()));
+    }
+    float b_max = *std::min_element(b_max_vec.begin(), b_max_vec.end());
+    float b_min = *std::min_element(b_min_vec.begin(), b_min_vec.end());
+
+    // normalize biases to [0, 255]
+    for (int i = 0; i < biases.size(); i++) {
+        for (int x = 0; x < biases[i].size(); x++) {
+            normalized_biases[i][x] = ((normalized_biases[i][x] - b_min) / (b_max - b_min)) * (255);
+        }
+    }
+
+    std::vector<int> true_dimensions = dimensions;
+    for (int i = 0; i < dimensions.size(); i++) {
+        if (resNet.find(i - 1) != resNet.end()) {
+            true_dimensions[i] += dimensions[0];
+        }
+    }
+
+    int max = *std::max_element(true_dimensions.begin(), true_dimensions.end());
+    int size = true_dimensions.size();
+
+    int circle_diameter = 3;
+    int horizontal_gap = 4;
+    int vertical_gap = 15;
+    int border_size = 4;
+
+    int width = (max * circle_diameter) + ((max - 1) * horizontal_gap) + border_size;
+    int height = (size * circle_diameter) + ((size - 1) * vertical_gap) + border_size;
+    network.Create(width, height, 24);
+
+    for (int i = 0; i < size; i++) {
+
+        int offset_x = (max - true_dimensions[i]) / 2;
+
+        for (int x = 0; x < true_dimensions[i]; x++) {
+            int center_x = ((x + offset_x) * (circle_diameter + horizontal_gap)) + border_size;
+            int center_y = (i * (circle_diameter + vertical_gap)) + border_size;
+            int c_r = circle_diameter / 2;
+
+            int strength = i == 0 ? 255 : normalized_biases[i - 1][x];
+
+            for (int c_x = -c_r; c_x < c_r; c_x++) {
+                for (int c_y = -c_r; c_y < c_r; c_y++) {
+                    network.SetPixel(center_x + c_x, center_y + c_y, RGB(strength, strength, strength));
+                }
+            }
+        }
+    }
+
+    network.Save(fp.c_str(), Gdiplus::ImageFormatBMP);
+    network.Destroy();
 }

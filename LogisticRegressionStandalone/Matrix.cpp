@@ -257,6 +257,42 @@ Matrix Matrix::ExtractFeatures(int fourier, int taylor, int chebyshev, int legen
 	return mat;
 }
 
+Matrix Matrix::Normalized(float lowerRange, float upperRange) {
+
+	Matrix normal = matrix;
+
+	float fMin = FLT_MAX;
+	float fMax = FLT_MIN;
+
+	for (int c = 0; c < ColumnCount; c++) {
+		std::vector<float> vec = this->Column(c);
+
+		float min = *std::min_element(vec.begin(), vec.end());
+		float max = *std::max_element(vec.begin(), vec.end());
+
+		if (min < fMin) {
+			fMin = min;
+		}
+
+		if (max > fMax) {
+			fMax = max;
+		}
+	}
+
+	for (int c = 0; c < ColumnCount; c++) {
+		std::vector<float> vec = this->Column(c);
+
+		std::vector<float> n;
+
+		for (float x : vec) {
+			float temp = lowerRange + ((x - fMin) / (fMax - fMin)) * (upperRange - lowerRange);
+			n.push_back(temp);
+		}
+		normal.SetColumn(c, n);
+	}
+	return normal;
+}
+
 Matrix Matrix::FourierSeries(int order) {
 	return this->Multiply(order).Sin().Combine(this->Multiply(order).Cos());
 }
@@ -307,6 +343,9 @@ std::vector<float> Matrix::LogSumExp() {
 // Basic Math
 Matrix Matrix::Negative() {
 	return SingleFloatOperation(&Matrix::SIMDMul, &Matrix::RemainderMul, -1);
+}
+Matrix Matrix::Abs() {
+	return SingleFloatOperation(&Matrix::SIMDAbs, &Matrix::RemainderAbs, 0);
 }
 
 Matrix Matrix::Add(float scalar) {
@@ -530,6 +569,11 @@ __m256 Matrix::SIMDExp(__m256 opOne, __m256 opTwo) {
 __m256 Matrix::SIMDMax(__m256 opOne, __m256 opTwo) {
 	return _mm256_max_ps(opOne, opTwo);
 }
+__m256 Matrix::SIMDAbs(__m256 opOne, __m256 opTwo) {
+	__m256 mask = _mm256_castsi256_ps(_mm256_srli_epi32(_mm256_set1_epi32(-1), 1));
+	__m256 result = _mm256_and_ps(opOne, mask);
+	return result;
+}
 
 // SIMD Trig
 __m256 Matrix::SIMDSin(__m256 opOne, __m256 opTwo) {
@@ -571,6 +615,9 @@ float Matrix::RemainderExp(float a, float b) {
 }
 float Matrix::RemainderMax(float a, float b) {
 	return std::max(a, b);
+}
+float Matrix::RemainderAbs(float a, float b) {
+	return std::abs(a);
 }
 
 // SIMD Trig
@@ -642,40 +689,4 @@ Matrix Matrix::Transpose() {
 
 		return matrixT;
 	}
-}
-
-Matrix Matrix::Normalized(float lowerRange, float upperRange) {
-	
-	Matrix normal = matrix;
-
-	float fMin = FLT_MAX;
-	float fMax = FLT_MIN;
-
-	for (int c = 0; c < ColumnCount; c++) {
-		std::vector<float> vec = this->Column(c);
-
-		float min = *std::min_element(vec.begin(), vec.end());
-		float max = *std::max_element(vec.begin(), vec.end());
-
-		if (min < fMin) {
-			fMin = min;
-		}
-
-		if (max > fMax) {
-			fMax = max;
-		}
-	}
-
-	for (int c = 0; c < ColumnCount; c++) {
-		std::vector<float> vec = this->Column(c);
-
-		std::vector<float> n;
-
-		for (float x : vec) {
-			float temp = lowerRange + ((x - fMin) / (fMax - fMin)) * (upperRange - lowerRange);
-			n.push_back(temp);
-		}
-		normal.SetColumn(c, n);
-	}
-	return normal;
 }
