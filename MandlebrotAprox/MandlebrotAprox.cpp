@@ -22,14 +22,14 @@
 
 // Hyperparameters
 std::vector<int> dimensions = { 2, 32, 32, 1 };
-std::unordered_set<int> resNet = {  };
+std::unordered_set<int> resNet = { 1 };
 std::unordered_set<int> batch_normalization = {  };
 
 float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 5;
+int epochs = 0;
 int batchSize = 500;
 float learningRate = 0.01f;
 
@@ -60,7 +60,7 @@ std::vector<std::vector<float>> dBiases;
 
 // Save / Load
 bool SaveOnComplete = false;
-bool LoadOnInit = false;
+bool LoadOnInit = true;
 std::string NetworkPath = "22_150_256_0_0_0_0.txt";
 
 // Image stuff / Mandlebrot specific
@@ -116,6 +116,7 @@ void UpdateNetwork();
 void SaveNetwork(std::string filename);
 void LoadNetwork(std::string filename);
 void NetworkToImage(std::string filename);
+void MakePerfectImage(std::string filename, int width, int height);
 
 int main()
 {
@@ -329,7 +330,6 @@ void MakeImageFeatures(int width, int height) {
     float scaleX = (std::abs(xMin - xMax)) / (width - 1);
     float scaleY = (std::abs(yMin - yMax)) / (height - 1);
 
-
     Matrix image = Matrix(2, width * height);
 
     for (int y = 0; y < height; y++) {
@@ -360,6 +360,7 @@ void MakeImageFeatures(int width, int height) {
 
     imageVector = std::vector<Matrix>(matrices);
 
+    // Segment total matrix into vectors
     for (int i = 0; i < matrices; i++) {
         imageVector[i] = image.SegmentC(i * pixelPerMatrix, std::min((i * pixelPerMatrix) + pixelPerMatrix, image.ColumnCount));
     }
@@ -677,9 +678,9 @@ void NetworkToImage(std::string filename) {
     int max = *std::max_element(true_dimensions.begin(), true_dimensions.end());
     int size = true_dimensions.size();
 
-    int circle_diameter = 3;
-    int horizontal_gap = 4;
-    int vertical_gap = 15;
+    int circle_diameter = 5;
+    int horizontal_gap = 6;
+    int vertical_gap = 18;
     int border_size = 4;
 
     int width = (max * circle_diameter) + ((max - 1) * horizontal_gap) + border_size;
@@ -695,11 +696,20 @@ void NetworkToImage(std::string filename) {
             int center_y = (i * (circle_diameter + vertical_gap)) + border_size;
             int c_r = circle_diameter / 2;
 
-            int strength = i == 0 ? 255 : normalized_biases[i - 1][x];
+            int strength;
+            int other;
+
+            if (resNet.find(i-1) != resNet.end() && x > biases[i-1].size()) {
+                strength = 255;
+                other = 255;
+            } else {
+                strength = i == 0 ? 255 : normalized_biases[i - 1][x];
+                other = i == 0 ? 255 : 0;
+            }         
 
             for (int c_x = -c_r; c_x < c_r; c_x++) {
                 for (int c_y = -c_r; c_y < c_r; c_y++) {
-                    network.SetPixel(center_x + c_x, center_y + c_y, RGB(strength, strength, strength));
+                    network.SetPixel(center_x + c_x, center_y + c_y, RGB(strength, other, other));
                 }
             }
         }
@@ -707,4 +717,41 @@ void NetworkToImage(std::string filename) {
 
     network.Save(fp.c_str(), Gdiplus::ImageFormatBMP);
     network.Destroy();
+}
+
+void MakePerfectImage(std::string filename, int width, int height) {
+    std::wstring fp = NarrowToWide(filename);
+
+    CImage mandle;
+
+    mandle.Create(width, height, 24);
+
+    float xMin = -2.5f;
+    float xMax = 1.0f;
+    float yMin = -1.1f;
+    float yMax = 1.1f;
+
+    float scaleX = (std::abs(xMin - xMax)) / (width - 1);
+    float scaleY = (std::abs(yMin - yMax)) / (height - 1);
+
+    std::vector<float> pixelData = std::vector<float>(width * height);
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            float x_val = xMin + (float)x * scaleX;
+            float y_val = yMin + (float)y * scaleY;
+
+            pixelData[(y * width) + x] = mandlebrot(x_val, y_val, mandlebrotIterations);
+        }
+    }
+
+    // Set pixels
+    for (int x = 0; x < pixelData.size(); x++) {
+        float r = pixelData[x] * 255.0f;
+        float other = pixelData[x] > confidenceThreshold ? 255 : 0;
+
+        mandle.SetPixel(x % width, x / width, RGB(r, other, other));
+    }
+
+    mandle.Save(fp.c_str(), Gdiplus::ImageFormatBMP);
+    mandle.Destroy();
 }
