@@ -65,7 +65,7 @@ std::string NetworkPath = "22_150_256_0_0_0_0.txt";
 
 // Image stuff / Mandlebrot specific
 int dataSize = 20000;
-int mandlebrotIterations = 500;
+int mandlebrotIterations = 5000;
 int epochPerDataset = 10;
 int epochPerImage = 10;
 
@@ -120,6 +120,10 @@ void MakePerfectImage(std::string filename, int width, int height);
 
 int main()
 {
+    MakePerfectImage("15360_8640_5000_0.95.bmp", 15360, 8640);
+
+    return 0;
+
     srand(time(0));
 
     MakeDataSet(dataSize);
@@ -734,22 +738,21 @@ void MakePerfectImage(std::string filename, int width, int height) {
     float scaleX = (std::abs(xMin - xMax)) / (width - 1);
     float scaleY = (std::abs(yMin - yMax)) / (height - 1);
 
-    std::vector<float> pixelData = std::vector<float>(width * height);
+    float pixelData;
+
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             float x_val = xMin + (float)x * scaleX;
             float y_val = yMin + (float)y * scaleY;
 
-            pixelData[(y * width) + x] = mandlebrot(x_val, y_val, mandlebrotIterations);
+            pixelData = mandlebrot(x_val, y_val, mandlebrotIterations);
+
+            // Set pixels
+            float r = pixelData * 255.0f;
+            float other = pixelData > confidenceThreshold ? 255 : 0;
+
+            mandle.SetPixel(x, y, RGB(r, other, other));
         }
-    }
-
-    // Set pixels
-    for (int x = 0; x < pixelData.size(); x++) {
-        float r = pixelData[x] * 255.0f;
-        float other = pixelData[x] > confidenceThreshold ? 255 : 0;
-
-        mandle.SetPixel(x % width, x / width, RGB(r, other, other));
     }
 
     mandle.Save(fp.c_str(), Gdiplus::ImageFormatBMP);
