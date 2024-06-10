@@ -88,13 +88,27 @@ public:
 	Matrix Exp(std::vector<float> base);
 	Matrix Exp(Matrix base);
 
+	Matrix Log(float base = std::exp(1.0));
+
 	// Activation Functions
 	Matrix Sigmoid();
+	Matrix ReLU();
 	Matrix LeakyReLU(float alpha = 0.1f);
+	Matrix ELU(float alpha = 1.0f);
+	Matrix Tanh();
+	Matrix Softplus();
+	Matrix SiLU();
+
+	Matrix SoftMax();
 
 	// Activation Derivatives
 	Matrix SigmoidDerivative();
+	Matrix ReLUDerivative();
 	Matrix LeakyReLUDerivative(float alpha = 0.1f);
+	Matrix ELUDerivative(float alpha = 1.0f);
+	Matrix TanhDerivative();
+	Matrix SoftplusDerivative();
+	Matrix SiLUDerivative();
 
 	Matrix Transpose();
 	Matrix Combine(Matrix element);

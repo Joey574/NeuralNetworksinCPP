@@ -423,20 +423,50 @@ Matrix Matrix::Asin() {
 }
 
 // Activation Functions
+Matrix Matrix::Sigmoid() {
+	Matrix one = Matrix(RowCount, ColumnCount, 1);
+	return one / (this->Negative().Exp() + 1);
+}
+Matrix Matrix::ReLU() {
+	return SingleFloatOperation(&Matrix::SIMDMax, &Matrix::RemainderMax, 0);
+}
 Matrix Matrix::LeakyReLU(float alpha) {
 	return MatrixFloatOperation(&Matrix::SIMDMax, &Matrix::RemainderMax, this->Multiply(alpha));
 }
-Matrix Matrix::Sigmoid() {
+Matrix Matrix::ELU(float alpha) {
 	Matrix a = matrix;
-	for (int r = 0; r < a.RowCount; r++) {
-		for (int c = 0; c < a.ColumnCount; c++) {
-			a[r][c] = 1 / (1 + std::exp(-matrix[r][c]));
+	for (int r = 0; r < this->RowCount; r++) {
+		for (int c = 0; c < this->ColumnCount; c++) {
+			a[r][c] = matrix[r][c] < 0.0f ? alpha * (std::exp(matrix[r][c] - 1)) : matrix[r][c];
 		}
 	}
 	return a;
 }
+Matrix Matrix::Tanh() {
+	Matrix a = this->Exp();
+	Matrix b = this->Negative().Exp();
+
+	return (a - b) / (a + b);
+}
+Matrix Matrix::Softplus() {
+	return (this->Exp() + 1).Log();
+}
+Matrix Matrix::SiLU() {
+	return this->Divide((this->Negative().Exp() + 1));
+}
+
+Matrix Matrix::SoftMax() {
+	return this->Subtract(this->LogSumExp()).Exp();
+}
 
 // Activation Derivatives
+Matrix Matrix::SigmoidDerivative() {
+	Matrix a = matrix;
+	return this->Sigmoid() * (a - this->Sigmoid());
+}
+Matrix Matrix::ReLUDerivative() {
+
+}
 Matrix Matrix::LeakyReLUDerivative(float alpha) {
 	Matrix deriv = matrix;
 	for (int c = 0; c < ColumnCount; c++) {
@@ -446,9 +476,24 @@ Matrix Matrix::LeakyReLUDerivative(float alpha) {
 	}
 	return deriv;
 }
-Matrix Matrix::SigmoidDerivative() {
+Matrix Matrix::ELUDerivative(float alpha) {
 	Matrix a = matrix;
-	return this->Sigmoid() * (a - this->Sigmoid());
+
+	for (int r = 0; r < this->RowCount; r++) {	
+		for (int c = 0; c < this->ColumnCount; c++) {
+			a[r][c] = matrix[r][c] > 0.0f ? 1.0f : alpha * std::exp(matrix[r][c]);
+		}
+	}
+	return a;
+}
+Matrix Matrix::TanhDerivative() {
+
+}
+Matrix Matrix::SoftplusDerivative() {
+
+}
+Matrix Matrix::SiLUDerivative() {
+
 }
 
 // SIMD Implementations
