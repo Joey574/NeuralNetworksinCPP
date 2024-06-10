@@ -16,7 +16,7 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 784, 32, 32, 10 };
+std::vector<int> dimensions = { 784, 30,  10 };
 std::unordered_set<int> resNet = {  };
 
 // Feature Extractions
