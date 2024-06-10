@@ -408,6 +408,10 @@ Matrix Matrix::Exp(Matrix base) {
 	return MatrixFloatOperation(&Matrix::SIMDExp, &Matrix::RemainderExp, base);
 }
 
+Matrix Matrix::Log(float base) {
+	return matrix;
+}
+
 Matrix Matrix::Cos() {
 	return this->SingleFloatOperation(&Matrix::SIMDCos, &Matrix::RemainderCos, 0);
 }
@@ -437,7 +441,7 @@ Matrix Matrix::ELU(float alpha) {
 	Matrix a = matrix;
 	for (int r = 0; r < this->RowCount; r++) {
 		for (int c = 0; c < this->ColumnCount; c++) {
-			a[r][c] = matrix[r][c] < 0.0f ? alpha * (std::exp(matrix[r][c] - 1)) : matrix[r][c];
+			a[r][c] = matrix[r][c] < 0.0f ? alpha * (std::exp(matrix[r][c]) - 1) : matrix[r][c];
 		}
 	}
 	return a;
