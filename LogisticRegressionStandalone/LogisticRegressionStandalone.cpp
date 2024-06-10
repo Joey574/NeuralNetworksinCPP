@@ -33,7 +33,7 @@ float upperNormalized = 1.0f;
 Matrix::init initType = Matrix::init::He;
 int epochs = 10;
 int batchSize = 500;
-float learningRate = 0.025;
+float learningRate = 0.05;
 
 // Save / Load
 bool SaveOnComplete = false;
@@ -408,7 +408,7 @@ void ForwardPropogation(Matrix in) {
 		} else {
 			aTotal[i] = (weights[i].DotProduct(i == 0 ? in : activation[i - 1]) + biases[i]).Transpose();
 		}
-		activation[i] = i < aTotal.size() - 1 ? LeakyReLU(aTotal[i]) : SoftMax(aTotal[i]);
+		activation[i] = i < aTotal.size() - 1 ? aTotal[i].ELU() : SoftMax(aTotal[i]);
 	}
 }
 
@@ -419,10 +419,10 @@ void BackwardPropogation() {
 	for (int i = dTotal.size() - 2; i > -1; i--) {
 
 		if (resNet.find(i) != resNet.end()) {
-			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].SegmentR(batch.RowCount))).Transpose() * LeakyReLUDerivative(aTotal[i].SegmentR(batch.RowCount)));
+			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].SegmentR(batch.RowCount))).Transpose() * aTotal[i].SegmentR(batch.RowCount).ELUDerivative());
 		}
 		else {
-			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * LeakyReLUDerivative(aTotal[i]));
+			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1])).Transpose() * aTotal[i].ELUDerivative());
 		}
 	}
 
