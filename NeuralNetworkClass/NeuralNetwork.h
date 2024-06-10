@@ -28,5 +28,14 @@ public:
 	Matrix Predict(Matrix x_test);
 
 private:
+
+	struct network_structure {
+		std::vector<Matrix> weights;
+		std::vector<std::vector<float>> biases;
+	};
+
+	network_structure ForwardPropogation(network_structure network);
+	network_structure BackwardPropogation(network_structure network);
+	
 };
 
