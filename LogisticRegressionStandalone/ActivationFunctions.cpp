@@ -50,7 +50,7 @@ Matrix ELU(Matrix total, float alpha) {
 	Matrix a = total;
 	for (int r = 0; r < total.RowCount; r++) {
 		for (int c = 0; c < total.ColumnCount; c++) {
-			a[r][c] = total[r][c] < 0.0f ? alpha * (std::exp(total[r][c] - 1)) : total[r][c];
+			a[r][c] = total[r][c] < 0.0f ? alpha * (std::exp(total[r][c]) - 1) : total[r][c];
 		}
 	}
 	return a;

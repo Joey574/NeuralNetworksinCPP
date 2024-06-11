@@ -1,5 +1,7 @@
 #pragma once
 #include <unordered_set>
+#include <iostream>
+
 #include "Matrix.h"
 
 class NeuralNetwork
@@ -27,6 +29,8 @@ public:
 	void Fit(Matrix x_train, Matrix y_train, int batch_size, int epochs, float validation_split = 0.0f, 
 		bool shuffle = true, int validation_freq = 1);
 
+	std::tuple<Matrix, Matrix> Shuffle(Matrix x, Matrix y);
+
 	std::string Evaluate(Matrix x_train, Matrix y_train);
 
 	Matrix Predict(Matrix x_test);
@@ -38,13 +42,20 @@ private:
 		std::vector<std::vector<float>> biases;
 	};
 
+	struct result_matrices {
+		std::vector<Matrix> total;
+		std::vector<Matrix> activation;
+	};
+
 	network_structure network;
 
 	std::unordered_set<int> res_net_layers;
 	std::unordered_set<int> batch_norm_layers;
 
-	network_structure ForwardPropogation(network_structure network);
-	network_structure BackwardPropogation(network_structure network);
-	
+	result_matrices ForwardPropogation(network_structure network, Matrix x);
+	network_structure BackwardPropogation(network_structure network, result_matrices results);
+	std::string TestNetwork(network_structure network);
+
+	std::string clean_time(double time);
 };
 
