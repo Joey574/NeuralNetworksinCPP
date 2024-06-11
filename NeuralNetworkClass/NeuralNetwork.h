@@ -1,4 +1,5 @@
 #pragma once
+#include <unordered_set>
 #include "Matrix.h"
 
 class NeuralNetwork
@@ -14,14 +15,17 @@ public:
 	};
 
 	static enum class optimization_technique {
-		none, threshold_stepdown
+		none
 	};
 
-	void Define(std::vector<int> dimensions, std::vector<int> res_net = std::vector<int>(0), std::vector<int> batch_normalization = std::vector<int>(0));
+	void Define(std::vector<int> dimensions, std::unordered_set<int> res_net = {}, std::unordered_set<int> batch_normalization = {});
 
-	void Compile(loss_metrics loss = loss_metrics::none, loss_metrics metrics = loss_metrics::none, optimization_technique optimizer = optimization_technique::none, initialization_technique weight_initialization = initialization_technique::random);
+	void Compile(loss_metrics loss = loss_metrics::none, loss_metrics metrics = loss_metrics::none, 
+		optimization_technique optimizer = optimization_technique::none, 
+		initialization_technique weight_initialization = initialization_technique::random);
 
-	void Fit(Matrix x_train, Matrix y_train, int batch_size, int epochs, float validation_split = 0.0f, bool shuffle = true, int validation_freq = 1);
+	void Fit(Matrix x_train, Matrix y_train, int batch_size, int epochs, float validation_split = 0.0f, 
+		bool shuffle = true, int validation_freq = 1);
 
 	std::string Evaluate(Matrix x_train, Matrix y_train);
 
@@ -33,6 +37,11 @@ private:
 		std::vector<Matrix> weights;
 		std::vector<std::vector<float>> biases;
 	};
+
+	network_structure network;
+
+	std::unordered_set<int> res_net_layers;
+	std::unordered_set<int> batch_norm_layers;
 
 	network_structure ForwardPropogation(network_structure network);
 	network_structure BackwardPropogation(network_structure network);

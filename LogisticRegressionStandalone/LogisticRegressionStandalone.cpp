@@ -16,8 +16,8 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 784, 30,  10 };
-std::unordered_set<int> resNet = {  };
+std::vector<int> dimensions = { 784, 784, 10 };
+std::unordered_set<int> res_net = {  };
 
 // Feature Extractions
 int fourierSeries = 0;
@@ -260,7 +260,7 @@ void InitializeNetwork() {
 	dBiases.reserve(dimensions.size() - 1);
 
 	for (int i = 0; i < dimensions.size() - 1; i++) {
-		if (resNet.find(i - 1) != resNet.end()) {
+		if (res_net.find(i - 1) != res_net.end()) {
 			weights.emplace_back(dimensions[i] + dimensions[0], dimensions[i + 1], initType);
 		} else {
 			weights.emplace_back(dimensions[i], dimensions[i + 1], initType);
@@ -287,7 +287,7 @@ void InitializeNetwork() {
 	dTotal.reserve(weights.size());
 
 	for (int i = 0; i < weights.size(); i++) {
-		if (resNet.find(i) != resNet.end()) {
+		if (res_net.find(i) != res_net.end()) {
 			aTotal.emplace_back(weights[i].ColumnCount + dimensions[0], batchSize);
 		}
 		else {
@@ -310,7 +310,7 @@ void InitializeResultMatrices(int size) {
 	activation.reserve(weights.size());
 
 	for (int i = 0; i < weights.size(); i++) {
-		if (resNet.find(i) != resNet.end()) {
+		if (res_net.find(i) != res_net.end()) {
 			aTotal.emplace_back(weights[i].ColumnCount + dimensions[0], size);
 		}
 		else {
@@ -399,7 +399,7 @@ void TrainNetwork() {
 void ForwardPropogation(Matrix in) {
 
 	for (int i = 0; i < aTotal.size(); i++) {
-		if (resNet.find(i) != resNet.end()) {
+		if (res_net.find(i) != res_net.end()) {
 			
 			aTotal[i].Insert(0, in);
 			activation[i].Insert(0, in);
@@ -418,7 +418,7 @@ void BackwardPropogation() {
 
 	for (int i = dTotal.size() - 2; i > -1; i--) {
 
-		if (resNet.find(i) != resNet.end()) {
+		if (res_net.find(i) != res_net.end()) {
 			dTotal[i] = ((dTotal[i + 1].DotProduct(weights[i + 1].SegmentR(batch.RowCount))).Transpose() * aTotal[i].SegmentR(batch.RowCount).ELUDerivative());
 		}
 		else {
@@ -481,17 +481,17 @@ void SaveNetwork(std::string filename) {
 	int s = dimensions.size();
 	fw.write(reinterpret_cast<const char*>(&s), sizeof(int));
 
-	// Number of resNet
-	int r = resNet.size();
+	// Number of res_net
+	int r = res_net.size();
 	fw.write(reinterpret_cast<const char*>(&r), sizeof(int));
 
 	// Write dimensions of network
 	fw.write(reinterpret_cast<const char*>(dimensions.data()), dimensions.size() * sizeof(int));
 
-	// Write resNet layers
+	// Write res_net layers
 	std::vector<int> res;
-	for (auto it = resNet.begin(); it != resNet.end(); ) {
-		res.push_back(std::move(resNet.extract(it++).value()));
+	for (auto it = res_net.begin(); it != res_net.end(); ) {
+		res.push_back(std::move(res_net.extract(it++).value()));
 	}
 	fw.write(reinterpret_cast<const char*>(res.data()), res.size() * sizeof(int));
 
@@ -526,7 +526,7 @@ void LoadNetwork(std::string filename) {
 	int s;
 	fr.read(reinterpret_cast<char*>(&s), sizeof(int));
 
-	// ResNet size
+	// res_net size
 	int r;
 	fr.read(reinterpret_cast<char*>(&r), sizeof(int));
 
@@ -534,13 +534,13 @@ void LoadNetwork(std::string filename) {
 	dimensions = std::vector<int>(s);
 	fr.read(reinterpret_cast<char*>(dimensions.data()), s * sizeof(int));
 
-	// Read resNet
-	resNet.clear();
+	// Read res_net
+	res_net.clear();
 	std::vector<int> res = std::vector<int>(r);
 	fr.read(reinterpret_cast<char*>(res.data()), r * sizeof(int));
 
 	for (int i = 0; i < res.size(); i++) {
-		resNet.insert(res[i]);
+		res_net.insert(res[i]);
 	}
 
 	InitializeNetwork();
