@@ -45,9 +45,10 @@ void NeuralNetwork::Fit(Matrix x_train, Matrix y_train, int batch_size, int epoc
 		}
 
 		if (e % validation_freq == validation_freq - 1) {
-			// Test Network
+			std::string score = TestNetwork(network);
 
 			time = std::chrono::high_resolution_clock::now() - epoch_start_time;
+			std::cout << "Epoch: " << e << " Time: " << clean_time(time.count()) << score << std::endl;
 		} else {
 			time = std::chrono::high_resolution_clock::now() - epoch_start_time;
 			std::cout << "Epoch: " << e << " Time: " << clean_time(time.count()) << std::endl;
