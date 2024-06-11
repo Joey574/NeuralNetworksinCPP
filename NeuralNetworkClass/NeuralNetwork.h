@@ -47,14 +47,24 @@ private:
 		std::vector<Matrix> activation;
 	};
 
+	struct derivative_matrices {
+		std::vector<Matrix> d_total;
+		std::vector<Matrix> d_weights;
+		std::vector<std::vector<float>> d_biases;
+	};
+
+	Matrix (Matrix::* activation_function)();
+	Matrix (Matrix::* end_activation_function)();
+	Matrix (Matrix::* activation_function_derivative)();
+
 	network_structure network;
 
 	std::unordered_set<int> res_net_layers;
 	std::unordered_set<int> batch_norm_layers;
 
-	result_matrices ForwardPropogation(network_structure network, Matrix x);
-	network_structure BackwardPropogation(network_structure network, result_matrices results);
-	std::string TestNetwork(network_structure network);
+	result_matrices ForwardPropogation(network_structure net, Matrix x);
+	network_structure BackwardPropogation(network_structure net, result_matrices results, Matrix x);
+	std::string TestNetwork(network_structure net);
 
 	std::string clean_time(double time);
 };
