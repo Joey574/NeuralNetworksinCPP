@@ -24,6 +24,8 @@ int main()
 
 	std::cout << a.DotProductM(b).ToString() << std::endl;
 
+	std::cout << a.DotProduct(b).ToString() << std::endl;
+
 	return 0;
 
 	// TEST CASE

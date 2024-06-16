@@ -57,13 +57,17 @@ private:
 	Matrix (Matrix::* end_activation_function)();
 	Matrix (Matrix::* activation_function_derivative)();
 
-	network_structure network;
+	network_structure current_network;
+	result_matrices current_results;
+	derivative_matrices current_derivs;
+
+	std::vector<int> network_dimensions;
 
 	std::unordered_set<int> res_net_layers;
 	std::unordered_set<int> batch_norm_layers;
 
-	result_matrices ForwardPropogation(network_structure net, Matrix x);
-	network_structure BackwardPropogation(network_structure net, result_matrices results, Matrix x);
+	result_matrices ForwardPropogation(Matrix x, network_structure net, result_matrices results);
+	network_structure BackwardPropogation(Matrix x, network_structure net, result_matrices results, derivative_matrices deriv);
 	std::string TestNetwork(network_structure net);
 
 	std::string clean_time(double time);

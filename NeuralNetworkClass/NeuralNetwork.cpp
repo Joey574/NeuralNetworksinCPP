@@ -2,25 +2,41 @@
 
 void NeuralNetwork::Define(std::vector<int> dimensions, std::unordered_set<int> res_net, std::unordered_set<int> batch_normalization) {
 
-	res_net_layers = res_net;
-	batch_norm_layers = batch_normalization;
-
-	for (int i = 1; i < dimensions.size(); i++) {
-		if (res_net.find(i) != res_net.end()) {
-			network.weights.emplace_back(dimensions[i - 1] + dimensions[0], dimensions[i]);
-		} else {
-			network.weights.emplace_back(dimensions[i - 1], dimensions[i]);
-		}
-		network.biases.emplace_back(dimensions[i], 0);
-	}
+	this->res_net_layers = res_net;
+	this->batch_norm_layers = batch_normalization;
+	this->network_dimensions = dimensions;
 }
 
 void NeuralNetwork::Compile(loss_metrics loss, loss_metrics metrics, optimization_technique optimizer, initialization_technique weight_initialization) {
 
+	// Initialization of network and respective derivative matrices
+	for (int i = 1; i < network_dimensions.size(); i++) {
+		if (res_net_layers.find(i) != res_net_layers.end()) {
+			current_network.weights.emplace_back(network_dimensions[i - 1] + network_dimensions[0], network_dimensions[i], weight_initialization);
+		}
+		else {
+			current_network.weights.emplace_back(network_dimensions[i - 1], network_dimensions[i], weight_initialization);
+		}
+		current_network.biases.emplace_back(network_dimensions[i], 0);
+
+		current_derivs.d_weights.emplace_back(current_network.weights[i].RowCount, current_network.weights[i].ColumnCount);
+		current_derivs.d_biases.emplace_back(current_network.biases[i].size());
+	}
 }
 
 void NeuralNetwork::Fit(Matrix x_train, Matrix y_train, int batch_size, int epochs, float validation_split,	bool shuffle, int validation_freq) {
-	
+	// Initialize result matrices
+	for (int i = 0; i < current_network.weights.size(); i++) {
+		if (res_net_layers.find(i) != res_net_layers.end()) {
+			current_results.total.emplace_back(current_network.weights[i].ColumnCount + network_dimensions[0], batch_size);
+		}
+		else {
+			current_results.total.emplace_back(current_network.weights[i].ColumnCount, batch_size);
+		}
+		current_results.activation.emplace_back(current_results.total[i].RowCount, batch_size);
+		current_derivs.d_total.emplace_back(current_results.total[i].RowCount, batch_size);
+	}
+
 	auto start_time = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double, std::milli> time;
 
@@ -36,16 +52,14 @@ void NeuralNetwork::Fit(Matrix x_train, Matrix y_train, int batch_size, int epoc
 
 		for (int i = 0; i < iterations; i++) {
 
-			result_matrices results;
-
 			Matrix x = x_train.SegmentC((i * batch_size), (batch_size + (i * batch_size)));
 
-			results = ForwardPropogation(network, x);
-			network = BackwardPropogation(network, results, x);
+			current_results = ForwardPropogation(x, current_network, current_results);
+			current_network = BackwardPropogation(x, current_network, current_results, current_derivs);
 		}
 
 		if (e % validation_freq == validation_freq - 1) {
-			std::string score = TestNetwork(network);
+			std::string score = TestNetwork(current_network);
 
 			time = std::chrono::high_resolution_clock::now() - epoch_start_time;
 			std::cout << "Epoch: " << e << " Time: " << clean_time(time.count()) << score << std::endl;
@@ -53,15 +67,10 @@ void NeuralNetwork::Fit(Matrix x_train, Matrix y_train, int batch_size, int epoc
 			time = std::chrono::high_resolution_clock::now() - epoch_start_time;
 			std::cout << "Epoch: " << e << " Time: " << clean_time(time.count()) << std::endl;
 		}
-
-		
 	}
 }
 
-NeuralNetwork::result_matrices NeuralNetwork::ForwardPropogation(network_structure net, Matrix x) {
-
-	result_matrices results;
-
+NeuralNetwork::result_matrices NeuralNetwork::ForwardPropogation(Matrix x, network_structure net, result_matrices results) {
 	for (int i = 0; i < results.total.size(); i++) {
 		if (res_net_layers.find(i) != res_net_layers.end()) {
 
@@ -79,10 +88,7 @@ NeuralNetwork::result_matrices NeuralNetwork::ForwardPropogation(network_structu
 	return results;
 }
 
-NeuralNetwork::network_structure  NeuralNetwork::BackwardPropogation(network_structure net, result_matrices results, Matrix x) {
-
-	derivative_matrices deriv;
-
+NeuralNetwork::network_structure  NeuralNetwork::BackwardPropogation(Matrix x, network_structure net, result_matrices results, derivative_matrices deriv) {
 	// do loss stuff
 	deriv.d_total[deriv.d_total.size() - 1];
 
@@ -91,7 +97,7 @@ NeuralNetwork::network_structure  NeuralNetwork::BackwardPropogation(network_str
 			deriv.d_total[i] = ((deriv.d_total[i + 1].DotProduct(net.weights[i + 1].SegmentR(x.RowCount))).Transpose() * (results.total[i].SegmentR(x.RowCount).*activation_function_derivative)());
 		}
 		else {
-			deriv.d_total[i] = ((deriv.d_total[i + 1].DotProduct(net.weights[i + 1])).Transpose() * results.total[i].ELUDerivative());
+			deriv.d_total[i] = ((deriv.d_total[i + 1].DotProduct(net.weights[i + 1])).Transpose() * (results.total[i].*activation_function_derivative)());
 		}
 	}
 

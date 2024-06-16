@@ -469,13 +469,20 @@ Matrix Matrix::SigmoidDerivative() {
 	return this->Sigmoid() * (a - this->Sigmoid());
 }
 Matrix Matrix::ReLUDerivative() {
+	Matrix a = matrix;
 
+	for (int r = 0; r < this->RowCount; r++) {
+		for (int c = 0; c < this->ColumnCount; c++) {
+			a[r][c] = matrix[r][c] > 0.0f ? 1.0f : 0.0f;
+		}
+	}
+	return a;
 }
 Matrix Matrix::LeakyReLUDerivative(float alpha) {
 	Matrix deriv = matrix;
 	for (int c = 0; c < ColumnCount; c++) {
 		for (int r = 0; r < RowCount; r++) {
-			deriv[r][c] > 0.0f ? 1.0f : alpha;
+			deriv[r][c] = deriv[r][c] > 0.0f ? 1.0f : alpha;
 		}
 	}
 	return deriv;
@@ -491,13 +498,15 @@ Matrix Matrix::ELUDerivative(float alpha) {
 	return a;
 }
 Matrix Matrix::TanhDerivative() {
-
+	Matrix one = Matrix(this->RowCount, this->ColumnCount, 1);
+	return one - this->Tanh().Pow(2);
 }
 Matrix Matrix::SoftplusDerivative() {
-
+	Matrix one = Matrix(this->RowCount, this->ColumnCount, 1);
+	return one / (this->Negative().Exp() + 1);
 }
 Matrix Matrix::SiLUDerivative() {
-
+	return (this->Negative().Exp() + (this->Multiply(this->Negative().Exp()) + 1) / (this->Negative().Exp() + 1).Pow(2));
 }
 
 // SIMD Implementations
