@@ -437,6 +437,9 @@ Matrix Matrix::ReLU() {
 Matrix Matrix::LeakyReLU(float alpha) {
 	return MatrixFloatOperation(&Matrix::SIMDMax, &Matrix::RemainderMax, this->Multiply(alpha));
 }
+Matrix Matrix::_LeakyReLU() {
+	return LeakyReLU();
+}
 Matrix Matrix::ELU(float alpha) {
 	Matrix a = matrix;
 	for (int r = 0; r < this->RowCount; r++) {
@@ -445,6 +448,9 @@ Matrix Matrix::ELU(float alpha) {
 		}
 	}
 	return a;
+}
+Matrix Matrix::_ELU() {
+	return ELU();
 }
 Matrix Matrix::Tanh() {
 	Matrix a = this->Exp();
@@ -487,6 +493,9 @@ Matrix Matrix::LeakyReLUDerivative(float alpha) {
 	}
 	return deriv;
 }
+Matrix Matrix::_LeakyReLUDerivative() {
+	return LeakyReLUDerivative();
+}
 Matrix Matrix::ELUDerivative(float alpha) {
 	Matrix a = matrix;
 
@@ -496,6 +505,9 @@ Matrix Matrix::ELUDerivative(float alpha) {
 		}
 	}
 	return a;
+}
+Matrix Matrix::_ELUDerivative() {
+	return ELUDerivative();
 }
 Matrix Matrix::TanhDerivative() {
 	Matrix one = Matrix(this->RowCount, this->ColumnCount, 1);
