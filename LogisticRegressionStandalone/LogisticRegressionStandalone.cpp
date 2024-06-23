@@ -16,7 +16,7 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 784, 784, 10 };
+std::vector<int> dimensions = { 784, 30, 10 };
 std::unordered_set<int> res_net = {  };
 
 // Feature Extractions
@@ -70,7 +70,6 @@ void InitializeResultMatrices(int size);
 void TrainNetwork();
 void ForwardPropogation(Matrix in);
 void BackwardPropogation();
-void UpdateNetwork();
 void LoadInput();
 int ReadBigInt(std::ifstream* fr);
 Matrix GetNextInput(Matrix totalInput, int size, int i);
@@ -220,14 +219,11 @@ void LoadInput() {
 	testingFR.close();
 	testingLabelFR.close();
 
-	input = input.Normalized(lowerNormalized, upperNormalized);
-	testData = testData.Normalized(lowerNormalized, upperNormalized);
+	testData = testData.ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries, laguerreSeries, lowerNormalized, upperNormalized);
+	input = input.ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries, laguerreSeries, lowerNormalized, upperNormalized);
 
 	std::chrono::duration<double, std::milli> time = std::chrono::high_resolution_clock::now() - sTime;
 	std::cout << "Time to load input: " << (time.count() / 1000.00) << " seconds" << std::endl;
-
-	testData = testData.ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries, laguerreSeries, lowerNormalized, upperNormalized);
-	input = input.ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries, laguerreSeries, lowerNormalized, upperNormalized);
 }
 
 int ReadBigInt(std::ifstream* fr) {
@@ -325,14 +321,13 @@ Matrix GetNextInput(Matrix totalInput, int size, int i) {
 	Matrix a = Matrix(totalInput.RowCount, size);
 
 	YBatch = YTotal.SegmentC(i * size, i * size + size);
-	a = totalInput.SegmentC(i * size, i * size + size);
 	batchLabels.clear();
 
 	for (int x = i * size; x < i * size + size; x++) {
 		batchLabels.push_back(inputLabels[x]);
 	}
 
-	return a;
+	return totalInput.SegmentC(i * size, i * size + size);;
 }
 
 
@@ -363,7 +358,6 @@ void TrainNetwork() {
 
 			ForwardPropogation(batch);
 			BackwardPropogation();
-			UpdateNetwork();
 		}
 
 		InitializeResultMatrices(testData.ColumnCount);
@@ -426,15 +420,12 @@ void BackwardPropogation() {
 		}
 	}
 
-	std::for_each(std::execution::par_unseq, dWeights.begin(), dWeights.end(), [&](auto&& item) {
+	std::for_each(std::execution::par, dWeights.begin(), dWeights.end(), [&](auto&& item) {
 		size_t i = &item - dWeights.data();
 		item = (dTotal[i].Transpose().DotProduct(i == 0 ? batch.Transpose() : activation[i - 1].Transpose()) * (1.0f / (float)batchSize)).Transpose();
 		dBiases[i] = dTotal[i].Multiply(1.0f / (float)batchSize).RowSums();
 	});
 
-}
-
-void UpdateNetwork() {
 	for (int i = 0; i < weights.size(); i++) {
 		weights[i] -= dWeights[i].Multiply(learningRate);
 	}
@@ -445,7 +436,6 @@ void UpdateNetwork() {
 		}
 	}
 }
-
 
 std::vector<int> GetPredictions(int len) {
 
