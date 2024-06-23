@@ -19,7 +19,7 @@
 
 
 // Hyperparameters
-std::vector<int> dimensions = { 2, 30, 30, 1 };
+std::vector<int> dimensions = { 2, 128, 128, 128, 1 };
 std::unordered_set<int> resNet = {  };
 int fourierSeries = 128;
 
@@ -27,9 +27,9 @@ float lowerNormalized = -M_PI;
 float upperNormalized = M_PI;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 250;
-int batchSize = 256;
-float learningRate = 0.0075;
+int epochs = 40;
+int batchSize = 100;
+float learningRate = 0.025;
 
 // Image drawing stuff
 Matrix unshuffledInput;
@@ -73,7 +73,7 @@ int main()
 {
 	srand(time(0));
 
-	CImage t = LoadBMP("ML Images\\TrafficCone.bmp");
+	CImage t = LoadBMP("ML Images\\xs_heart.bmp");
 
 	InitializeNetwork();
 	
@@ -276,15 +276,12 @@ void TrainNetwork(CImage image) {
 	std::chrono::steady_clock::time_point totalStart;
 	std::chrono::steady_clock::time_point tStart;
 	std::chrono::duration<double, std::milli> time;
-	std::chrono::duration<double, std::milli> timeToReachHighest;
 
 	std::vector<int> bestPredictions;
 
 	totalStart = std::chrono::high_resolution_clock::now();
 
 	int iterations = input.ColumnCount / batchSize;
-	float highestAcc = 0.0f;
-	int highestIndex = 0;
 
 	std::cout << std::fixed << std::setprecision(4);
 	for (int e = 0; e < epochs; e++) {
@@ -310,14 +307,6 @@ void TrainNetwork(CImage image) {
 		std::string filename = "NetworkImages\\" + std::to_string(e).append("_").append(std::to_string(acc)).append(".bmp");
 		MakeBMP(filename, predic, image);
 
-		if (acc >= highestAcc) {
-
-			bestPredictions = GetPredictions(unshuffledInput.ColumnCount);
-			highestAcc = acc;
-			highestIndex = e;
-			timeToReachHighest = std::chrono::high_resolution_clock::now() - totalStart;
-		}
-
 		InitializeResultMatrices(batchSize);
 
 		time = std::chrono::high_resolution_clock::now() - tStart;
@@ -335,9 +324,6 @@ void TrainNetwork(CImage image) {
 	std::cout << "Average Epoch Time: ";
 	CleanTime(epochTime);
 
-	std::cout << "Highest Accuracy: " << highestAcc << " at epoch " << highestIndex << std::endl;
-	std::cout << "Time to reach max: ";
-	CleanTime(timeToReachHighest.count());
 }
 
 void ForwardPropogation(Matrix in) {
@@ -351,6 +337,11 @@ void ForwardPropogation(Matrix in) {
 			aTotal[i].Insert(in.RowCount, (weights[i].DotProduct(i == 0 ? in : activation[i - 1]) + biases[i]).Transpose());
 		}
 		else {
+			/*std::cout << i << ":\n";
+			std::cout <<"\tTotal: " << aTotal[i].RowCount << " :: " << aTotal[i].ColumnCount << std::endl;
+			std::cout <<"\tWeights: " << weights[i].RowCount << " :: " << weights[i].ColumnCount << std::endl;
+			std::cout <<"\tInput: " << in.RowCount << " :: " << in.ColumnCount << std::endl;*/
+
 			aTotal[i] = (weights[i].DotProduct(i == 0 ? in : activation[i - 1]) + biases[i]).Transpose();
 		}
 		activation[i] = i < aTotal.size() - 1 ? LeakyReLU(aTotal[i]) : Sigmoid(aTotal[i]);

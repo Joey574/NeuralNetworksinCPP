@@ -1,13 +1,18 @@
 #include "NeuralNetwork.h"
 
-void NeuralNetwork::Define(std::vector<int> dimensions, std::unordered_set<int> res_net, std::unordered_set<int> batch_normalization) {
+void NeuralNetwork::Define(std::vector<int> dimensions, std::unordered_set<int> res_net, std::unordered_set<int> batch_normalization, 
+	Matrix(Matrix::* activation_function)(), Matrix(Matrix::* end_activation_function)(), Matrix(Matrix::* activation_function_derivative)()) {
 
 	this->res_net_layers = res_net;
 	this->batch_norm_layers = batch_normalization;
 	this->network_dimensions = dimensions;
+
+	this->activation_function = activation_function;
+	this->end_activation_function = end_activation_function;
+	this->activation_function_derivative = activation_function_derivative;
 }
 
-void NeuralNetwork::Compile(loss_metrics loss, loss_metrics metrics, optimization_technique optimizer, initialization_technique weight_initialization) {
+void NeuralNetwork::Compile(loss_metrics loss, loss_metrics metrics, optimization_technique optimizer, Matrix::init weight_initialization) {
 
 	// Initialization of network and respective derivative matrices
 	for (int i = 1; i < network_dimensions.size(); i++) {
@@ -89,8 +94,9 @@ NeuralNetwork::result_matrices NeuralNetwork::ForwardPropogation(Matrix x, netwo
 }
 
 NeuralNetwork::network_structure  NeuralNetwork::BackwardPropogation(Matrix x, network_structure net, result_matrices results, derivative_matrices deriv) {
-	// do loss stuff
-	deriv.d_total[deriv.d_total.size() - 1];
+
+	// Compute loss
+	deriv.d_total[deriv.d_total.size() - 1] = (this->*loss_function)();
 
 	for (int i = deriv.d_total.size() - 2; i > -1; i--) {
 		if (res_net_layers.find(i) != res_net_layers.end()) {

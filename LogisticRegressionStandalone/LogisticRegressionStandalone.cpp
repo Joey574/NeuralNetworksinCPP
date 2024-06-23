@@ -33,7 +33,7 @@ float upperNormalized = 1.0f;
 Matrix::init initType = Matrix::init::He;
 int epochs = 10;
 int batchSize = 500;
-float learningRate = 0.05;
+float learningRate = 1.1f;
 
 // Save / Load
 bool SaveOnComplete = false;

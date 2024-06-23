@@ -13,8 +13,7 @@ int main()
 	NeuralNetwork::loss_metrics loss = NeuralNetwork::loss_metrics::mse;
 	NeuralNetwork::loss_metrics eval_metric = NeuralNetwork::loss_metrics::mae;
 	NeuralNetwork::optimization_technique optimizer = NeuralNetwork::optimization_technique::none;
-	NeuralNetwork::initialization_technique init_tech = NeuralNetwork::initialization_technique::he;
-
+	Matrix::init init_tech = Matrix::init::He;
 		
 	Matrix x;
 	Matrix y;
@@ -24,7 +23,7 @@ int main()
 	float valid_split = 0.0f;
 	int valid_freq = 5;
 
-	model.Define(dims, res, batch_norm);
+	model.Define(dims, res, batch_norm, &Matrix::_ELU, &Matrix::Sigmoid, &Matrix::_ELUDerivative);
 
 	model.Compile(loss, eval_metric, optimizer, init_tech);
 

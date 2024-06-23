@@ -7,10 +7,6 @@
 class NeuralNetwork
 {
 public:
-	static enum class initialization_technique
-	{
-		random, normalized, xavier, he
-	};
 
 	static enum class loss_metrics {
 		none, mse, mae, accuracy
@@ -20,11 +16,12 @@ public:
 		none
 	};
 
-	void Define(std::vector<int> dimensions, std::unordered_set<int> res_net = {}, std::unordered_set<int> batch_normalization = {});
+	void Define(std::vector<int> dimensions, std::unordered_set<int> res_net = {}, std::unordered_set<int> batch_normalization = {}, 
+		Matrix(Matrix::* activation_function)(), Matrix(Matrix::* end_activation_function)(), Matrix(Matrix::* activation_function_derivative)());
 
 	void Compile(loss_metrics loss = loss_metrics::none, loss_metrics metrics = loss_metrics::none, 
 		optimization_technique optimizer = optimization_technique::none, 
-		initialization_technique weight_initialization = initialization_technique::random);
+		Matrix::init weight_initialization = Matrix::init::Random);
 
 	void Fit(Matrix x_train, Matrix y_train, int batch_size, int epochs, float validation_split = 0.0f, 
 		bool shuffle = true, int validation_freq = 1);
@@ -56,6 +53,8 @@ private:
 	Matrix (Matrix::* activation_function)();
 	Matrix (Matrix::* end_activation_function)();
 	Matrix (Matrix::* activation_function_derivative)();
+
+	Matrix(NeuralNetwork::* loss_function)();
 
 	network_structure current_network;
 	result_matrices current_results;

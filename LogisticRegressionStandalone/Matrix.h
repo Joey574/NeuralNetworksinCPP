@@ -94,7 +94,9 @@ public:
 	Matrix Sigmoid();
 	Matrix ReLU();
 	Matrix LeakyReLU(float alpha = 0.1f);
+	Matrix _LeakyReLU();
 	Matrix ELU(float alpha = 1.0f);
+	Matrix _ELU();
 	Matrix Tanh();
 	Matrix Softplus();
 	Matrix SiLU();
@@ -105,7 +107,9 @@ public:
 	Matrix SigmoidDerivative();
 	Matrix ReLUDerivative();
 	Matrix LeakyReLUDerivative(float alpha = 0.1f);
+	Matrix _LeakyReLUDerivative();
 	Matrix ELUDerivative(float alpha = 1.0f);
+	Matrix _ELUDerivative();
 	Matrix TanhDerivative();
 	Matrix SoftplusDerivative();
 	Matrix SiLUDerivative();
