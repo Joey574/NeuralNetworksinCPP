@@ -25,27 +25,28 @@ int main()
 	std::unordered_set<int> res = { };
 	std::unordered_set<int> batch_norm = { };
 
-	NeuralNetwork::loss_metrics loss = NeuralNetwork::loss_metrics::mae;
+	NeuralNetwork::loss_metrics loss = NeuralNetwork::loss_metrics::mse;
 	NeuralNetwork::loss_metrics eval_metric = NeuralNetwork::loss_metrics::mae;
 	NeuralNetwork::optimization_technique optimizer = NeuralNetwork::optimization_technique::none;
 	Matrix::init init_tech = Matrix::init::He;
 		
-	int batch_size = 264;
-	int epochs = 10;
+	int batch_size = 500;
+	int epochs = 40;
+    float learning_rate = 0.005f;
 	float valid_split = 0.0f;
-	int valid_freq = 5;
+	int valid_freq = 1;
 
     Matrix x;
     Matrix y;
 
-    std::tie(x, y) = MakeDataSet(10000);
+    std::tie(x, y) = MakeDataSet(50000);
     dims[0] = x.RowCount;
 
 	model.Define(dims, res, batch_norm, &Matrix::_ELU, &Matrix::_ELUDerivative, &Matrix::Sigmoid);
 
 	model.Compile(loss, eval_metric, optimizer, init_tech);
 
-	model.Fit(x, y, batch_size, epochs, valid_split, true, valid_freq);
+	model.Fit(x, y, batch_size, epochs, learning_rate, valid_split, true, valid_freq);
 }
 
 float mandlebrot(float x, float y, int maxIterations) {

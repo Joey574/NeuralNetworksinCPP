@@ -40,6 +40,7 @@ void NeuralNetwork::Compile(loss_metrics loss, loss_metrics metrics, optimizatio
 		current_derivs.d_biases.emplace_back(current_network.biases[i].size());
 	}
 
+	this->loss = loss;
 	switch (loss) {
 	case loss_metrics::mse:
 		loss_function = &NeuralNetwork::mse_loss;
@@ -52,7 +53,7 @@ void NeuralNetwork::Compile(loss_metrics loss, loss_metrics metrics, optimizatio
 	std::cout << "Status: network_compiled\n";
 }
 
-void NeuralNetwork::Fit(Matrix x_train, Matrix y_train, int batch_size, int epochs, float validation_split,	bool shuffle, int validation_freq) {
+void NeuralNetwork::Fit(Matrix x_train, Matrix y_train, int batch_size, int epochs, float learning_rate, float validation_split, bool shuffle, int validation_freq) {
 
 	std::cout << "Status: network_training\n";
 
@@ -90,14 +91,14 @@ void NeuralNetwork::Fit(Matrix x_train, Matrix y_train, int batch_size, int epoc
 			Matrix y = y_train.SegmentC((i * batch_size), (batch_size + (i * batch_size)));
 
 			current_results = forward_propogate(x, current_network, current_results);
-			current_network = backward_propogate(x, y, current_network, current_results, current_derivs);
+			current_network = backward_propogate(x, y, learning_rate, current_network, current_results, current_derivs);
 		}
 
 		if (e % validation_freq == validation_freq - 1) {
-			std::string score = test_network(current_network);
+			std::string score = test_network(x_train, y_train, current_network);
 
 			time = std::chrono::high_resolution_clock::now() - epoch_start_time;
-			std::cout << "Epoch: " << e << " Time: " << clean_time(time.count()) << score << std::endl;
+			std::cout << "Epoch: " << e << " Time: " << clean_time(time.count()) << " " << score << std::endl;
 		} else {
 			time = std::chrono::high_resolution_clock::now() - epoch_start_time;
 			std::cout << "Epoch: " << e << " Time: " << clean_time(time.count()) << std::endl;
@@ -123,7 +124,7 @@ NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, networ
 	return results;
 }
 
-NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Matrix y, network_structure net, result_matrices results, derivative_matrices deriv) {
+NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Matrix y, float learning_rate, network_structure net, result_matrices results, derivative_matrices deriv) {
 
 	// Compute loss
 	deriv.d_total[deriv.d_total.size() - 1] = (this->*loss_function)(results.activation.back(), y);
@@ -141,16 +142,62 @@ NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Ma
 		size_t i = &item - deriv.d_weights.data();
 		item = (deriv.d_total[i].Transpose().DotProduct(i == 0 ? x.Transpose() : results.activation[i - 1].Transpose()) * (1.0f / (float)x.ColumnCount)).Transpose();
 		deriv.d_biases[i] = deriv.d_total[i].Multiply(1.0f / (float)x.ColumnCount).RowSums();
-		});
+	});
+
+	for (int i = 0; i < net.weights.size(); i++) {
+		net.weights[i] -= deriv.d_weights[i].Multiply(learning_rate);
+	}
+
+	for (int i = 0; i < net.biases.size(); i++) {
+		for (int x = 0; x < net.biases[i].size(); x++) {
+			net.biases[i][x] -= (deriv.d_biases[i][x] * learning_rate);
+		}
+	}
 
 	return net;
 }
 
 std::string NeuralNetwork::test_network(Matrix x, Matrix y, network_structure net) {
 
+	std::string out;
 
+	result_matrices test_results;
 
-	return "";
+	// Initialize test result matrices
+	test_results.total.reserve(current_network.weights.size());
+	test_results.activation.reserve(current_network.weights.size());
+
+	for (int i = 0; i < current_network.weights.size(); i++) {
+		if (res_net_layers.find(i) != res_net_layers.end()) {
+			test_results.total.emplace_back(current_network.weights[i].ColumnCount + network_dimensions[0], x.ColumnCount);
+		}
+		else {
+			test_results.total.emplace_back(current_network.weights[i].ColumnCount, x.ColumnCount);
+		}
+		test_results.activation.emplace_back(current_results.total[i].RowCount, x.ColumnCount);
+	}
+
+	test_results = forward_propogate(x, net, test_results);
+
+	switch (loss) {
+	case loss_metrics::mse:
+		out = "mse: ";
+		break;
+	case loss_metrics::mae:
+		out = "mae: ";
+		break;		
+	}
+
+	switch (loss) {
+	case loss_metrics::mse:
+	case loss_metrics::mae:
+		Matrix error = (this->*loss_function)(test_results.activation.back(), y);
+		float total_error = std::abs(error.RowSums()[0] / (float)error.ColumnCount);
+		out = out.append(std::to_string(total_error));
+		break;
+	}
+
+	return out;
 }
 
 std::tuple<Matrix, Matrix> NeuralNetwork::Shuffle(Matrix x, Matrix y) {
@@ -186,16 +233,16 @@ std::string NeuralNetwork::clean_time(double time) {
 	std::string out;
 
 	if (time / hour > 1.00) {
-		out = std::to_string(time / hour).append("hours");
+		out = std::to_string(time / hour).append(" hours");
 	}
 	else if (time / minute > 1.00) {
-		out = std::to_string(time / minute).append("minutes");
+		out = std::to_string(time / minute).append(" minutes");
 	}
 	else if (time / second > 1.00) {
-		out = std::to_string(time / second).append("seconds");
+		out = std::to_string(time / second).append(" seconds");
 	}
 	else {
-		out = std::to_string(time).append("ms");
+		out = std::to_string(time).append(" ms");
 	}
 	return out;
 }

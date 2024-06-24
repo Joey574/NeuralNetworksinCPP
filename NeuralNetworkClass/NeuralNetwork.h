@@ -37,6 +37,7 @@ public:
 		Matrix y_train,
 		int batch_size,
 		int epochs,
+		float learning_rate,
 		float validation_split = 0.0f,
 		bool shuffle = true,
 		int validation_freq = 1
@@ -73,6 +74,7 @@ private:
 	Matrix (Matrix::* activation_function_derivative)();
 
 	Matrix(NeuralNetwork::* loss_function)(Matrix final_activation, Matrix labels);
+	loss_metrics loss;
 
 	// Network
 	network_structure current_network;
@@ -85,7 +87,7 @@ private:
 	std::unordered_set<int> batch_norm_layers;
 
 	result_matrices forward_propogate(Matrix x, network_structure net, result_matrices results);
-	network_structure backward_propogate(Matrix x, Matrix y, network_structure net, result_matrices results, derivative_matrices deriv);
+	network_structure backward_propogate(Matrix x, Matrix y, float learning_rate, network_structure net, result_matrices results, derivative_matrices deriv);
 	std::string test_network(Matrix x, Matrix y, network_structure net);
 
 	Matrix mse_loss(Matrix final_activation, Matrix labels);
