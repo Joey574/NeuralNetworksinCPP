@@ -1,7 +1,7 @@
 #include "NeuralNetwork.h"
 
 void NeuralNetwork::Define(std::vector<int> dimensions, std::unordered_set<int> res_net, std::unordered_set<int> batch_normalization, 
-	Matrix(Matrix::* activation_function)(), Matrix(Matrix::* end_activation_function)(), Matrix(Matrix::* activation_function_derivative)()) {
+	Matrix(Matrix::* activation_function)(), Matrix(Matrix::* activation_function_derivative)(), Matrix(Matrix::* end_activation_function)()) {
 
 	this->res_net_layers = res_net;
 	this->batch_norm_layers = batch_normalization;
@@ -10,27 +10,56 @@ void NeuralNetwork::Define(std::vector<int> dimensions, std::unordered_set<int> 
 	this->activation_function = activation_function;
 	this->end_activation_function = end_activation_function;
 	this->activation_function_derivative = activation_function_derivative;
+
+	std::cout << "Network Summary {\ndims = ";
+	for (int i = 0; i < network_dimensions.size() - 1; i++) {
+		std::cout << network_dimensions[i] << "_";
+	} std::cout << network_dimensions.back() << std::endl;
+
+	std::cout << "}\n\n";
 }
 
 void NeuralNetwork::Compile(loss_metrics loss, loss_metrics metrics, optimization_technique optimizer, Matrix::init weight_initialization) {
 
+	current_network.weights.reserve(network_dimensions.size() - 1);
+	current_network.biases.reserve(network_dimensions.size() - 1);
+
+	current_derivs.d_weights.reserve(network_dimensions.size() - 1);
+	current_derivs.d_biases.reserve(network_dimensions.size() - 1);
+
 	// Initialization of network and respective derivative matrices
-	for (int i = 1; i < network_dimensions.size(); i++) {
+	for (int i = 0; i < network_dimensions.size() - 1; i++) {
 		if (res_net_layers.find(i) != res_net_layers.end()) {
-			current_network.weights.emplace_back(network_dimensions[i - 1] + network_dimensions[0], network_dimensions[i], weight_initialization);
+			current_network.weights.emplace_back(network_dimensions[i] + network_dimensions[0], network_dimensions[i + 1], weight_initialization);
+		} else {
+			current_network.weights.emplace_back(network_dimensions[i], network_dimensions[i + 1], weight_initialization);
 		}
-		else {
-			current_network.weights.emplace_back(network_dimensions[i - 1], network_dimensions[i], weight_initialization);
-		}
-		current_network.biases.emplace_back(network_dimensions[i], 0);
+		current_network.biases.emplace_back(network_dimensions[i + 1], 0);
 
 		current_derivs.d_weights.emplace_back(current_network.weights[i].RowCount, current_network.weights[i].ColumnCount);
 		current_derivs.d_biases.emplace_back(current_network.biases[i].size());
 	}
+
+	switch (loss) {
+	case loss_metrics::mse:
+		loss_function = &NeuralNetwork::mse_loss;
+		break;
+	case loss_metrics::mae:
+		loss_function = &NeuralNetwork::mae_loss;
+		break;
+	}
+
+	std::cout << "Status: network_compiled\n";
 }
 
 void NeuralNetwork::Fit(Matrix x_train, Matrix y_train, int batch_size, int epochs, float validation_split,	bool shuffle, int validation_freq) {
+
+	std::cout << "Status: network_training\n";
+
 	// Initialize result matrices
+	current_results.total.reserve(current_network.weights.size());
+	current_results.activation.reserve(current_network.weights.size());
+
 	for (int i = 0; i < current_network.weights.size(); i++) {
 		if (res_net_layers.find(i) != res_net_layers.end()) {
 			current_results.total.emplace_back(current_network.weights[i].ColumnCount + network_dimensions[0], batch_size);
@@ -58,13 +87,14 @@ void NeuralNetwork::Fit(Matrix x_train, Matrix y_train, int batch_size, int epoc
 		for (int i = 0; i < iterations; i++) {
 
 			Matrix x = x_train.SegmentC((i * batch_size), (batch_size + (i * batch_size)));
+			Matrix y = y_train.SegmentC((i * batch_size), (batch_size + (i * batch_size)));
 
-			current_results = ForwardPropogation(x, current_network, current_results);
-			current_network = BackwardPropogation(x, current_network, current_results, current_derivs);
+			current_results = forward_propogate(x, current_network, current_results);
+			current_network = backward_propogate(x, y, current_network, current_results, current_derivs);
 		}
 
 		if (e % validation_freq == validation_freq - 1) {
-			std::string score = TestNetwork(current_network);
+			std::string score = test_network(current_network);
 
 			time = std::chrono::high_resolution_clock::now() - epoch_start_time;
 			std::cout << "Epoch: " << e << " Time: " << clean_time(time.count()) << score << std::endl;
@@ -75,7 +105,7 @@ void NeuralNetwork::Fit(Matrix x_train, Matrix y_train, int batch_size, int epoc
 	}
 }
 
-NeuralNetwork::result_matrices NeuralNetwork::ForwardPropogation(Matrix x, network_structure net, result_matrices results) {
+NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, network_structure net, result_matrices results) {
 	for (int i = 0; i < results.total.size(); i++) {
 		if (res_net_layers.find(i) != res_net_layers.end()) {
 
@@ -93,10 +123,10 @@ NeuralNetwork::result_matrices NeuralNetwork::ForwardPropogation(Matrix x, netwo
 	return results;
 }
 
-NeuralNetwork::network_structure  NeuralNetwork::BackwardPropogation(Matrix x, network_structure net, result_matrices results, derivative_matrices deriv) {
+NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Matrix y, network_structure net, result_matrices results, derivative_matrices deriv) {
 
 	// Compute loss
-	deriv.d_total[deriv.d_total.size() - 1] = (this->*loss_function)();
+	deriv.d_total[deriv.d_total.size() - 1] = (this->*loss_function)(results.activation.back(), y);
 
 	for (int i = deriv.d_total.size() - 2; i > -1; i--) {
 		if (res_net_layers.find(i) != res_net_layers.end()) {
@@ -110,10 +140,17 @@ NeuralNetwork::network_structure  NeuralNetwork::BackwardPropogation(Matrix x, n
 	std::for_each(std::execution::par_unseq, deriv.d_weights.begin(), deriv.d_weights.end(), [&](auto&& item) {
 		size_t i = &item - deriv.d_weights.data();
 		item = (deriv.d_total[i].Transpose().DotProduct(i == 0 ? x.Transpose() : results.activation[i - 1].Transpose()) * (1.0f / (float)x.ColumnCount)).Transpose();
-		dBiases[i] = deriv.d_total[i].Multiply(1.0f / (float)x.ColumnCount).RowSums();
+		deriv.d_biases[i] = deriv.d_total[i].Multiply(1.0f / (float)x.ColumnCount).RowSums();
 		});
 
 	return net;
+}
+
+std::string NeuralNetwork::test_network(Matrix x, Matrix y, network_structure net) {
+
+
+
+	return "";
 }
 
 std::tuple<Matrix, Matrix> NeuralNetwork::Shuffle(Matrix x, Matrix y) {
@@ -132,6 +169,14 @@ std::tuple<Matrix, Matrix> NeuralNetwork::Shuffle(Matrix x, Matrix y) {
 	}
 
 	return std::make_tuple(x, y);
+}
+
+Matrix NeuralNetwork::mae_loss(Matrix final_activation, Matrix labels) {
+	return (final_activation - labels);
+}
+
+Matrix NeuralNetwork::mse_loss(Matrix final_activation, Matrix labels) {
+	return (final_activation - labels).Pow(2);
 }
 
 std::string NeuralNetwork::clean_time(double time) {

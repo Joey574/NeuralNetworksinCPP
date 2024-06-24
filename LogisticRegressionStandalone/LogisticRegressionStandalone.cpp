@@ -400,6 +400,11 @@ void ForwardPropogation(Matrix in) {
 
 			aTotal[i].Insert(in.RowCount, (weights[i].DotProduct(i == 0 ? in : activation[i - 1]) + biases[i]).Transpose());
 		} else {
+			if (i == 0) {
+				//std::cout << weights[i].RowCount << " :: " << weights[i].ColumnCount << std::endl;
+				//std::cout << in.RowCount << " :: " << in.ColumnCount << std::endl << std::endl;
+			}
+			
 			aTotal[i] = (weights[i].DotProduct(i == 0 ? in : activation[i - 1]) + biases[i]).Transpose();
 		}
 		activation[i] = i < aTotal.size() - 1 ? aTotal[i].ELU() : SoftMax(aTotal[i]);

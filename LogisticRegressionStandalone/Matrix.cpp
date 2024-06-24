@@ -308,7 +308,6 @@ Matrix Matrix::LegendreSeries(int order) {
 Matrix Matrix::LaguerreSeries(int order) {
 	return this->Pow(order).Multiply(this->Negative().Exp());
 }
-#include<iostream>
 
 Matrix Matrix::DotProduct(Matrix element) {
 
