@@ -104,7 +104,32 @@ void NeuralNetwork::Fit(Matrix x_train, Matrix y_train, int batch_size, int epoc
 			std::cout << "Epoch: " << e << " Time: " << clean_time(time.count()) << std::endl;
 		}
 	}
+
+	std::cout << "Status: training_complete\n";
 }
+
+Matrix NeuralNetwork::Predict(Matrix x_test) {
+	result_matrices test_results;
+
+	// Initialize test result matrices
+	test_results.total.reserve(current_network.weights.size());
+	test_results.activation.reserve(current_network.weights.size());
+
+	for (int i = 0; i < current_network.weights.size(); i++) {
+		if (res_net_layers.find(i) != res_net_layers.end()) {
+			test_results.total.emplace_back(current_network.weights[i].ColumnCount + network_dimensions[0], x_test.ColumnCount);
+		}
+		else {
+			test_results.total.emplace_back(current_network.weights[i].ColumnCount, x_test.ColumnCount);
+		}
+		test_results.activation.emplace_back(current_results.total[i].RowCount, x_test.ColumnCount);
+	}
+
+	test_results = forward_propogate(x_test, current_network, test_results);
+
+	return test_results.activation.back();
+}
+
 
 NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, network_structure net, result_matrices results) {
 	for (int i = 0; i < results.total.size(); i++) {
