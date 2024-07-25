@@ -30,6 +30,8 @@ std::wstring NarrowToWide(const std::string& narrowStr);
 
 int main()
 {
+    SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
+
 	NeuralNetwork model = NeuralNetwork();
 
 	std::vector<int> dims = { 2, 32, 32, 1 };
@@ -42,7 +44,7 @@ int main()
 	Matrix::init init_tech = Matrix::init::He;
 		
 	int batch_size = 500;
-	int epochs = 100;
+	int epochs = 1;
     float learning_rate = 0.005f;
 	float valid_split = 0.0f;
 	int valid_freq = 1;
@@ -54,14 +56,14 @@ int main()
     dims[0] = x.RowCount;
 
 	model.Define(dims, res, batch_norm, &Matrix::_ELU, &Matrix::_ELUDerivative, &Matrix::Sigmoid);
-
 	model.Compile(loss, eval_metric, optimizer, init_tech);
 
-	model.Fit(x, y, batch_size, epochs, learning_rate, valid_split, true, valid_freq);
+    for (int i = 0; i < 10; i++) {
+        model.Fit(x, y, batch_size, epochs, learning_rate, valid_split, true, valid_freq);
+        std::vector<Matrix> image_data = MakeImageFeatures(160, 90);
 
-    std::vector<Matrix> image_data = MakeImageFeatures(160, 90);
-
-    MakeBMP("test2.bmp", 160, 90, image_data, model);
+        MakeBMP("test_" + std::to_string(i).append(".bmp"), 160, 90, image_data, model);
+    }
 }
 
 float mandlebrot(float x, float y, int maxIterations) {
