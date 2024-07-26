@@ -46,7 +46,7 @@ int main()
 	int batch_size = 500;
 	int epochs = 1;
     float learning_rate = 0.005f;
-	float valid_split = 0.0f;
+	float valid_split = 0.05f;
 	int valid_freq = 1;
 
     Matrix x;

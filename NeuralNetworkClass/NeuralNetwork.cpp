@@ -84,7 +84,7 @@ NeuralNetwork::training_history NeuralNetwork::Fit(Matrix x_train, Matrix y_trai
 		// Test network every n epochs
 		std::string out;
 		if (e % validation_freq == validation_freq - 1) {
-			std::string score = test_network(x_train, y_train, current_network);
+			std::string score = test_network(x_test, y_test, current_network);
 
 			time = std::chrono::high_resolution_clock::now() - epoch_start_time;
 			std::cout << "Epoch: " << e << " Time: " << clean_time(time.count()) << " " << score << std::endl;
@@ -163,7 +163,13 @@ std::tuple<Matrix, Matrix, Matrix, Matrix> NeuralNetwork::data_preprocessing(Mat
 	
 	if (validation_split > 0.0f) {
 		int elements = (float)x_test.ColumnCount * validation_split;
+		x_test = x_train.SegmentC(x_train.ColumnCount - elements);
+		y_test = y_train.SegmentC(x_train.ColumnCount - elements);
+
+		x_train = x_train.SegmentC(0, elements);
+		y_train = y_train.SegmentC(0, elements);
 	}
+	return std::make_tuple(x_train, y_train, x_test, y_test);
 }
 
 
