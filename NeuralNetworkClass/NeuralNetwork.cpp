@@ -66,7 +66,7 @@ NeuralNetwork::training_history NeuralNetwork::Fit(Matrix x_train, Matrix y_trai
 
 	std::tie(x_train, y_train, x_test, y_test) = data_preprocessing(x_train, y_train, shuffle, validation_split);
 
-	const int iterations = x_train.ColumnCount / batch_size; 
+	const int iterations = x_train.RowCount / batch_size; 
 
 	for (int e = 0; e < epochs; e++) {
 
@@ -74,8 +74,8 @@ NeuralNetwork::training_history NeuralNetwork::Fit(Matrix x_train, Matrix y_trai
 
 		for (int i = 0; i < iterations; i++) {
 
-			Matrix x = x_train.SegmentC((i * batch_size), (batch_size + (i * batch_size)));
-			Matrix y = y_train.SegmentC((i * batch_size), (batch_size + (i * batch_size)));
+			Matrix x = x_train.SegmentR((i * batch_size), (batch_size + (i * batch_size)));
+			Matrix y = y_train.SegmentR((i * batch_size), (batch_size + (i * batch_size)));
 
 			current_results = forward_propogate(x, current_network, current_results);
 			current_network = backward_propogate(x, y, learning_rate, current_network, current_results, current_derivs);
@@ -105,20 +105,9 @@ NeuralNetwork::training_history NeuralNetwork::Fit(Matrix x_train, Matrix y_trai
 
 Matrix NeuralNetwork::Predict(Matrix x_test) {
 	result_matrices test_results;
+	derivative_matrices t;
 
-	// Initialize test result matrices
-	test_results.total.reserve(current_network.weights.size());
-	test_results.activation.reserve(current_network.weights.size());
-
-	for (int i = 0; i < current_network.weights.size(); i++) {
-		if (res_net_layers.find(i) != res_net_layers.end()) {
-			test_results.total.emplace_back(current_network.weights[i].ColumnCount + network_dimensions[0], x_test.ColumnCount);
-		}
-		else {
-			test_results.total.emplace_back(current_network.weights[i].ColumnCount, x_test.ColumnCount);
-		}
-		test_results.activation.emplace_back(current_network.weights[i].ColumnCount, x_test.ColumnCount);
-	}
+	std::tie(test_results, t) = initialize_result_matrices(x_test.RowCount);
 
 	test_results = forward_propogate(x_test, current_network, test_results);
 
@@ -138,13 +127,13 @@ std::tuple<NeuralNetwork::result_matrices, NeuralNetwork::derivative_matrices> N
 
 	for (int i = 0; i < current_network.weights.size(); i++) {
 		if (res_net_layers.find(i) != res_net_layers.end()) {
-			results.total.emplace_back(current_network.weights[i].ColumnCount + network_dimensions[0], batch_size);
+			results.total.emplace_back(batch_size, current_network.weights[i].ColumnCount + network_dimensions[0]);
 		}
 		else {
-			results.total.emplace_back(current_network.weights[i].ColumnCount, batch_size);
+			results.total.emplace_back(batch_size, current_network.weights[i].ColumnCount);
 		}
-		results.activation.emplace_back(results.total[i].RowCount, batch_size);
-		derivs.d_total.emplace_back(results.total[i].RowCount, batch_size);
+		results.activation.emplace_back(results.total[i].RowCount, results.total[i].ColumnCount);
+		derivs.d_total.emplace_back(results.total[i].RowCount, results.total[i].ColumnCount);
 
 		derivs.d_weights.emplace_back(current_network.weights[i].RowCount, current_network.weights[i].ColumnCount);
 		derivs.d_biases.emplace_back(current_network.biases[i].size());
@@ -157,19 +146,23 @@ std::tuple<Matrix, Matrix, Matrix, Matrix> NeuralNetwork::data_preprocessing(Mat
 	Matrix x_test;
 	Matrix y_test;
 
+	Matrix x;
+	Matrix y;
+
 	if (shuffle) {
 		std::tie(x_train, y_train) = Shuffle(x_train, y_train);
 	}
 	
 	if (validation_split > 0.0f) {
-		int elements = (float)x_test.ColumnCount * validation_split;
-		x_test = x_train.SegmentC(x_train.ColumnCount - elements);
-		y_test = y_train.SegmentC(x_train.ColumnCount - elements);
+		int elements = (float)x_train.RowCount * validation_split;
 
-		x_train = x_train.SegmentC(0, elements);
-		y_train = y_train.SegmentC(0, elements);
+		x_test = x_train.SegmentR(x_train.RowCount - elements);
+		y_test = y_train.SegmentR(x_train.RowCount - elements);
+
+		x = x_train.SegmentR(0, x_train.RowCount - elements);
+		y = y_train.SegmentR(0, x_train.RowCount - elements);
 	}
-	return std::make_tuple(x_train, y_train, x_test, y_test);
+	return std::make_tuple(x, y, x_test, y_test);
 }
 
 
@@ -181,9 +174,21 @@ NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, networ
 			results.activation[i].Insert(0, x);
 
 			results.total[i].Insert(x.RowCount, (net.weights[i].DotProduct(i == 0 ? x : results.activation[i - 1]) + net.biases[i]).Transpose());
-		}
-		else {
-			results.total[i] = (net.weights[i].DotProduct(i == 0 ? x : results.activation[i - 1]) + net.biases[i]).Transpose();
+		} else {
+
+			/*std::cout << "Before: " << i << std::endl;
+			std::cout << "\tTotal: " << results.total[i].RowCount << " :: " << results.total[i].ColumnCount << std::endl;
+			std::cout << "\tWeights: " << net.weights[i].RowCount << " :: " << net.weights[i].ColumnCount << std::endl;
+			std::cout << "\tInputs: " << (i == 0 ? x.RowCount : results.activation[i - 1].RowCount) << " :: " << (i == 0 ? x.ColumnCount : results.activation[i - 1].ColumnCount) << std::endl;
+			std::cout << "\tBiases: " << net.biases[i].size() << std::endl << std::endl;*/
+
+			results.total[i] = (net.weights[i].DotProduct(i == 0 ? x : results.activation[i - 1]) + net.biases[i]);
+
+			/*std::cout << "After: " << i << std::endl;
+			std::cout << "\tTotal: " << results.total[i].RowCount << " :: " << results.total[i].ColumnCount << std::endl;
+			std::cout << "\tWeights: " << net.weights[i].RowCount << " :: " << net.weights[i].ColumnCount << std::endl;
+			std::cout << "\tInputs: " << (i == 0 ? x.RowCount : results.activation[i - 1].RowCount) << " :: " << (i == 0 ? x.ColumnCount : results.activation[i - 1].ColumnCount) << std::endl;
+			std::cout << "\tBiases: " << net.biases[i].size() << std::endl << std::endl;*/
 		}
 		results.activation[i] = i < results.total.size() - 1 ? (results.total[i].*activation_function)() : (results.total[i].*end_activation_function)();
 	}
@@ -196,26 +201,40 @@ NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Ma
 	// Compute loss
 	deriv.d_total[deriv.d_total.size() - 1] = (this->*loss_function)(results.activation.back(), y);
 
-	for (int i = deriv.d_total.size() - 2; i > -1; i--) {
+	for (int i = deriv.d_total.size() - 1; i > 0; i--) {
+
+		/*std::cout << "Before: " << i-1 << std::endl;
+		std::cout << "\td_total: " << deriv.d_total[i - 1].RowCount << " :: " << deriv.d_total[i - 1].ColumnCount << std::endl;
+		std::cout << "\td_weights: " << deriv.d_weights[i - 1].RowCount << " :: " << deriv.d_weights[i - 1].ColumnCount << std::endl;
+		std::cout << "\td_biases: " << deriv.d_biases.size() << std::endl;*/
+
 		if (res_net_layers.find(i) != res_net_layers.end()) {
 			deriv.d_total[i] = ((deriv.d_total[i + 1].DotProduct(net.weights[i + 1].SegmentR(x.RowCount))).Transpose() * (results.total[i].SegmentR(x.RowCount).*activation_function_derivative)());
 		}
 		else {
-			deriv.d_total[i] = ((deriv.d_total[i + 1].DotProduct(net.weights[i + 1])).Transpose() * (results.total[i].*activation_function_derivative)());
+			deriv.d_total[i - 1] = net.weights[i].Transpose().DotProduct(deriv.d_total[i]) * (results.total[i - 1].*activation_function_derivative)();
+			deriv.d_weights[i - 1] = deriv.d_total[i - 1].DotProduct(i == 1 ? x.Transpose() : results.activation[i - 2].Transpose());
+			deriv.d_biases[i - 1] = deriv.d_total[i - 1].RowSums();
+			//deriv.d_total[i] = ((deriv.d_total[i + 1].DotProduct(net.weights[i + 1])).Transpose() * (results.total[i].*activation_function_derivative)());
 		}
+
+		/*std::cout << "After: " << i - 1 << std::endl;
+		std::cout << "\td_total: " << deriv.d_total[i - 1].RowCount << " :: " << deriv.d_total[i - 1].ColumnCount << std::endl;
+		std::cout << "\td_weights: " << deriv.d_weights[i - 1].RowCount << " :: " << deriv.d_weights[i - 1].ColumnCount << std::endl;
+		std::cout << "\td_biases: " << deriv.d_biases.size() << std::endl << std::endl;*/
 	}
 
-	int i = 0;
+	/*int i = 0;
 	for (Matrix& d_weight : deriv.d_weights) {
 		d_weight = (deriv.d_total[i].Transpose().DotProduct(i == 0 ? x.Transpose() : results.activation[i - 1].Transpose()) * (1.0f / (float)x.ColumnCount)).Transpose();
 		deriv.d_biases[i] = deriv.d_total[i].Multiply(1.0f / (float)x.ColumnCount).RowSums();
 		i++;
-	}
+	}*/
 
 	for (int i = 0; i < net.weights.size(); i++) {
-		net.weights[i] -= deriv.d_weights[i].Multiply(learning_rate);
-		for (int x = 0; x < net.biases[i].size(); x++) {
-			net.biases[i][x] -= (deriv.d_biases[i][x] * learning_rate);
+		net.weights[i] -= deriv.d_weights[i].Multiply(learning_rate / x.RowCount);
+		for (int idx_x = 0; idx_x < net.biases[i].size(); idx_x++) {
+			net.biases[i][idx_x] -= (deriv.d_biases[i][idx_x] * learning_rate / x.RowCount);
 		}
 	}
 
@@ -254,31 +273,32 @@ std::string NeuralNetwork::test_network(Matrix x, Matrix y, network_structure ne
 		break;		
 	}
 
+	float total_error = 0.0f;
 	switch (loss) {
 	case loss_metrics::mse:
 	case loss_metrics::mae:
 		Matrix error = (this->*loss_function)(test_results.activation.back(), y);
-		float total_error = std::abs(error.RowSums()[0] / (float)error.ColumnCount);
-		out = out.append(std::to_string(total_error));
+		total_error = std::abs(error.RowSums()[0] / (float)error.ColumnCount);
 		break;
 	}
+	out = out.append(std::to_string(total_error));
 
 	return out;
 }
 
 std::tuple<Matrix, Matrix> NeuralNetwork::Shuffle(Matrix x, Matrix y) {
-	for (int k = 0; k < x.ColumnCount; k++) {
+	for (int k = 0; k < x.RowCount; k++) {
 
-		int r = k + rand() % (x.ColumnCount - k);
+		int r = k + rand() % (x.RowCount - k);
 
-		std::vector<float> tempX = x.Column(k);
-		std::vector<float> tempY = y.Column(k);
+		std::vector<float> tempX = x.Row(k);
+		std::vector<float> tempY = y.Row(k);
 
-		x.SetColumn(k, x.Column(r));
-		y.SetColumn(k, y.Column(r));
+		x.SetRow(k, x.Row(r));
+		y.SetRow(k, y.Row(r));
 
-		x.SetColumn(r, tempX);
-		y.SetColumn(r, tempY);
+		x.SetRow(r, tempX);
+		y.SetRow(r, tempY);
 	}
 
 	return std::make_tuple(x, y);

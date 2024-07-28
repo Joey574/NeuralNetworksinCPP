@@ -116,6 +116,7 @@ public:
 
 	Matrix Transpose();
 	Matrix Combine(Matrix element);
+	Matrix Join(Matrix element);
 	Matrix Normalized(float lowerRange, float upperRange);
 
 	void Insert(int startRow, Matrix element);
@@ -260,9 +261,6 @@ private:
 		float (Matrix::* remainderOperation)(float a, float b), std::vector<float> scalar);
 	Matrix MatrixFloatOperation(__m256 (Matrix::*operation)(__m256 opOne, __m256 opTwo),
 		float (Matrix::* remainderOperation)(float a, float b), Matrix element);
-
-	std::vector<float> HorizontalSum(std::vector<std::vector<float>> element);
-	std::vector<float> VerticalSum(std::vector<std::vector<float>> element);
 
 	__m256 SIMDAdd(__m256 opOne, __m256 opTwo);
 	__m256 SIMDSub(__m256 opOne, __m256 opTwo);
