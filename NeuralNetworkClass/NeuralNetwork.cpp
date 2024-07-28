@@ -175,20 +175,7 @@ NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, networ
 
 			results.total[i].Insert(x.RowCount, (net.weights[i].DotProduct(i == 0 ? x : results.activation[i - 1]) + net.biases[i]).Transpose());
 		} else {
-
-			/*std::cout << "Before: " << i << std::endl;
-			std::cout << "\tTotal: " << results.total[i].RowCount << " :: " << results.total[i].ColumnCount << std::endl;
-			std::cout << "\tWeights: " << net.weights[i].RowCount << " :: " << net.weights[i].ColumnCount << std::endl;
-			std::cout << "\tInputs: " << (i == 0 ? x.RowCount : results.activation[i - 1].RowCount) << " :: " << (i == 0 ? x.ColumnCount : results.activation[i - 1].ColumnCount) << std::endl;
-			std::cout << "\tBiases: " << net.biases[i].size() << std::endl << std::endl;*/
-
 			results.total[i] = (net.weights[i].DotProduct(i == 0 ? x : results.activation[i - 1]) + net.biases[i]);
-
-			/*std::cout << "After: " << i << std::endl;
-			std::cout << "\tTotal: " << results.total[i].RowCount << " :: " << results.total[i].ColumnCount << std::endl;
-			std::cout << "\tWeights: " << net.weights[i].RowCount << " :: " << net.weights[i].ColumnCount << std::endl;
-			std::cout << "\tInputs: " << (i == 0 ? x.RowCount : results.activation[i - 1].RowCount) << " :: " << (i == 0 ? x.ColumnCount : results.activation[i - 1].ColumnCount) << std::endl;
-			std::cout << "\tBiases: " << net.biases[i].size() << std::endl << std::endl;*/
 		}
 		results.activation[i] = i < results.total.size() - 1 ? (results.total[i].*activation_function)() : (results.total[i].*end_activation_function)();
 	}
