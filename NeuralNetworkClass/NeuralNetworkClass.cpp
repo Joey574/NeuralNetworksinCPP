@@ -30,6 +30,8 @@ std::wstring NarrowToWide(const std::string& narrowStr);
 
 int main()
 {
+    SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
+
 	NeuralNetwork model = NeuralNetwork();
 
 	std::vector<int> dims = { 2, 32, 32, 1 };
@@ -42,26 +44,32 @@ int main()
 	Matrix::init init_tech = Matrix::init::He;
 		
 	int batch_size = 500;
-	int epochs = 100;
-    float learning_rate = 0.005f;
-	float valid_split = 0.0f;
-	int valid_freq = 1;
+	int epochs = 2;
+    float learning_rate = 0.1f;
+	float valid_split = 0.05f;
+	int valid_freq = 5;
 
     Matrix x;
     Matrix y;
 
+    int image_width = 800;
+    int image_height = 450;
+
     std::tie(x, y) = MakeDataSet(200000);
-    dims[0] = x.RowCount;
+    dims[0] = x.ColumnCount;
 
 	model.Define(dims, res, batch_norm, &Matrix::_ELU, &Matrix::_ELUDerivative, &Matrix::Sigmoid);
-
 	model.Compile(loss, eval_metric, optimizer, init_tech);
 
-	model.Fit(x, y, batch_size, epochs, learning_rate, valid_split, true, valid_freq);
+    for (int i = 0; i < 10; i++) {
 
-    std::vector<Matrix> image_data = MakeImageFeatures(160, 90);
+        std::tie(x, y) = MakeDataSet(200000);
 
-    MakeBMP("test2.bmp", 160, 90, image_data, model);
+        model.Fit(x, y, batch_size, epochs, learning_rate, valid_split, true, valid_freq);
+        std::vector<Matrix> image_data = MakeImageFeatures(image_width, image_height);
+
+        MakeBMP("test_" + std::to_string(i).append(".bmp"), image_width, image_height, image_data, model);
+    }
 }
 
 float mandlebrot(float x, float y, int maxIterations) {
@@ -108,7 +116,8 @@ std::tuple<Matrix, Matrix> MakeDataSet(int size, int iterations) {
     }
 
     input = input.ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries,
-        laguerreSeries, lowerNormalized, upperNormalized);
+        laguerreSeries, lowerNormalized, upperNormalized).Transpose();
+    labels = labels.Transpose();
 
     return std::make_tuple(input, labels);
 }
@@ -123,19 +132,19 @@ std::vector<Matrix> MakeImageFeatures(int width, int height) {
     float scaleX = (std::abs(xMin - xMax)) / (width - 1);
     float scaleY = (std::abs(yMin - yMax)) / (height - 1);
 
-    Matrix image = Matrix(2, width * height);
+    Matrix image = Matrix(width * height, 2);
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             std::vector<float> val = { xMin + (float)x * scaleX, yMin + (float)y * scaleY };
-            image.SetColumn(x + (y * width), val);
+            image.SetRow(x + (y * width), val);
         }
     }
 
+    image = image.Transpose();
     image = image.ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries,
         laguerreSeries, lowerNormalized, upperNormalized);
-
-    image.Transpose();
+    image = image.Transpose();
 
     pixelPerMatrix = width;
 
@@ -146,7 +155,7 @@ std::vector<Matrix> MakeImageFeatures(int width, int height) {
 
     // Segment total matrix into vectors
     for (int i = 0; i < matrices; i++) {
-        imageVector[i] = image.SegmentC(i * pixelPerMatrix, std::min((i * pixelPerMatrix) + pixelPerMatrix, image.ColumnCount));
+        imageVector[i] = image.SegmentR(i * pixelPerMatrix, std::min((i * pixelPerMatrix) + pixelPerMatrix, image.RowCount));
     }
 
     return imageVector;
@@ -169,7 +178,7 @@ void MakeBMP(std::string filename, int width, int height, std::vector<Matrix> im
     for (int y = 0; y < imageVector.size(); y++) {
 
         // Get pixel data
-        std::vector<float> pixelData = model.Predict(imageVector[y]).Row(0);
+        std::vector<float> pixelData = model.Predict(imageVector[y]).Column(0);
 
         // Set pixels
         for (int x = 0; x < pixelData.size() && pI < width * height; x++) {
