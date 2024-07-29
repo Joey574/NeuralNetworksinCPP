@@ -45,7 +45,7 @@ int main()
 		
 	int batch_size = 500;
 	int epochs = 2;
-    float learning_rate = 0.01f;
+    float learning_rate = 0.1f;
 	float valid_split = 0.05f;
 	int valid_freq = 5;
 

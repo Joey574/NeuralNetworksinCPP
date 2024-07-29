@@ -122,6 +122,7 @@ public:
 	void Insert(int startRow, Matrix element);
 
 	std::string ToString();
+	std::string Size();
 
 	int ColumnCount;
 	int RowCount;

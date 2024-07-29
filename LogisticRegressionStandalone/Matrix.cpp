@@ -730,6 +730,9 @@ std::string Matrix::ToString() {
 
 	return out;
 }
+std::string Matrix::Size() {
+	return std::to_string(RowCount).append(" :: ").append(std::to_string(ColumnCount)).append("\n");
+}
 
 Matrix Matrix::Combine(Matrix element) {
 	Matrix a = Matrix(RowCount + element.RowCount, ColumnCount);
