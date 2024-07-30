@@ -16,7 +16,7 @@
 #include "ActivationFunctions.h"
 
 // Hyperparameters
-std::vector<int> dimensions = { 784, 30, 10 };
+std::vector<int> dimensions = { 784, 256, 128, 64, 32, 16, 10 };
 std::unordered_set<int> res_net = {  };
 
 // Feature Extractions
@@ -31,9 +31,9 @@ float lowerNormalized = 0.0f;
 float upperNormalized = 1.0f;
 
 Matrix::init initType = Matrix::init::He;
-int epochs = 10;
+int epochs = 30;
 int batchSize = 500;
-float learningRate = 1.1f;
+float learningRate = 0.1f;
 
 // Save / Load
 bool SaveOnComplete = false;

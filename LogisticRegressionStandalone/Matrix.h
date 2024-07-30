@@ -23,72 +23,74 @@ public:
 	Matrix(int rows, int columns);
 	Matrix(int rows, int columns, init initType);
 	Matrix(int rows, int columns, float value);
-	Matrix(std::vector<std::vector<float>>);
+	Matrix(const std::vector<std::vector<float>>& matrix);
 
-	std::vector<float> Column(int index);
-	std::vector<float> Row(int index);
+	std::vector<float> Column(int index) const;
+	std::vector<float> Row(int index) const;
 
-	void SetColumn(int index, std::vector<float> column);
-	void SetColumn(int index, std::vector<int> column);
-	void SetRow(int index, std::vector<float> row);
-	void SetRow(int index, std::vector<int> row);
+	void SetColumn(int index, const std::vector<float>& column);
+	void SetColumn(int index, const std::vector<int>& column);
+	void SetRow(int index, const std::vector<float>& row);
+	void SetRow(int index, const std::vector<int>& row);
 
-	Matrix SegmentR(int startRow, int endRow);
-	Matrix SegmentR(int startRow);
+	Matrix SegmentR(int startRow, int endRow) const;
+	Matrix SegmentR(int startRow) const;
 
-	Matrix SegmentC(int startColumn, int endColumn);
-	Matrix SegmentC(int startColumn);
+	Matrix SegmentC(int startColumn, int endColumn) const;
+	Matrix SegmentC(int startColumn) const;
 
-	std::vector<float> ColumnSums();
-	std::vector<float> RowSums();
+	std::vector<float> ColumnSums() const;
+	std::vector<float> RowSums() const;
 
 	// "Advanced" Math
-	Matrix ExtractFeatures(int fourier, int taylor, int chebyshev, int legendre, int laguerre, float lowerNormal, float upperNormal);
+	Matrix ExtractFeatures(int fourier, int taylor, int chebyshev, int legendre, int laguerre, float lowerNormal, float upperNormal) const;
 
-	Matrix FourierSeries(int order);
-	Matrix TaylorSeries(int order);
-	Matrix ChebyshevSeries(int order);
-	Matrix LegendreSeries(int order);
-	Matrix LaguerreSeries(int order);
+	Matrix Normalized(float lowerRange, float upperRange) const;
 
-	Matrix DotProduct(Matrix element);
+	Matrix FourierSeries(int order) const;
+	Matrix TaylorSeries(int order) const;
+	Matrix ChebyshevSeries(int order) const;
+	Matrix LegendreSeries(int order) const;
+	Matrix LaguerreSeries(int order) const;
 
-	std::vector<float> LogSumExp();
+	Matrix DotProduct(const Matrix& element) const;
+
+	std::vector<float> LogSumExp() const;
 
 	// Basic Math
-	Matrix Negative();
-	Matrix Abs();
+	Matrix Negative() const;
+	Matrix Abs() const;
 
-	Matrix Add(float scalar);
-	Matrix Add(std::vector<float> scalar);
-	Matrix Add(Matrix element);
+	Matrix Add(float scalar) const;
+	Matrix Add(const std::vector<float>& scalar) const;
+	Matrix Add(const Matrix& element) const;
 
-	Matrix Subtract(float scalar);
-	Matrix Subtract(std::vector<float> scalar);
-	Matrix Subtract(Matrix element);
+	Matrix Subtract(float scalar) const;
+	Matrix Subtract(const std::vector<float>& scalar) const;
+	Matrix Subtract(const Matrix& element) const;
 
-	Matrix Multiply(float scalar);
-	Matrix Multiply(std::vector<float> scalar);
-	Matrix Multiply(Matrix element);
+	Matrix Multiply(float scalar) const;
+	Matrix Multiply(const std::vector<float>& scalar) const;
+	Matrix Multiply(const Matrix& element) const;
 
-	Matrix Divide(float scalar);
-	Matrix Divide(std::vector<float> scalar);
-	Matrix Divide(Matrix element);
+	Matrix Divide(float scalar) const;
+	Matrix Divide(const std::vector<float>& scalar) const;
+	Matrix Divide(const Matrix& element) const;
 
-	Matrix Pow(float scalar);
-	Matrix Pow(std::vector<float> scalar);
-	Matrix Pow(Matrix element);
+	Matrix Pow(float scalar) const;
+	Matrix Pow(const std::vector<float>& scalar) const;
+	Matrix Pow(const Matrix& element) const;
 
-	Matrix Cos();
-	Matrix Sin();
-	Matrix Acos();
-	Matrix Asin();
+	Matrix Cos() const;
+	Matrix Sin() const;
+	Matrix Acos() const;
+	Matrix Asin() const;
 
-	Matrix Exp(float base = std::exp(1.0));
-	Matrix Exp(std::vector<float> base);
-	Matrix Exp(Matrix base);
+	Matrix Exp(float base = std::exp(1.0)) const;
+	Matrix Exp(const std::vector<float>& base) const;
+	Matrix Exp(const Matrix& base) const;
 
-	Matrix Log(float base = std::exp(1.0));
+	Matrix Log(float base = std::exp(1.0)) const;
 
 	// Activation Functions
 	Matrix Sigmoid();
@@ -115,9 +117,9 @@ public:
 	Matrix SiLUDerivative();
 
 	Matrix Transpose();
+
 	Matrix Combine(Matrix element);
 	Matrix Join(Matrix element);
-	Matrix Normalized(float lowerRange, float upperRange);
 
 	void Insert(int startRow, Matrix element);
 
@@ -256,44 +258,44 @@ private:
 
 	std::vector<std::vector<float>> matrixT;
 
-	Matrix SingleFloatOperation(__m256 (Matrix::*operation)(__m256 opOne, __m256 opTwo),
-		float (Matrix::* remainderOperation)(float a, float b), float scalar);
-	Matrix VectorFloatOperation(__m256 (Matrix::*operation)(__m256 opOne, __m256 opTwo),
-		float (Matrix::* remainderOperation)(float a, float b), std::vector<float> scalar);
-	Matrix MatrixFloatOperation(__m256 (Matrix::*operation)(__m256 opOne, __m256 opTwo),
-		float (Matrix::* remainderOperation)(float a, float b), Matrix element);
+	Matrix SingleFloatOperation(__m256 (Matrix::*operation)(__m256 opOne, __m256 opTwo) const,
+		float (Matrix::* remainderOperation)(float a, float b) const, float scalar) const;
+	Matrix VectorFloatOperation(__m256 (Matrix::*operation)(__m256 opOne, __m256 opTwo) const,
+		float (Matrix::* remainderOperation)(float a, float b) const, const std::vector<float>& scalar) const;
+	Matrix MatrixFloatOperation(__m256 (Matrix::*operation)(__m256 opOne, __m256 opTwo) const,
+		float (Matrix::* remainderOperation)(float a, float b) const, const Matrix& element) const;
 
-	__m256 SIMDAdd(__m256 opOne, __m256 opTwo);
-	__m256 SIMDSub(__m256 opOne, __m256 opTwo);
-	__m256 SIMDMul(__m256 opOne, __m256 opTwo);
-	__m256 SIMDDiv(__m256 opOne, __m256 opTwo);
-	__m256 SIMDPow(__m256 opOne, __m256 opTwo);
-	__m256 SIMDExp(__m256 opOne, __m256 opTwo);
-	__m256 SIMDMax(__m256 opOne, __m256 opTwo);
-	__m256 SIMDAbs(__m256 opOne, __m256 opTwo);
-
-	// SIMD Trig
-	__m256 SIMDSin(__m256 opOne, __m256 opTwo);
-	__m256 SIMDCos(__m256 opOne, __m256 opTwo);
-	__m256 SIMDSec(__m256 opOne, __m256 opTwo);
-	__m256 SIMDCsc(__m256 opOne, __m256 opTwo);
-	__m256 SIMDAcos(__m256 opOne, __m256 opTwo);
-	__m256 SIMDAsin(__m256 opOne, __m256 opTwo);
-
-	float RemainderAdd(float a, float b);
-	float RemainderSub(float a, float b);
-	float RemainderMul(float a, float b);
-	float RemainderDiv(float a, float b);
-	float RemainderPow(float a, float b);
-	float RemainderExp(float a, float b);
-	float RemainderMax(float a, float b);
-	float RemainderAbs(float a, float b);
+	__m256 SIMDAdd(__m256 opOne, __m256 opTwo) const;
+	__m256 SIMDSub(__m256 opOne, __m256 opTwo) const;
+	__m256 SIMDMul(__m256 opOne, __m256 opTwo) const;
+	__m256 SIMDDiv(__m256 opOne, __m256 opTwo) const;
+	__m256 SIMDPow(__m256 opOne, __m256 opTwo) const;
+	__m256 SIMDExp(__m256 opOne, __m256 opTwo) const;
+	__m256 SIMDMax(__m256 opOne, __m256 opTwo) const;
+	__m256 SIMDAbs(__m256 opOne, __m256 opTwo) const;
 
 	// SIMD Trig
-	float RemainderSin(float a, float b);
-	float RemainderCos(float a, float b);
-	float RemainderSec(float a, float b);
-	float RemainderCsc(float a, float b);
-	float RemainderAcos(float a, float b);
-	float RemainderAsin(float a, float b);
+	__m256 SIMDSin(__m256 opOne, __m256 opTwo) const;
+	__m256 SIMDCos(__m256 opOne, __m256 opTwo) const;
+	__m256 SIMDSec(__m256 opOne, __m256 opTwo) const;
+	__m256 SIMDCsc(__m256 opOne, __m256 opTwo) const;
+	__m256 SIMDAcos(__m256 opOne, __m256 opTwo) const;
+	__m256 SIMDAsin(__m256 opOne, __m256 opTwo) const;
+
+	float RemainderAdd(float a, float b) const;
+	float RemainderSub(float a, float b) const;
+	float RemainderMul(float a, float b) const;
+	float RemainderDiv(float a, float b) const;
+	float RemainderPow(float a, float b) const;
+	float RemainderExp(float a, float b) const;
+	float RemainderMax(float a, float b) const;
+	float RemainderAbs(float a, float b) const;
+
+	// SIMD Trig
+	float RemainderSin(float a, float b) const;
+	float RemainderCos(float a, float b) const;
+	float RemainderSec(float a, float b) const;
+	float RemainderCsc(float a, float b) const;
+	float RemainderAcos(float a, float b) const;
+	float RemainderAsin(float a, float b) const;
 };

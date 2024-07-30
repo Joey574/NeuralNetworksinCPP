@@ -85,7 +85,7 @@ Matrix::Matrix(int rows, int columns, init initType) {
 
 	transposeBuilt = false;
 }
-Matrix::Matrix(std::vector<std::vector<float>> matrix) {
+Matrix::Matrix(const std::vector<std::vector<float>>& matrix) {
 	this->matrix = matrix;
 	ColumnCount = matrix[0].size();
 	RowCount = matrix.size();
@@ -94,14 +94,14 @@ Matrix::Matrix(std::vector<std::vector<float>> matrix) {
 
 // Util
 
-void Matrix::SetColumn(int index, std::vector<float> vector) {
+void Matrix::SetColumn(int index, const std::vector<float>& vector) {
 	for (int i = 0; i < RowCount; i++) {
 		matrix[i][index] = vector[i];
 	}
 
 	transposeBuilt = false;
 }
-void Matrix::SetColumn(int index, std::vector<int> vector) {
+void Matrix::SetColumn(int index, const std::vector<int>& vector) {
 	for (int i = 0; i < RowCount; i++) {
 		matrix[i][index] = vector[i];
 	}
@@ -109,14 +109,14 @@ void Matrix::SetColumn(int index, std::vector<int> vector) {
 	transposeBuilt = false;
 }
 
-void Matrix::SetRow(int index, std::vector<float> vector) {
+void Matrix::SetRow(int index, const std::vector<float>& vector) {
 	for (int i = 0; i < ColumnCount; i++) {
 		matrix[index][i] = vector[i];
 	}
 
 	transposeBuilt = false;
 }
-void Matrix::SetRow(int index, std::vector<int> vector) {
+void Matrix::SetRow(int index, const std::vector<int>& vector) {
 	for (int i = 0; i < ColumnCount; i++) {
 		matrix[index][i] = vector[i];
 	}
@@ -132,7 +132,7 @@ void Matrix::Insert(int startRow, Matrix element) {
 	transposeBuilt = false;
 }
 
-Matrix Matrix::SegmentR(int startRow, int endRow) {
+Matrix Matrix::SegmentR(int startRow, int endRow) const {
 	Matrix a = Matrix(endRow - startRow, ColumnCount);
 
 	for (int i = 0; i < a.RowCount; i++) {
@@ -141,7 +141,7 @@ Matrix Matrix::SegmentR(int startRow, int endRow) {
 
 	return a;
 }
-Matrix Matrix::SegmentR(int startRow) {
+Matrix Matrix::SegmentR(int startRow) const {
 	Matrix a = Matrix(RowCount - startRow, ColumnCount);
 
 	for (int i = 0; i < a.RowCount; i++) {
@@ -151,7 +151,7 @@ Matrix Matrix::SegmentR(int startRow) {
 	return a;
 }
 
-Matrix Matrix::SegmentC(int startColumn, int endColumn) {
+Matrix Matrix::SegmentC(int startColumn, int endColumn) const {
 	Matrix a = Matrix(RowCount, endColumn - startColumn);
 
 	for (int i = 0; i < a.ColumnCount; i++) {
@@ -160,7 +160,7 @@ Matrix Matrix::SegmentC(int startColumn, int endColumn) {
 
 	return a;
 }
-Matrix Matrix::SegmentC(int startColumn) {
+Matrix Matrix::SegmentC(int startColumn) const {
 	Matrix a = Matrix(RowCount, ColumnCount - startColumn);
 
 	for (int i = 0; i < a.ColumnCount; i++) {
@@ -170,7 +170,7 @@ Matrix Matrix::SegmentC(int startColumn) {
 	return a;
 }
 
-std::vector<float> Matrix::ColumnSums() {
+std::vector<float> Matrix::ColumnSums() const {
 	std::vector<float> sums = std::vector<float>();
 	sums.reserve(ColumnCount);
 
@@ -189,7 +189,7 @@ std::vector<float> Matrix::ColumnSums() {
 	}
 	return sums;
 }
-std::vector<float> Matrix::RowSums() {
+std::vector<float> Matrix::RowSums() const {
 	std::vector<float> sums = std::vector<float>();
 	sums.reserve(matrix.size());
 
@@ -200,7 +200,7 @@ std::vector<float> Matrix::RowSums() {
 	return sums;
 }
 
-std::vector<float> Matrix::Column(int index) {
+std::vector<float> Matrix::Column(int index) const {
 
 	if (transposeBuilt) {
 		return matrixT[index];
@@ -214,12 +214,12 @@ std::vector<float> Matrix::Column(int index) {
 		return column;
 	}
 }
-std::vector<float> Matrix::Row(int index) {
+std::vector<float> Matrix::Row(int index) const {
 	return matrix[index];
 }
 
 // "Advanced" math
-Matrix Matrix::ExtractFeatures(int fourier, int taylor, int chebyshev, int legendre, int laguerre, float lowerNormal, float upperNormal) {
+Matrix Matrix::ExtractFeatures(int fourier, int taylor, int chebyshev, int legendre, int laguerre, float lowerNormal, float upperNormal) const {
 	// Normalize
 	Matrix mat = this->matrix;
 	Matrix taylorNormal;
@@ -270,7 +270,7 @@ Matrix Matrix::ExtractFeatures(int fourier, int taylor, int chebyshev, int legen
 	return mat;
 }
 
-Matrix Matrix::Normalized(float lowerRange, float upperRange) {
+Matrix Matrix::Normalized(float lowerRange, float upperRange) const {
 
 	Matrix normal = matrix;
 
@@ -306,23 +306,23 @@ Matrix Matrix::Normalized(float lowerRange, float upperRange) {
 	return normal;
 }
 
-Matrix Matrix::FourierSeries(int order) {
+Matrix Matrix::FourierSeries(int order) const {
 	return this->Multiply(order).Sin().Combine(this->Multiply(order).Cos());
 }
-Matrix Matrix::TaylorSeries(int order) {
+Matrix Matrix::TaylorSeries(int order) const {
 	return this->Pow(order);
 }
-Matrix Matrix::ChebyshevSeries(int order) {
+Matrix Matrix::ChebyshevSeries(int order) const {
 	return this->Acos().Multiply(order).Cos();
 }
-Matrix Matrix::LegendreSeries(int order) {
+Matrix Matrix::LegendreSeries(int order) const {
 	return (this->Pow(2) - 1).Pow(order);
 }
-Matrix Matrix::LaguerreSeries(int order) {
+Matrix Matrix::LaguerreSeries(int order) const {
 	return this->Pow(order).Multiply(this->Negative().Exp());
 }
 
-Matrix Matrix::DotProduct(Matrix element) {
+Matrix Matrix::DotProduct(const Matrix& element) const {
 
 	Matrix mat = Matrix(element.RowCount, ColumnCount);
 
@@ -333,7 +333,7 @@ Matrix Matrix::DotProduct(Matrix element) {
 	return mat;
 }
 
-std::vector<float> Matrix::LogSumExp() {
+std::vector<float> Matrix::LogSumExp() const {
 
 	std::vector<float> logSum = std::vector<float>(ColumnCount);
 
@@ -354,88 +354,88 @@ std::vector<float> Matrix::LogSumExp() {
 }
 
 // Basic Math
-Matrix Matrix::Negative() {
+Matrix Matrix::Negative() const {
 	return SingleFloatOperation(&Matrix::SIMDMul, &Matrix::RemainderMul, -1);
 }
-Matrix Matrix::Abs() {
+Matrix Matrix::Abs() const {
 	return SingleFloatOperation(&Matrix::SIMDAbs, &Matrix::RemainderAbs, 0);
 }
 
-Matrix Matrix::Add(float scalar) {
+Matrix Matrix::Add(float scalar) const {
 	return SingleFloatOperation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, scalar);
 }
-Matrix Matrix::Add(std::vector<float> scalar) {
+Matrix Matrix::Add(const std::vector<float>& scalar) const {
 	return VectorFloatOperation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, scalar);
 }
-Matrix Matrix::Add(Matrix element) {
+Matrix Matrix::Add(const Matrix& element) const {
 	return MatrixFloatOperation(&Matrix::SIMDAdd, &Matrix::RemainderAdd, element);
 }
 
-Matrix Matrix::Subtract(float scalar) {
+Matrix Matrix::Subtract(float scalar) const {
 	return SingleFloatOperation(&Matrix::SIMDSub, &Matrix::RemainderSub, scalar);
 }
-Matrix Matrix::Subtract(std::vector<float> scalar) {
+Matrix Matrix::Subtract(const std::vector<float>& scalar) const {
 	return VectorFloatOperation(&Matrix::SIMDSub, &Matrix::RemainderSub, scalar);
 }
-Matrix Matrix::Subtract(Matrix element) {
+Matrix Matrix::Subtract(const Matrix& element) const {
 	return MatrixFloatOperation(&Matrix::SIMDSub, &Matrix::RemainderSub, element);
 }
 
-Matrix Matrix::Multiply(float scalar) {
+Matrix Matrix::Multiply(float scalar) const {
 	return SingleFloatOperation(&Matrix::SIMDMul, &Matrix::RemainderMul, scalar);
 }
-Matrix Matrix::Multiply(std::vector<float> scalar) {
+Matrix Matrix::Multiply(const std::vector<float>& scalar) const {
 	return VectorFloatOperation(&Matrix::SIMDMul, &Matrix::RemainderMul, scalar);
 }
-Matrix Matrix::Multiply(Matrix element) {
+Matrix Matrix::Multiply(const Matrix& element) const {
 	return MatrixFloatOperation(&Matrix::SIMDMul, &Matrix::RemainderMul, element);
 }
 
-Matrix Matrix::Divide(float scalar) {
+Matrix Matrix::Divide(float scalar) const {
 	return SingleFloatOperation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, scalar);
 }
-Matrix Matrix::Divide(std::vector<float> scalar) {
+Matrix Matrix::Divide(const std::vector<float>& scalar) const {
 	return VectorFloatOperation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, scalar);
 }
-Matrix Matrix::Divide(Matrix element) {
+Matrix Matrix::Divide(const Matrix& element) const {
 	return MatrixFloatOperation(&Matrix::SIMDDiv, &Matrix::RemainderDiv, element);
 }
 
-Matrix Matrix::Pow(float scalar) {
+Matrix Matrix::Pow(float scalar) const {
 	return SingleFloatOperation(&Matrix::SIMDPow, &Matrix::RemainderPow, scalar);
 }
-Matrix Matrix::Pow(std::vector<float> scalar) {
+Matrix Matrix::Pow(const std::vector<float>& scalar) const {
 	return VectorFloatOperation(&Matrix::SIMDPow, &Matrix::RemainderPow, scalar);
 }
-Matrix Matrix::Pow(Matrix element) {
+Matrix Matrix::Pow(const Matrix& element) const {
 	return MatrixFloatOperation(&Matrix::SIMDPow, &Matrix::RemainderPow, element);
 }
 
-Matrix Matrix::Exp(float base) {
+Matrix Matrix::Exp(float base) const {
 	return SingleFloatOperation(&Matrix::SIMDExp, &Matrix::RemainderExp, base);
 }
-Matrix Matrix::Exp(std::vector<float> base) {
+Matrix Matrix::Exp(const std::vector<float>& base) const {
 	return VectorFloatOperation(&Matrix::SIMDExp, &Matrix::RemainderExp, base);
 }
-Matrix Matrix::Exp(Matrix base) {
+Matrix Matrix::Exp(const Matrix& base) const {
 	return MatrixFloatOperation(&Matrix::SIMDExp, &Matrix::RemainderExp, base);
 }
 
-Matrix Matrix::Log(float base) {
+Matrix Matrix::Log(float base) const {
 	return matrix;
 }
 
-Matrix Matrix::Cos() {
+Matrix Matrix::Cos() const {
 	return this->SingleFloatOperation(&Matrix::SIMDCos, &Matrix::RemainderCos, 0);
 }
-Matrix Matrix::Sin() {
+Matrix Matrix::Sin() const {
 	return this->SingleFloatOperation(&Matrix::SIMDSin, &Matrix::RemainderSin, 0);
 }
 
-Matrix Matrix::Acos() {
+Matrix Matrix::Acos() const {
 	return this->SingleFloatOperation(&Matrix::SIMDAcos, &Matrix::RemainderAcos, 0);
 }
-Matrix Matrix::Asin() {
+Matrix Matrix::Asin() const {
 	return this->SingleFloatOperation(&Matrix::SIMDAsin, &Matrix::RemainderAcos, 0);
 }
 
@@ -535,8 +535,8 @@ Matrix Matrix::SiLUDerivative() {
 }
 
 // SIMD Implementations
-Matrix Matrix::SingleFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo),
-	float (Matrix::* remainderOperation)(float a, float b), float scalar) {
+Matrix Matrix::SingleFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const,
+	float (Matrix::* remainderOperation)(float a, float b) const, float scalar) const {
 	std::vector<std::vector<float>> mat = matrix;
 	const int alignedN = mat[0].size() - (mat[0].size() % 8);
 	__m256 _scalar = _mm256_set1_ps(scalar);
@@ -556,8 +556,8 @@ Matrix Matrix::SingleFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, _
 	return mat;
 }
 
-Matrix Matrix::VectorFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo),
-	float (Matrix::* remainderOperation)(float a, float b), std::vector<float> scalar) {
+Matrix Matrix::VectorFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const,
+	float (Matrix::* remainderOperation)(float a, float b) const, const std::vector<float>& scalar) const {
 
 	Matrix mat = matrix;
 	const int alignedN = mat.matrix[0].size() - (mat.matrix[0].size() % 8);
@@ -600,8 +600,8 @@ Matrix Matrix::VectorFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, _
 	return mat;
 }
 
-Matrix Matrix::MatrixFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo),
-	float (Matrix::* remainderOperation)(float a, float b), Matrix element) {
+Matrix Matrix::MatrixFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, __m256 opTwo) const,
+	float (Matrix::* remainderOperation)(float a, float b) const, const Matrix& element) const {
 	std::vector<std::vector<float>> mat = element.matrix;
 	const int alignedN = mat[0].size() - (mat[0].size() % 8);
 
@@ -624,95 +624,95 @@ Matrix Matrix::MatrixFloatOperation(__m256 (Matrix::* operation)(__m256 opOne, _
 
 // SIMD Operations
 
-__m256 Matrix::SIMDAdd(__m256 opOne, __m256 opTwo) {
+__m256 Matrix::SIMDAdd(__m256 opOne, __m256 opTwo) const {
 	return _mm256_add_ps(opOne, opTwo);
 }
-__m256 Matrix::SIMDSub(__m256 opOne, __m256 opTwo) {
+__m256 Matrix::SIMDSub(__m256 opOne, __m256 opTwo) const {
 	return _mm256_sub_ps(opOne, opTwo);
 }
-__m256 Matrix::SIMDMul(__m256 opOne, __m256 opTwo) {
+__m256 Matrix::SIMDMul(__m256 opOne, __m256 opTwo) const {
 	return _mm256_mul_ps(opOne, opTwo);
 }
-__m256 Matrix::SIMDDiv(__m256 opOne, __m256 opTwo) {
+__m256 Matrix::SIMDDiv(__m256 opOne, __m256 opTwo) const {
 	return _mm256_div_ps(opOne, opTwo);
 }
-__m256 Matrix::SIMDPow(__m256 opOne, __m256 opTwo) {
+__m256 Matrix::SIMDPow(__m256 opOne, __m256 opTwo) const {
 	return _mm256_pow_ps(opOne, opTwo);
 }
-__m256 Matrix::SIMDExp(__m256 opOne, __m256 opTwo) {
+__m256 Matrix::SIMDExp(__m256 opOne, __m256 opTwo) const {
 	return _mm256_pow_ps(opTwo, opOne);
 }
-__m256 Matrix::SIMDMax(__m256 opOne, __m256 opTwo) {
+__m256 Matrix::SIMDMax(__m256 opOne, __m256 opTwo) const {
 	return _mm256_max_ps(opOne, opTwo);
 }
-__m256 Matrix::SIMDAbs(__m256 opOne, __m256 opTwo) {
+__m256 Matrix::SIMDAbs(__m256 opOne, __m256 opTwo) const {
 	__m256 mask = _mm256_castsi256_ps(_mm256_srli_epi32(_mm256_set1_epi32(-1), 1));
 	__m256 result = _mm256_and_ps(opOne, mask);
 	return result;
 }
 
 // SIMD Trig
-__m256 Matrix::SIMDSin(__m256 opOne, __m256 opTwo) {
+__m256 Matrix::SIMDSin(__m256 opOne, __m256 opTwo) const {
 	return _mm256_sin_ps(opOne);
 }
-__m256 Matrix::SIMDCos(__m256 opOne, __m256 opTwo) {
+__m256 Matrix::SIMDCos(__m256 opOne, __m256 opTwo) const {
 	return _mm256_cos_ps(opOne);
 }
-__m256 Matrix::SIMDSec(__m256 opOne, __m256 opTwo) {
+__m256 Matrix::SIMDSec(__m256 opOne, __m256 opTwo) const {
 	return _mm256_div_ps(_mm256_set1_ps(1.0f), _mm256_cos_ps(opOne));
 }
-__m256 Matrix::SIMDCsc(__m256 opOne, __m256 opTwo) {
+__m256 Matrix::SIMDCsc(__m256 opOne, __m256 opTwo) const {
 	return _mm256_div_ps(_mm256_set1_ps(1.0f), _mm256_sin_ps(opOne));
 }
-__m256 Matrix::SIMDAcos(__m256 opOne, __m256 opTwo) {
+__m256 Matrix::SIMDAcos(__m256 opOne, __m256 opTwo) const {
 	return _mm256_acos_ps(opOne);
 }
-__m256 Matrix::SIMDAsin(__m256 opOne, __m256 opTwo) {
+__m256 Matrix::SIMDAsin(__m256 opOne, __m256 opTwo) const {
 	return _mm256_asin_ps(opOne);
 }
 
-float Matrix::RemainderAdd(float a, float b) {
+float Matrix::RemainderAdd(float a, float b) const {
 	return a + b;
 }
-float Matrix::RemainderSub(float a, float b) {
+float Matrix::RemainderSub(float a, float b) const {
 	return a - b;
 }
-float Matrix::RemainderMul(float a, float b) {
+float Matrix::RemainderMul(float a, float b) const {
 	return a * b;
 }
-float Matrix::RemainderDiv(float a, float b) {
+float Matrix::RemainderDiv(float a, float b) const {
 	return a / b;
 }
-float Matrix::RemainderPow(float a, float b) {
+float Matrix::RemainderPow(float a, float b) const {
 	return std::pow(a, b);
 }
-float Matrix::RemainderExp(float a, float b) {
+float Matrix::RemainderExp(float a, float b) const {
 	return std::pow(b, a);
 }
-float Matrix::RemainderMax(float a, float b) {
+float Matrix::RemainderMax(float a, float b) const {
 	return std::max(a, b);
 }
-float Matrix::RemainderAbs(float a, float b) {
+float Matrix::RemainderAbs(float a, float b) const {
 	return std::abs(a);
 }
 
 // SIMD Trig
-float Matrix::RemainderSin(float a, float b) {
+float Matrix::RemainderSin(float a, float b) const {
 	return std::sin(a);
 }
-float Matrix::RemainderCos(float a, float b) {
+float Matrix::RemainderCos(float a, float b) const {
 	return std::cos(a);
 }
-float Matrix::RemainderSec(float a, float b) {
+float Matrix::RemainderSec(float a, float b) const {
 	return 1.0f / std::cos(a);
 }
-float Matrix::RemainderCsc(float a, float b) {
+float Matrix::RemainderCsc(float a, float b) const {
 	return 1.0f / std::sin(a);
 }
-float Matrix::RemainderAcos(float a, float b) {
+float Matrix::RemainderAcos(float a, float b) const {
 	return std::acos(a);
 }
-float Matrix::RemainderAsin(float a, float b) {
+float Matrix::RemainderAsin(float a, float b) const {
 	return std::asin(a);
 }
 
