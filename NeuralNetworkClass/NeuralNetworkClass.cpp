@@ -44,7 +44,7 @@ int main()
 	Matrix::init init_tech = Matrix::init::He;
 		
 	int batch_size = 500;
-	int epochs = 2;
+	int epochs = 1;
     float learning_rate = 0.1f;
 	float valid_split = 0.05f;
 	int valid_freq = 5;
@@ -132,19 +132,17 @@ std::vector<Matrix> MakeImageFeatures(int width, int height) {
     float scaleX = (std::abs(xMin - xMax)) / (width - 1);
     float scaleY = (std::abs(yMin - yMax)) / (height - 1);
 
-    Matrix image = Matrix(width * height, 2);
+    Matrix image = Matrix(2, width * height);
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             std::vector<float> val = { xMin + (float)x * scaleX, yMin + (float)y * scaleY };
-            image.SetRow(x + (y * width), val);
+            image.SetColumn(x + (y * width), val);
         }
     }
 
-    image = image.Transpose();
     image = image.ExtractFeatures(fourierSeries, taylorSeries, chebyshevSeries, legendreSeries,
-        laguerreSeries, lowerNormalized, upperNormalized);
-    image = image.Transpose();
+        laguerreSeries, lowerNormalized, upperNormalized).Transpose();
 
     pixelPerMatrix = width;
 

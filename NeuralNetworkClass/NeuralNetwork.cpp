@@ -184,36 +184,21 @@ NeuralNetwork::result_matrices NeuralNetwork::forward_propogate(Matrix x, networ
 }
 
 NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Matrix y, float learning_rate, network_structure net, result_matrices results, derivative_matrices deriv) {
-
 	// Compute loss
 	deriv.d_total[deriv.d_total.size() - 1] = (this->*loss_function)(results.activation.back(), y);
 
-	//std::cout << deriv.d_total[deriv.d_total.size() - 1].ToString();
-
 	for (int i = deriv.d_total.size() - 1; i > 0; i--) {
-
-		/*std::cout << "\nBefore: " << i << std::endl;
-		std::cout << "\td_total: " << deriv.d_total[i - 1].Size();
-		std::cout << "\td_weights: " << deriv.d_weights[i - 1].Size();
-		std::cout << "\td_biases: " << deriv.d_biases.size() << std::endl;*/
 
 		if (res_net_layers.find(i) != res_net_layers.end()) {
 			deriv.d_total[i] = ((deriv.d_total[i + 1].DotProduct(net.weights[i + 1].SegmentR(x.RowCount))).Transpose() * (results.total[i].SegmentR(x.RowCount).*activation_function_derivative)());
-		}
-		else {
+		} else {
 			deriv.d_total[i - 1] = net.weights[i].Transpose().DotProduct(deriv.d_total[i]) * (results.total[i - 1].*activation_function_derivative)();
-			//deriv.d_total[i] = ((deriv.d_total[i + 1].DotProduct(net.weights[i + 1])).Transpose() * (results.total[i].*activation_function_derivative)());
 		}
-
-		/*std::cout << "After: " << i << std::endl;
-		std::cout << "\td_total: " << deriv.d_total[i - 1].Size();
-		std::cout << "\td_weights: " << deriv.d_weights[i - 1].Size();
-		std::cout << "\td_biases: " << deriv.d_biases.size() << std::endl;*/
 	}
 
 	for (int i = 0; i < deriv.d_weights.size(); i++) {
-		deriv.d_weights[i] = deriv.d_total[i].DotProduct(i == 0 ? x.Transpose() : results.activation[i - 1].Transpose()) * (1.0f / (float)x.RowCount);
-		deriv.d_biases[i] = deriv.d_total[i].Multiply(1.0f / (float)x.RowCount).RowSums();
+		deriv.d_weights[i] = deriv.d_total[i].DotProduct(i == 0 ? x.Transpose() : results.activation[i - 1].Transpose());
+		deriv.d_biases[i] = deriv.d_total[i].RowSums();
 	}
 
 	/*int i = 0;
@@ -224,9 +209,9 @@ NeuralNetwork::network_structure  NeuralNetwork::backward_propogate(Matrix x, Ma
 	}*/
 
 	for (int i = 0; i < net.weights.size(); i++) {
-		net.weights[i] -= deriv.d_weights[i].Multiply(learning_rate);
+		net.weights[i] += deriv.d_weights[i].Multiply(learning_rate / x.RowCount);
 		for (int idx_x = 0; idx_x < net.biases[i].size(); idx_x++) {
-			net.biases[i][idx_x] -= (deriv.d_biases[i][idx_x] * learning_rate);
+			net.biases[i][idx_x] += (deriv.d_biases[i][idx_x] * learning_rate / x.RowCount);
 		}
 	}
 
